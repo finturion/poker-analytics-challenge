@@ -1,0 +1,22 @@
+# Render Blueprint voor de Poker Analytics Challenge API.
+# Deploy: op render.com -> New -> Blueprint -> wijs naar deze repo.
+#
+# LET OP (belangrijk voor straks, niet blokkerend voor nu):
+# de "free" plan hieronder heeft GEEN persistente disk. submissions_db.json,
+# gallery_db.json, reviews_db.json en toernooi_resultaten_db.json (de
+# JSON-"database" van de API) gaan verloren zodra de service herstart of
+# na inactiviteit in slaap valt en weer opstart. Prima voor een testfase
+# met een klein groepje testers; voor de echte cursus met een hele klas
+# moet dit naar een betaald plan met een Render Disk, of naar een externe
+# database.
+services:
+  - type: web
+    name: poker-analytics-api
+    env: python
+    rootDir: api
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9

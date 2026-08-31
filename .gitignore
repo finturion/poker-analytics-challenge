@@ -1,0 +1,13 @@
+# Runtime "database" bestanden — worden door de API zelf aangemaakt, horen niet in git.
+# tokens_db.json en docent_token.json bevatten geheimen en mogen NOOIT gecommit worden.
+api/submissions_db.json
+api/gallery_db.json
+api/reviews_db.json
+api/toernooi_resultaten_db.json
+api/tokens_db.json
+api/docent_token.json
+
+__pycache__/
+*.pyc
+.DS_Store
+.ipynb_checkpoints/
