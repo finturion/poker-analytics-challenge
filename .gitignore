@@ -11,3 +11,9 @@ __pycache__/
 *.pyc
 .DS_Store
 .ipynb_checkpoints/
+
+# Output van scripts/genereer_tokens.py — bevat echte studentnummers + tokens, nooit committen.
+scripts/tokens.json
+scripts/tokens_voor_verspreiding.csv
+scripts/*studentnummers*
+scripts/*nummers*.txt
