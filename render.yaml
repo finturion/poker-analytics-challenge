@@ -1,14 +1,19 @@
 # Render Blueprint voor de Poker Analytics Challenge API.
-# Deploy: op render.com -> New -> Blueprint -> wijs naar deze repo.
+# Deploy: op render.com -> New -> Blueprint -> wijs naar deze repo -> Sync.
 #
-# LET OP (belangrijk voor straks, niet blokkerend voor nu):
-# de "free" plan hieronder heeft GEEN persistente disk. submissions_db.json,
-# gallery_db.json, reviews_db.json en toernooi_resultaten_db.json (de
-# JSON-"database" van de API) gaan verloren zodra de service herstart of
-# na inactiviteit in slaap valt en weer opstart. Prima voor een testfase
-# met een klein groepje testers; voor de echte cursus met een hele klas
-# moet dit naar een betaald plan met een Render Disk, of naar een externe
-# database.
+# LET OP — kost geld, jouw keuze:
+# de database hieronder staat op "free". Render's gratis Postgres-plan
+# VERLOOPT NA 30 DAGEN en wordt dan permanent verwijderd, inclusief alle
+# data — dat is korter dan dit hele blok (6+ weken). Voor de testfase is
+# free prima, maar zet 'm in de Render-dashboard om naar een betaald plan
+# (Basic-256mb, vanaf ~$6/maand, geen verloopdatum) ruim vóór dag 30, of
+# meteen als je zeker weet dat dit de rest van het blok blijft draaien.
+databases:
+  - name: poker-analytics-db
+    plan: free
+    databaseName: poker_analytics
+    user: poker_analytics
+
 services:
   - type: web
     name: poker-analytics-api
@@ -20,3 +25,7 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.9
+      - key: DATABASE_URL
+        fromDatabase:
+          name: poker-analytics-db
+          property: connectionString

@@ -1,8 +1,18 @@
 """
 Opslag-laag voor de Poker Analytics Challenge API.
 
-Gebruikt platte JSON-bestanden als database (zelfde aanpak als de Hackathon-API),
-zodat er geen aparte database-server nodig is voor een 6-wekelijks vak.
+Elke "tabel" (submissions, gallery, reviews, tokens, ...) is gewoon één
+sleutel in een key-value store: {"submissions_db.json": {...grote dict...}}.
+Dat is bewust simpel gehouden — de rest van de API (main.py, toernooi_runner.py)
+kent alleen laad_x()/sla_x_op()-functies en weet niet of daarachter Postgres
+of een lokaal bestand zit.
+
+Is de omgevingsvariabele DATABASE_URL gezet (op Render: automatisch, zodra je
+een Postgres-database aan deze service koppelt), dan gaat alles naar Postgres
+— dat overleeft een herstart/redeploy van de API, in tegenstelling tot lokale
+bestanden op een host zonder persistente disk (bv. Render's gratis webservice-plan).
+Zonder DATABASE_URL (lokaal ontwikkelen) val je automatisch terug op platte
+JSON-bestanden, zodat je niet voor elke test een Postgres-server nodig hebt.
 """
 import hashlib
 import json
@@ -20,17 +30,64 @@ TOERNOOI_RESULTATEN_FILE = "toernooi_resultaten_db.json"
 
 security_bearer = HTTPBearer()
 
-
-def _laad(pad: str) -> dict:
-    if os.path.exists(pad):
-        with open(pad, "r") as f:
-            return json.load(f)
-    return {}
+DATABASE_URL = os.environ.get("DATABASE_URL")
 
 
-def _sla_op(pad: str, data: dict):
-    with open(pad, "w") as f:
-        json.dump(data, f, indent=2)
+if DATABASE_URL:
+    import psycopg
+
+    def _connectie():
+        # Render's DATABASE_URL gebruikt het schema "postgres://", psycopg wil "postgresql://".
+        url = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+        return psycopg.connect(url, autocommit=True)
+
+    def _zorg_voor_tabel():
+        with _connectie() as conn:
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS kv_store (
+                    key TEXT PRIMARY KEY,
+                    value JSONB NOT NULL
+                )
+                """
+            )
+
+    _zorg_voor_tabel()
+
+    def _laad(sleutel: str) -> dict:
+        with _connectie() as conn:
+            rij = conn.execute("SELECT value FROM kv_store WHERE key = %s", (sleutel,)).fetchone()
+            return rij[0] if rij else {}
+
+    def _sla_op(sleutel: str, data: dict):
+        with _connectie() as conn:
+            conn.execute(
+                """
+                INSERT INTO kv_store (key, value) VALUES (%s, %s)
+                ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
+                """,
+                (sleutel, json.dumps(data)),
+            )
+
+    def _bestaat(sleutel: str) -> bool:
+        with _connectie() as conn:
+            rij = conn.execute("SELECT 1 FROM kv_store WHERE key = %s", (sleutel,)).fetchone()
+            return rij is not None
+
+else:
+
+    def _laad(sleutel: str) -> dict:
+        if os.path.exists(sleutel):
+            with open(sleutel, "r") as f:
+                return json.load(f)
+        return {}
+
+    def _sla_op(sleutel: str, data: dict):
+        with open(sleutel, "w") as f:
+            json.dump(data, f, indent=2)
+
+    def _bestaat(sleutel: str) -> bool:
+        return os.path.exists(sleutel)
 
 
 def laad_submissions() -> dict:
@@ -73,21 +130,20 @@ def sla_reviews_op(data: dict):
 
 def bootstrap_geheimen_uit_omgeving():
     """
-    Op een host zonder shell-toegang (bv. Render's gratis plan) is er geen
-    manier om na deploy handmatig tokens_db.json / docent_token.json neer te
-    zetten — die staan bewust in .gitignore, dus ze bestaan nergens totdat je
-    ze zet. Bij het opstarten worden ze daarom eenmalig gevuld vanuit de
-    omgevingsvariabelen POKER_TOKENS_JSON en POKER_DOCENT_TOKEN, als het
-    bestand nog niet bestaat. Bestaat het bestand al (lokaal draaien, of een
-    host met een persistente disk), dan gebeurt er niets — de omgevingsvariabele
-    overschrijft nooit een bestaand bestand.
+    Op een host zonder shell-toegang (bv. Render's gratis webservice-plan) is
+    er geen manier om na deploy handmatig tokens neer te zetten — die staan
+    bewust in .gitignore, dus ze bestaan nergens totdat je ze zet. Bij het
+    opstarten worden ze daarom eenmalig gevuld vanuit de omgevingsvariabelen
+    POKER_TOKENS_JSON en POKER_DOCENT_TOKEN, als er nog niets staat. Staat er
+    al iets (in Postgres, of lokaal een bestand), dan gebeurt er niets — de
+    omgevingsvariabele overschrijft nooit bestaande data.
     """
-    if not os.path.exists(TOKENS_FILE):
+    if not _bestaat(TOKENS_FILE):
         ruwe_tokens = os.environ.get("POKER_TOKENS_JSON")
         if ruwe_tokens:
             _sla_op(TOKENS_FILE, json.loads(ruwe_tokens))
 
-    if not os.path.exists(DOCENT_TOKEN_FILE):
+    if not _bestaat(DOCENT_TOKEN_FILE):
         docent_token = os.environ.get("POKER_DOCENT_TOKEN")
         if docent_token:
             _sla_op(DOCENT_TOKEN_FILE, {"docent_token": docent_token})
