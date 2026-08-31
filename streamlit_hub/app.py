@@ -18,7 +18,7 @@ import streamlit.components.v1 as components
 
 st.set_page_config(page_title="Poker Analytics Peer Review", page_icon="🃏", layout="centered")
 
-DEFAULT_API_URL = "http://localhost:8000"
+DEFAULT_API_URL = "https://poker-analytics-api.onrender.com"
 WEKEN_MET_INLEVERING = [1, 3, 5]
 
 

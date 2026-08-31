@@ -13,7 +13,7 @@ import io
 
 import requests
 
-API_URL = "http://localhost:8000"  # tijdens het werkcollege vervangen door het echte API-adres
+API_URL = "https://poker-analytics-api.onrender.com"
 
 
 def export_chart_info(fig, titel, x_label="", y_label="", library="matplotlib", n_kleuren=None):
