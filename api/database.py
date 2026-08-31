@@ -69,11 +69,6 @@ if DATABASE_URL:
                 (sleutel, json.dumps(data)),
             )
 
-    def _bestaat(sleutel: str) -> bool:
-        with _connectie() as conn:
-            rij = conn.execute("SELECT 1 FROM kv_store WHERE key = %s", (sleutel,)).fetchone()
-            return rij is not None
-
 else:
 
     def _laad(sleutel: str) -> dict:
@@ -85,9 +80,6 @@ else:
     def _sla_op(sleutel: str, data: dict):
         with open(sleutel, "w") as f:
             json.dump(data, f, indent=2)
-
-    def _bestaat(sleutel: str) -> bool:
-        return os.path.exists(sleutel)
 
 
 def laad_submissions() -> dict:
@@ -131,22 +123,25 @@ def sla_reviews_op(data: dict):
 def bootstrap_geheimen_uit_omgeving():
     """
     Op een host zonder shell-toegang (bv. Render's gratis webservice-plan) is
-    er geen manier om na deploy handmatig tokens neer te zetten — die staan
-    bewust in .gitignore, dus ze bestaan nergens totdat je ze zet. Bij het
-    opstarten worden ze daarom eenmalig gevuld vanuit de omgevingsvariabelen
-    POKER_TOKENS_JSON en POKER_DOCENT_TOKEN, als er nog niets staat. Staat er
-    al iets (in Postgres, of lokaal een bestand), dan gebeurt er niets — de
-    omgevingsvariabele overschrijft nooit bestaande data.
-    """
-    if not _bestaat(TOKENS_FILE):
-        ruwe_tokens = os.environ.get("POKER_TOKENS_JSON")
-        if ruwe_tokens:
-            _sla_op(TOKENS_FILE, json.loads(ruwe_tokens))
+    er geen manier om handmatig tokens neer te zetten — die staan bewust in
+    .gitignore, dus ze bestaan nergens totdat je ze zet. De omgevingsvariabelen
+    POKER_TOKENS_JSON en POKER_DOCENT_TOKEN zijn daarom de bron van waarheid:
+    bij ELKE opstart wordt de opgeslagen data overschreven met wat er in de
+    env var staat (als die gezet is).
 
-    if not _bestaat(DOCENT_TOKEN_FILE):
-        docent_token = os.environ.get("POKER_DOCENT_TOKEN")
-        if docent_token:
-            _sla_op(DOCENT_TOKEN_FILE, {"docent_token": docent_token})
+    Bewust GEEN "alleen als het nog leeg is"-check: als je de studentenlijst
+    op Render bijwerkt en de service herstart, moet dat ook echt effect
+    hebben. Zonder dit zou een eerder gezette (bv. test-)lijst voor altijd
+    blijven hangen, ook nadat je de env var wijzigt — precies dat gebeurde
+    met de eerste testtokens uit de ontwikkelfase.
+    """
+    ruwe_tokens = os.environ.get("POKER_TOKENS_JSON")
+    if ruwe_tokens:
+        _sla_op(TOKENS_FILE, json.loads(ruwe_tokens))
+
+    docent_token = os.environ.get("POKER_DOCENT_TOKEN")
+    if docent_token:
+        _sla_op(DOCENT_TOKEN_FILE, {"docent_token": docent_token})
 
 
 def laad_tokens() -> dict:
