@@ -134,10 +134,24 @@ def bootstrap_geheimen_uit_omgeving():
     hebben. Zonder dit zou een eerder gezette (bv. test-)lijst voor altijd
     blijven hangen, ook nadat je de env var wijzigt — precies dat gebeurde
     met de eerste testtokens uit de ontwikkelfase.
+
+    Een kapotte env var (bv. een verminkte JSON-paste) mag nooit de hele API
+    platleggen — dat gebeurde hier wél, want een JSONDecodeError in een
+    FastAPI-startup-handler laat de héle applicatie stoppen (Render's
+    "Application startup failed. Exiting."), voor alle endpoints, voor
+    iedereen. Daarom vangen we een ongeldige POKER_TOKENS_JSON hier af: de
+    API start gewoon door met de tokens die er al waren (of leeg, als er nog
+    nooit een geldige gezet is), en de fout verschijnt in de logs in plaats
+    van de hele service mee te trekken.
     """
     ruwe_tokens = os.environ.get("POKER_TOKENS_JSON")
     if ruwe_tokens:
-        _sla_op(TOKENS_FILE, json.loads(ruwe_tokens))
+        try:
+            tokens = json.loads(ruwe_tokens)
+        except json.JSONDecodeError as e:
+            print(f"WAARSCHUWING: POKER_TOKENS_JSON is geen geldige JSON, tokens NIET bijgewerkt ({e}).")
+        else:
+            _sla_op(TOKENS_FILE, tokens)
 
     docent_token = os.environ.get("POKER_DOCENT_TOKEN")
     if docent_token:
