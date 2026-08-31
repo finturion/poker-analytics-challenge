@@ -56,6 +56,28 @@ def sla_reviews_op(data: dict):
     _sla_op(REVIEWS_FILE, data)
 
 
+def bootstrap_geheimen_uit_omgeving():
+    """
+    Op een host zonder shell-toegang (bv. Render's gratis plan) is er geen
+    manier om na deploy handmatig tokens_db.json / docent_token.json neer te
+    zetten — die staan bewust in .gitignore, dus ze bestaan nergens totdat je
+    ze zet. Bij het opstarten worden ze daarom eenmalig gevuld vanuit de
+    omgevingsvariabelen POKER_TOKENS_JSON en POKER_DOCENT_TOKEN, als het
+    bestand nog niet bestaat. Bestaat het bestand al (lokaal draaien, of een
+    host met een persistente disk), dan gebeurt er niets — de omgevingsvariabele
+    overschrijft nooit een bestaand bestand.
+    """
+    if not os.path.exists(TOKENS_FILE):
+        ruwe_tokens = os.environ.get("POKER_TOKENS_JSON")
+        if ruwe_tokens:
+            _sla_op(TOKENS_FILE, json.loads(ruwe_tokens))
+
+    if not os.path.exists(DOCENT_TOKEN_FILE):
+        docent_token = os.environ.get("POKER_DOCENT_TOKEN")
+        if docent_token:
+            _sla_op(DOCENT_TOKEN_FILE, {"docent_token": docent_token})
+
+
 def laad_tokens() -> dict:
     return _laad(TOKENS_FILE)
 

@@ -29,6 +29,11 @@ WEEK_VANAF_LOCATIE_VERPLICHT = 5
 
 app = FastAPI(title="Poker Analytics Challenge API")
 
+
+@app.on_event("startup")
+def _bij_opstarten():
+    db.bootstrap_geheimen_uit_omgeving()
+
 MIN_REVIEWS_VOOR_VOLDAAN = 3
 GALLERY_STEEKPROEF = 3
 
