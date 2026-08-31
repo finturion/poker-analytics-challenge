@@ -34,11 +34,25 @@ def _sla_op(pad: str, data: dict):
 
 
 def laad_submissions() -> dict:
+    """
+    Vorm: {week: {student_id: [inzending, inzending, ...]}}.
+
+    Elke keer dat een student iets inlevert, wordt er een nieuwe inzending
+    AAN de lijst toegevoegd — eerdere pogingen worden nooit overschreven of
+    weggegooid. Overal waar je "de" inzending van een student nodig hebt
+    (status, docent-export, toernooi, locaties), gebruik je nieuwste_inzending()
+    hieronder, die gewoon de laatste van de lijst pakt.
+    """
     return _laad(SUBMISSIONS_FILE)
 
 
 def sla_submissions_op(data: dict):
     _sla_op(SUBMISSIONS_FILE, data)
+
+
+def nieuwste_inzending(inzendingen: list) -> dict | None:
+    """Laatste (= meest recente) inzending uit een lijst, of None als er nog geen is."""
+    return inzendingen[-1] if inzendingen else None
 
 
 def laad_gallery() -> dict:

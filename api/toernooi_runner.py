@@ -37,8 +37,9 @@ def _verzamel_geldige_bots(week):
     """
     submissions = db.laad_submissions().get(str(week), {})
     bots = {}
-    for student_id, inzending in submissions.items():
-        if not inzending.get("geldig"):
+    for student_id, inzendingen in submissions.items():
+        inzending = db.nieuwste_inzending(inzendingen)
+        if not inzending or not inzending.get("geldig"):
             continue
         kies_actie = _laad_kies_actie(inzending["bot_code"])
         if kies_actie is not None:

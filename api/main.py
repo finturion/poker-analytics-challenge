@@ -86,18 +86,24 @@ def inleveren(
     submissions = db.laad_submissions()
     week_key = str(inzending.week)
     submissions.setdefault(week_key, {})
-    submissions[week_key][student_id] = {
-        "bot_code": inzending.bot_code,
-        "chart": inzending.chart,
-        "strategie": inzending.strategie,
-        "bluf_kans": inzending.bluf_kans,
-        "locatie": inzending.locatie,
-        "bot_check": bot_resultaat,
-        "chart_check": chart_resultaat,
-        "locatie_check": locatie_resultaat,
-        "geldig": geldig,
-        "ingeleverd_op": datetime.now(timezone.utc).isoformat(),
-    }
+    submissions[week_key].setdefault(student_id, [])
+    # Aanvullen, nooit overschrijven: je mag zo vaak opnieuw inleveren als je
+    # wilt, en elke eerdere poging blijft bewaard. Alleen de laatste poging
+    # telt mee voor status/toernooi/gallery (zie db.nieuwste_inzending()).
+    submissions[week_key][student_id].append(
+        {
+            "bot_code": inzending.bot_code,
+            "chart": inzending.chart,
+            "strategie": inzending.strategie,
+            "bluf_kans": inzending.bluf_kans,
+            "locatie": inzending.locatie,
+            "bot_check": bot_resultaat,
+            "chart_check": chart_resultaat,
+            "locatie_check": locatie_resultaat,
+            "geldig": geldig,
+            "ingeleverd_op": datetime.now(timezone.utc).isoformat(),
+        }
+    )
     db.sla_submissions_op(submissions)
 
     if geldig:
@@ -112,6 +118,7 @@ def inleveren(
 
     return {
         "geldig": geldig,
+        "poging_nummer": len(submissions[week_key][student_id]),
         "bot_check": bot_resultaat,
         "chart_check": chart_resultaat,
         "locatie_check": locatie_resultaat,
@@ -186,8 +193,10 @@ def peer_review(student_id: str, review: PeerReview, ok: bool = Depends(db.verif
 # ---------------------------------------------------------------------------
 @app.get("/status/{student_id}/{week}")
 def status(student_id: str, week: int, ok: bool = Depends(db.verifieer_student_token)):
+    """Kijkt altijd naar je MEEST RECENTE inzending — eerdere pogingen tellen niet mee, maar blijven bewaard."""
     week_key = str(week)
-    submission = db.laad_submissions().get(week_key, {}).get(student_id)
+    inzendingen = db.laad_submissions().get(week_key, {}).get(student_id, [])
+    submission = db.nieuwste_inzending(inzendingen)
     reviews_gegeven = len(db.laad_reviews().get(week_key, {}).get(student_id, []))
 
     technisch_ok = bool(submission and submission["geldig"])
@@ -196,6 +205,7 @@ def status(student_id: str, week: int, ok: bool = Depends(db.verifieer_student_t
     return {
         "week": week,
         "ingeleverd": submission is not None,
+        "aantal_pogingen": len(inzendingen),
         "technisch_goedgekeurd": technisch_ok,
         "reviews_gegeven": reviews_gegeven,
         "reviews_nodig": MIN_REVIEWS_VOOR_VOLDAAN,
@@ -247,8 +257,9 @@ def locaties(week: int, student_id: str, ok: bool = Depends(db.verifieer_student
     eindstand_per_bot = db.laad_toernooi_resultaten().get(week_key, {}).get("eindstand_per_bot", {})
 
     resultaat = []
-    for bot_student_id, submission in submissions.items():
-        if not submission.get("geldig") or not submission.get("locatie"):
+    for bot_student_id, inzendingen in submissions.items():
+        submission = db.nieuwste_inzending(inzendingen)
+        if not submission or not submission.get("geldig") or not submission.get("locatie"):
             continue
         resultaat.append(
             {
@@ -270,15 +281,19 @@ def export(week: int, ok: bool = Depends(db.verifieer_docent_token)):
     reviews = db.laad_reviews().get(week_key, {})
 
     overzicht = []
-    for student_id, submission in submissions.items():
+    for student_id, inzendingen in submissions.items():
+        submission = db.nieuwste_inzending(inzendingen)
+        if submission is None:
+            continue
         reviews_gegeven = len(reviews.get(student_id, []))
         overzicht.append(
             {
                 "student_id": student_id,
+                "aantal_pogingen": len(inzendingen),
                 "technisch_goedgekeurd": submission["geldig"],
                 "reviews_gegeven": reviews_gegeven,
                 "voldaan": submission["geldig"] and reviews_gegeven >= MIN_REVIEWS_VOOR_VOLDAAN,
-                "ingeleverd_op": submission["ingeleverd_op"],
+                "laatst_ingeleverd_op": submission["ingeleverd_op"],
             }
         )
     return overzicht
