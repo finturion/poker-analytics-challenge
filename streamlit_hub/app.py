@@ -184,30 +184,52 @@ def peer_review_tab():
         focal_point = st.slider(
             "Focal point — is in één oogopslag duidelijk waar je naar moet kijken?", 1, 5, 3
         )
+        focal_point_opmerking = st.text_area(
+            "Toelichting bij focal point", placeholder="Wat trekt je oog als eerste, en is dat terecht?"
+        )
         kleur_contrast = st.slider(
-            "Kleur & contrast — functioneel gebruikt, of een papegaaiengrafiek?", 1, 5, 3
+            "Kleur & contrast — is kleur functioneel gebruikt, of zijn het te veel losse kleuren zonder duidelijk doel?", 1, 5, 3
+        )
+        kleur_contrast_opmerking = st.text_area(
+            "Toelichting bij kleur & contrast", placeholder="Welke kleur draagt bij, welke niet?"
         )
         actietitel = st.slider(
             "Actietitel — vertelt de titel het inzicht, of alleen de variabelen?", 1, 5, 3
         )
-        opmerking = st.text_area("Opmerking (optioneel)")
+        actietitel_opmerking = st.text_area(
+            "Toelichting bij actietitel", placeholder="Wat zou een sterkere titel zijn?"
+        )
         verzonden = st.form_submit_button("Beoordeling versturen")
 
     if verzonden:
-        body = {
-            "week": st.session_state.week,
-            "anon_id": huidige["anon_id"],
-            "focal_point_score": focal_point,
-            "kleur_contrast_score": kleur_contrast,
-            "actietitel_score": actietitel,
-            "opmerking": opmerking or None,
-        }
-        response = api_post(f"/peer-review/{st.session_state.student_id}", st.session_state.token, body)
-        if response.status_code == 200:
-            st.session_state.gallery_index += 1
-            st.rerun()
+        ontbreekt = [
+            naam
+            for naam, waarde in [
+                ("focal point", focal_point_opmerking),
+                ("kleur & contrast", kleur_contrast_opmerking),
+                ("actietitel", actietitel_opmerking),
+            ]
+            if not waarde.strip()
+        ]
+        if ontbreekt:
+            st.error(f"Vul bij elk criterium een toelichting in — nog leeg bij: {', '.join(ontbreekt)}.")
         else:
-            st.error(f"Versturen mislukt ({response.status_code}): {_foutmelding(response)}")
+            body = {
+                "week": st.session_state.week,
+                "anon_id": huidige["anon_id"],
+                "focal_point_score": focal_point,
+                "focal_point_opmerking": focal_point_opmerking,
+                "kleur_contrast_score": kleur_contrast,
+                "kleur_contrast_opmerking": kleur_contrast_opmerking,
+                "actietitel_score": actietitel,
+                "actietitel_opmerking": actietitel_opmerking,
+            }
+            response = api_post(f"/peer-review/{st.session_state.student_id}", st.session_state.token, body)
+            if response.status_code == 200:
+                st.session_state.gallery_index += 1
+                st.rerun()
+            else:
+                st.error(f"Versturen mislukt ({response.status_code}): {_foutmelding(response)}")
 
 
 # ---------------------------------------------------------------------------

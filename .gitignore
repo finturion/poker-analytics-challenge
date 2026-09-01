@@ -17,3 +17,8 @@ scripts/tokens.json
 scripts/tokens_voor_verspreiding.csv
 scripts/*studentnummers*
 scripts/*nummers*.txt
+
+# Persoonlijke bot-bestanden die studenten/docent lokaal maken door de notebooks
+# te draaien (bv. via de %%writefile-cel) — dit is ieders eigen huiswerk, hoort
+# nooit in de gedeelde repo terecht te komen.
+notebooks/mijn_bot_week*.py

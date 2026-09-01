@@ -53,12 +53,20 @@ class Submission(BaseModel):
 
 
 class PeerReview(BaseModel):
+    """
+    Elk criterium heeft nu zowel een score als een verplichte toelichting.
+    Een score alleen ("3") vertelt de indiener niet wát er beter kan; de
+    toelichting is waar het leereffect van peer review vandaan komt.
+    """
+
     week: int
     anon_id: str = Field(..., description="anon_id van de te beoordelen grafiek, uit /gallery")
     focal_point_score: int = Field(..., ge=1, le=5)
+    focal_point_opmerking: str = Field(..., min_length=1)
     kleur_contrast_score: int = Field(..., ge=1, le=5)
+    kleur_contrast_opmerking: str = Field(..., min_length=1)
     actietitel_score: int = Field(..., ge=1, le=5)
-    opmerking: str | None = None
+    actietitel_opmerking: str = Field(..., min_length=1)
 
 
 # ---------------------------------------------------------------------------
@@ -172,9 +180,11 @@ def peer_review(student_id: str, review: PeerReview, ok: bool = Depends(db.verif
         {
             "anon_id": review.anon_id,
             "focal_point_score": review.focal_point_score,
+            "focal_point_opmerking": review.focal_point_opmerking,
             "kleur_contrast_score": review.kleur_contrast_score,
+            "kleur_contrast_opmerking": review.kleur_contrast_opmerking,
             "actietitel_score": review.actietitel_score,
-            "opmerking": review.opmerking,
+            "actietitel_opmerking": review.actietitel_opmerking,
             "beoordeeld_op": datetime.now(timezone.utc).isoformat(),
         }
     )
