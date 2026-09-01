@@ -26,7 +26,15 @@ punt van dit vak.
 GENERIEKE_TITELS = {
     "", "grafiek", "plot", "figure", "figure 1", "untitled", "chart",
     "plot 1", "titel", "mijn grafiek", "chipstack vs tijd", "kaarten",
+    "vul hier een echte actietitel in",
 }
+
+# Vangnet naast de exacte-match-lijst hierboven: elke placeholder-tekst in de
+# notebooks begint met "vul hier" ("vul hier je student_id in", "vul hier een
+# echte actietitel in", ...). Als een titel daarmee begint, is die zo goed als
+# zeker nooit aangepast — precies wat er in de praktijk al gebeurde bij 2 van
+# de 3 eerste echte inzendingen.
+GENERIEKE_TITEL_PREFIXES = ("vul hier",)
 
 MIN_TITEL_LENGTE = 8
 
@@ -44,10 +52,11 @@ def valideer_chart_json(chart: dict) -> dict:
     library = chart.get("library")
     figuur_json = chart.get("figuur_json")
 
-    if not titel or titel.lower() in GENERIEKE_TITELS:
+    titel_lower = titel.lower()
+    if not titel or titel_lower in GENERIEKE_TITELS or titel_lower.startswith(GENERIEKE_TITEL_PREFIXES):
         problemen.append(
-            "Je titel ontbreekt of is te generiek. Gebruik een actietitel die het "
-            "inzicht samenvat, geen kolomnamen (bv. niet 'Chipstack vs Tijd')."
+            "Je titel ontbreekt, is te generiek, of is nog de placeholder-tekst uit het notebook. "
+            "Gebruik een actietitel die het inzicht samenvat, geen kolomnamen (bv. niet 'Chipstack vs Tijd')."
         )
     elif len(titel) < MIN_TITEL_LENGTE:
         problemen.append("Je titel is wel aanwezig, maar erg kort — is dit al een echte actietitel?")
