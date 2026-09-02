@@ -18,11 +18,11 @@ TIMEOUT_SECONDS = 8
 MARKER = "###POKERBOT_RESULTAAT###"
 
 TOEGESTANE_ACTIES = {"call", "raise", "fold", "check"}
-# "all_in" mag pas vanaf Week 3 (config["heeft_strategie"]): pas dan kan een
-# bot zijn eigen stack meewegen en dus bewust voor all-in kiezen. Zie ook
-# StudentBotSpeler._ondersteunt_all_in_regels in poker_adapter.py, die
-# hetzelfde onderscheid maakt aan de speel-kant.
-TOEGESTANE_ACTIES_VANAF_WEEK3 = TOEGESTANE_ACTIES | {"all_in"}
+# "all_in" mag pas zodra een bot zijn eigen stack kent (config["heeft_stack"],
+# vanaf Week 3): pas dan kan hij bewust afwegen of hij alles inzet. Zie ook
+# _ondersteunt_all_in_regels in poker_adapter.py, dat aan de speel-kant op
+# exact hetzelfde signaal ("stack" in de signatuur) gate't.
+TOEGESTANE_ACTIES_MET_STACK = TOEGESTANE_ACTIES | {"all_in"}
 TOEGESTANE_STRATEGIEEN = {"tight", "loose", "balanced", "aggressive"}
 BLUF_KANS_MIN, BLUF_KANS_MAX = 0.0, 1.0
 
@@ -32,12 +32,20 @@ BLUF_KANS_MIN, BLUF_KANS_MAX = 0.0, 1.0
 _TEST_HANDEN = [["A", "K"], ["7", "2"], ["Q", "Q"]]
 _TEST_STACKS = [1000, 50]
 
-# Per week ligt vast welke functienaam de bot moet aanbieden, en of hij een
-# strategie / bluf_kans verwacht. Dit groeit mee met de cursus.
+# Per week ligt vast welke functienaam de bot moet aanbieden, en welke extra
+# gegevens hij verwacht. Dit groeit mee met de cursus:
+#   Week 1: kies_actie(hand)
+#   Week 3: kies_actie(hand, stack)            -- plus optioneel ronde/pot/etc.
+#   Week 5: kies_actie(hand, stack, strategie, bluf_kans)
+#
+# `strategie` zit bewust pas vanaf Week 5: in Week 3 heeft een tight/loose-label
+# nog te weinig om zich in te uiten (de bot kan dan alleen op hand en stack
+# reageren). Vanaf Week 5, mét bluf_kans en tegenstander-info erbij, gaat een
+# strategie zich pas echt anders gedragen per moment.
 VERWACHTE_FUNCTIES = {
-    1: {"functienaam": "kies_actie", "heeft_strategie": False, "heeft_bluf_kans": False},
-    3: {"functienaam": "kies_actie", "heeft_strategie": True, "heeft_bluf_kans": False},
-    5: {"functienaam": "kies_actie", "heeft_strategie": True, "heeft_bluf_kans": True},
+    1: {"functienaam": "kies_actie", "heeft_stack": False, "heeft_strategie": False, "heeft_bluf_kans": False},
+    3: {"functienaam": "kies_actie", "heeft_stack": True, "heeft_strategie": False, "heeft_bluf_kans": False},
+    5: {"functienaam": "kies_actie", "heeft_stack": True, "heeft_strategie": True, "heeft_bluf_kans": True},
 }
 
 
@@ -71,6 +79,23 @@ def _bevat_functie(code: str, functienaam: str) -> bool:
     )
 
 
+def _functie_parameternamen(code: str, functienaam: str) -> set[str]:
+    """
+    Haalt de parameternamen van de opgegeven functie op via AST-parsing --
+    voert de code NIET uit (zie moduledocstring). Retourneert een lege set
+    als de functie niet gevonden kan worden; _bevat_functie meldt dat al
+    apart als een eigen foutmelding.
+    """
+    try:
+        boom = ast.parse(code)
+    except SyntaxError:
+        return set()
+    for node in ast.walk(boom):
+        if isinstance(node, ast.FunctionDef) and node.name == functienaam:
+            return {arg.arg for arg in node.args.args}
+    return set()
+
+
 def _valideer_strategie_en_bluf_kans(config: dict, strategie, bluf_kans) -> str | None:
     """
     Checkt of de student een geldige strategie/bluf_kans heeft opgegeven bij
@@ -100,23 +125,56 @@ def _valideer_strategie_en_bluf_kans(config: dict, strategie, bluf_kans) -> str 
     return None
 
 
-def _bouw_testgevallen(config: dict, strategie, bluf_kans) -> list[dict]:
+_RONDE_PARAMETERS = {"ronde", "pot", "inzet_om_te_callen", "tegenstander_acties_deze_hand"}
+# Representatieve situaties op elke straat, om te checken dat een bot die
+# ronde/pot/inzet_om_te_callen/tegenstander_acties_deze_hand gebruikt, in elke
+# fase van de hand een herkenbare actie teruggeeft (niet alleen preflop, waar
+# de meeste bots het eerst getest worden) -- inclusief een variatie in wat
+# tegenstanders deze hand al gedaan hebben, want dat is precies waar een bot
+# die daarop reageert onderuit kan gaan (bv. een lege lijst niet aankunnen).
+_TEST_RONDE_SCENARIOS = [
+    {"ronde": "preflop", "pot": 30, "inzet_om_te_callen": 10, "tegenstander_acties_deze_hand": []},
+    {"ronde": "flop", "pot": 120, "inzet_om_te_callen": 0, "tegenstander_acties_deze_hand": [
+        {"bot_naam": "TestBot", "actie": "call", "bedrag": 20},
+    ]},
+    {"ronde": "river", "pot": 400, "inzet_om_te_callen": 200, "tegenstander_acties_deze_hand": [
+        {"bot_naam": "TestBot", "actie": "raise", "bedrag": 200},
+    ]},
+]
+
+
+def _bouw_testgevallen(config: dict, strategie, bluf_kans, parameternamen: set[str]) -> list[dict]:
     """
     Bouwt een klein setje realistische aanroepen van kies_actie(), met
-    wisselende hand en (vanaf Week 3) stack. We testen dus niet met 1 hand,
-    maar meteen met een sterke hand, een zwakke hand en een pocket pair, op
-    een normale én een lage stack.
+    wisselende hand, (vanaf Week 3) stack en (vanaf Week 5) strategie/bluf_kans.
+    We testen dus niet met 1 hand, maar meteen met een sterke hand, een zwakke
+    hand en een pocket pair, op een normale én een lage stack.
+
+    Neemt de student alleen mee als hij `ronde`/`pot`/`inzet_om_te_callen`/
+    `tegenstander_acties_deze_hand` ZELF in zijn functie-signatuur heeft
+    opgenomen (parameternamen komt uit _functie_parameternamen) -- anders
+    krijgt hij ze niet aangeboden, precies zoals StudentBotSpeler.declare_action
+    ook alleen doorgeeft wat de functie zelf accepteert. Zo blijft een bot
+    zonder die parameters exact even vaak getest als voorheen.
     """
     gevallen = []
     for hand in _TEST_HANDEN:
-        if not config["heeft_strategie"]:
+        if not config["heeft_stack"]:
             gevallen.append({"hand": hand})
             continue
         for stack in _TEST_STACKS:
-            args = {"hand": hand, "stack": stack, "strategie": strategie}
+            basis = {"hand": hand, "stack": stack}
+            if config["heeft_strategie"]:
+                basis["strategie"] = strategie
             if config["heeft_bluf_kans"]:
-                args["bluf_kans"] = bluf_kans
-            gevallen.append(args)
+                basis["bluf_kans"] = bluf_kans
+            if parameternamen & _RONDE_PARAMETERS:
+                for scenario in _TEST_RONDE_SCENARIOS:
+                    args = dict(basis)
+                    args.update({k: v for k, v in scenario.items() if k in parameternamen})
+                    gevallen.append(args)
+            else:
+                gevallen.append(basis)
     return gevallen
 
 
@@ -150,7 +208,8 @@ def valideer_bot_code(code: str, week: int, strategie: str | None = None, bluf_k
             "actie_resultaten": None,
         }
 
-    testgevallen = _bouw_testgevallen(config, strategie, bluf_kans)
+    parameternamen = _functie_parameternamen(code, functienaam)
+    testgevallen = _bouw_testgevallen(config, strategie, bluf_kans, parameternamen)
 
     # Let op: het studentbestand (`code`) heeft zijn eigen, willekeurige inspringing.
     # Die mag NIET door textwrap.dedent worden aangeraakt (dedent kijkt naar de
@@ -201,15 +260,19 @@ def valideer_bot_code(code: str, week: int, strategie: str | None = None, bluf_k
             "actie_resultaten": None,
         }
 
-    toegestane_acties = TOEGESTANE_ACTIES_VANAF_WEEK3 if config["heeft_strategie"] else TOEGESTANE_ACTIES
+    toegestane_acties = TOEGESTANE_ACTIES_MET_STACK if config["heeft_stack"] else TOEGESTANE_ACTIES
     for testgeval, actie in zip(testgevallen, acties):
         if not isinstance(actie, str) or actie.lower() not in toegestane_acties:
+            context = [f"hand {testgeval['hand']}"]
+            if "stack" in testgeval:
+                context.append(f"stack {testgeval['stack']}")
+            if "ronde" in testgeval:
+                context.append(f"ronde {testgeval['ronde']!r}")
             return {
                 "geldig": False,
                 "foutmelding": (
-                    f"Bij hand {testgeval['hand']}"
-                    + (f" en stack {testgeval['stack']}" if "stack" in testgeval else "")
-                    + f" gaf je functie '{actie}' terug — verwacht een van {sorted(toegestane_acties)}."
+                    f"Bij {', '.join(context)}"
+                    f" gaf je functie '{actie}' terug — verwacht een van {sorted(toegestane_acties)}."
                 ),
                 "actie_resultaten": acties,
             }

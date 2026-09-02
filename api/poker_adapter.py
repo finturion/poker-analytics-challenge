@@ -4,13 +4,25 @@ PyPokerEngine daadwerkelijk tegen elkaar kan laten spelen.
 
 Studenten schrijven een functie die door het blok heen groeit:
     Week 1:  kies_actie(hand)
-    Week 3:  kies_actie(hand, stack, strategie)
+    Week 3:  kies_actie(hand, stack)
     Week 5:  kies_actie(hand, stack, strategie, bluf_kans)
+
+Daarnaast mag een bot vanaf Week 3 optioneel ook `ronde` ("preflop"/"flop"/
+"turn"/"river"), `pot` en `inzet_om_te_callen` opnemen, zodat hij een ander
+besluit kan nemen per speelronde in plaats van zijn hand-sterkte maar één
+keer per hand te wegen (`pot`/`inzet_om_te_callen` sluiten direct aan op
+bereken_pot_odds() uit Werkcollege 4). Ook mag een bot `tegenstander_acties_
+deze_hand` opnemen: een lijst met wat de ANDERE spelers deze hand al hebben
+gedaan (bot_naam/actie/bedrag, over alle straten tot nu toe) -- niet wat ze
+ooit in het verleden deden, alleen deze ene hand, precies zoals je dat aan
+een echte tafel ook zou zien.
 
 Deze module hoeft niet per week te weten welke vorm het is: met
 inspect.signature() geven we een functie alleen de argumenten die hij zelf
 accepteert. Zo kan dezelfde toernooi-engine vanaf Week 1 gebruikt worden,
-en blijft hij werken als de bot-signatuur in Week 3 en 5 uitbreidt.
+en blijft hij werken als de bot-signatuur in Week 3 en 5 uitbreidt -- en een
+bot die een van deze parameters niet kent, krijgt 'm simpelweg niet
+aangeboden.
 """
 import inspect
 import random
@@ -45,21 +57,27 @@ def _naar_onze_hand(hole_card):
 
 def _ondersteunt_all_in_regels(kies_actie):
     """
-    Vanaf Week 3 schrijven studenten kies_actie(hand, stack, strategie) en
-    kunnen ze daarmee bewust reageren op hun eigen stack. Alleen bots met die
-    strategie-parameter krijgen de Week 3-spelregels: max 1 raise per straat,
-    en de mogelijkheid om zelf "all_in" terug te geven. Week 1/2-bots (zonder
-    strategie-parameter) spelen met het oude, ongewijzigde gedrag, zodat
-    al gedraaide toernooien voor die weken niet stiekem veranderen.
+    Vanaf Week 3 schrijven studenten kies_actie(hand, stack, ...) en kunnen ze
+    daarmee bewust reageren op hun eigen stack. Alleen bots met die
+    stack-parameter krijgen de Week 3-spelregels: max 1 raise per straat, en de
+    mogelijkheid om zelf "all_in" terug te geven. Week 1/2-bots (die alleen
+    `hand` kennen) spelen met het oude, ongewijzigde gedrag, zodat al gedraaide
+    toernooien voor die weken niet stiekem veranderen.
+
+    De gate kijkt bewust naar `stack` en niet naar `strategie`: strategie komt
+    pas vanaf Week 5, terwijl all-in en de raise-cap al vanaf Week 3 gelden.
     """
     try:
         parameters = inspect.signature(kies_actie).parameters
     except (TypeError, ValueError):
         return False
-    return "strategie" in parameters
+    return "stack" in parameters
 
 
-def roep_student_bot_aan(kies_actie, hand, stack, strategie, bluf_kans):
+def roep_student_bot_aan(
+    kies_actie, hand, stack, strategie, bluf_kans, ronde=None, pot=None, inzet_om_te_callen=None,
+    tegenstander_acties_deze_hand=None,
+):
     """
     Roept de functie van de student aan met alleen de argumenten die hij
     zelf in zijn eigen functie-signatuur accepteert.
@@ -67,7 +85,16 @@ def roep_student_bot_aan(kies_actie, hand, stack, strategie, bluf_kans):
     Crasht de studentcode (bv. een vergeten edge case), dan folded de bot
     die hand — één kapotte bot mag de rest van het toernooi niet verstoren.
     """
-    beschikbaar = {"hand": hand, "stack": stack, "strategie": strategie, "bluf_kans": bluf_kans}
+    beschikbaar = {
+        "hand": hand,
+        "stack": stack,
+        "strategie": strategie,
+        "bluf_kans": bluf_kans,
+        "ronde": ronde,
+        "pot": pot,
+        "inzet_om_te_callen": inzet_om_te_callen,
+        "tegenstander_acties_deze_hand": tegenstander_acties_deze_hand,
+    }
     try:
         parameters = inspect.signature(kies_actie).parameters
     except (TypeError, ValueError):
@@ -100,13 +127,22 @@ class StudentBotSpeler(BasePokerPlayer):
         self._eerste_actie_deze_hand = None
         self._raises_deze_straat = 0
         self._ondersteunt_all_in = _ondersteunt_all_in_regels(kies_actie)
+        self._acties_deze_hand = []
+        self._uuid_naar_naam = {}
         self.hand_log = []
 
     def declare_action(self, valid_actions, hole_card, round_state):
         hand = _naar_onze_hand(hole_card)
         eigen_stack = self._vind_eigen_stack(round_state)
+        ronde = round_state.get("street")
+        pot = round_state.get("pot", {}).get("main", {}).get("amount")
+        inzet_om_te_callen = next(
+            (a["amount"] for a in valid_actions if a["action"] == "call"), None
+        )
         gekozen = roep_student_bot_aan(
-            self._kies_actie, hand, eigen_stack, self._strategie, self._bluf_kans
+            self._kies_actie, hand, eigen_stack, self._strategie, self._bluf_kans,
+            ronde=ronde, pot=pot, inzet_om_te_callen=inzet_om_te_callen,
+            tegenstander_acties_deze_hand=list(self._acties_deze_hand),
         )
         if self._ondersteunt_all_in and gekozen == "raise":
             if self._raises_deze_straat >= 1:
@@ -181,12 +217,20 @@ class StudentBotSpeler(BasePokerPlayer):
     def receive_round_start_message(self, round_count, hole_card, seats):
         self._huidige_hand_nummer = round_count
         self._eerste_actie_deze_hand = None
+        self._acties_deze_hand = []
+        self._uuid_naar_naam = {seat["uuid"]: seat["name"] for seat in seats}
 
     def receive_street_start_message(self, street, round_state):
         self._raises_deze_straat = 0
 
     def receive_game_update_message(self, new_action, round_state):
-        pass
+        if new_action["player_uuid"] == self.uuid:
+            return  # eigen acties horen niet in tegenstander_acties_deze_hand
+        self._acties_deze_hand.append({
+            "bot_naam": self._uuid_naar_naam.get(new_action["player_uuid"], "onbekend"),
+            "actie": new_action["action"],
+            "bedrag": new_action["amount"],
+        })
 
     def receive_round_result_message(self, winners, hand_info, round_state):
         eigen_stack = self._vind_eigen_stack(round_state)
