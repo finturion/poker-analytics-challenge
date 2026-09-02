@@ -235,6 +235,26 @@ def peer_review_tab():
 # ---------------------------------------------------------------------------
 # Docent-tabblad
 # ---------------------------------------------------------------------------
+def _toon_toernooi_resultaat(resultaat, gedraaid_nu):
+    """Rendert eindstand_per_bot als tabel. gedraaid_nu onderscheidt de twee knoppen in het succesbericht."""
+    if gedraaid_nu:
+        st.success(
+            f"Toernooi opnieuw gedraaid: {resultaat['n_bots']} bots "
+            f"({resultaat['aangevuld_met_oefenbots']} oefenbot(s) aangevuld)."
+        )
+    else:
+        st.success(f"Laatst bekende uitslag: {resultaat['n_bots']} bots.")
+
+    eindstand = resultaat.get("eindstand_per_bot") or {}
+    if eindstand:
+        eindstand_df = pd.DataFrame(
+            sorted(eindstand.items(), key=lambda kv: -kv[1]), columns=["bot", "eindstand"]
+        )
+        st.dataframe(eindstand_df, width="stretch")
+    else:
+        st.info(resultaat.get("boodschap", "Nog geen eindstand beschikbaar."))
+
+
 def docent_tab():
     st.subheader("Docent-overzicht")
     docent_token = st.text_input("Docent-token", type="password", key="docent_token")
@@ -254,29 +274,31 @@ def docent_tab():
             st.dataframe(pd.DataFrame(response.json()), width="stretch")
 
     st.divider()
-    st.markdown("**Toernooi opnieuw draaien** (bv. na te late inzendingen, vóór een werkcollege met resultaten)")
+    st.markdown("**Toernooi-uitslag**")
     vergelijk_met = st.text_input("Vergelijk met week (optioneel, bv. 1)", key="vergelijk_met_week")
-    if st.button("Toernooi opnieuw draaien"):
-        params = {}
-        if vergelijk_met:
-            params["vergelijk_met_week"] = int(vergelijk_met)
-        response = api_post(f"/toernooi/{int(week)}/opnieuw", docent_token, json_body=None, params=params)
-        if response.status_code != 200:
-            st.error(f"Mislukt ({response.status_code}): {_foutmelding(response)}")
-        else:
-            resultaat = response.json()
-            st.success(
-                f"Toernooi opnieuw gedraaid: {resultaat['n_bots']} bots "
-                f"({resultaat['aangevuld_met_oefenbots']} oefenbot(s) aangevuld)."
-            )
-            eindstand = resultaat.get("eindstand_per_bot") or {}
-            if eindstand:
-                eindstand_df = pd.DataFrame(
-                    sorted(eindstand.items(), key=lambda kv: -kv[1]), columns=["bot", "eindstand"]
-                )
-                st.dataframe(eindstand_df, width="stretch")
+    params = {}
+    if vergelijk_met:
+        params["vergelijk_met_week"] = int(vergelijk_met)
+
+    kolom_ophalen, kolom_opnieuw = st.columns(2)
+
+    with kolom_ophalen:
+        if st.button("Huidige uitslag ophalen", help="Leest alleen wat er al bekend is -- start geen nieuwe run."):
+            response = api_get(f"/toernooi/{int(week)}/resultaat", docent_token, params=params)
+            if response.status_code != 200:
+                st.error(f"Mislukt ({response.status_code}): {_foutmelding(response)}")
+            elif not response.json().get("gedraaid"):
+                st.info("Nog geen toernooi gedraaid voor deze (week/vergelijk-met-week)-combinatie.")
             else:
-                st.info(resultaat.get("boodschap", "Nog geen eindstand beschikbaar."))
+                _toon_toernooi_resultaat(response.json(), gedraaid_nu=False)
+
+    with kolom_opnieuw:
+        if st.button("Toernooi opnieuw draaien", help="Start een verse run (bv. na te late inzendingen)."):
+            response = api_post(f"/toernooi/{int(week)}/opnieuw", docent_token, json_body=None, params=params)
+            if response.status_code != 200:
+                st.error(f"Mislukt ({response.status_code}): {_foutmelding(response)}")
+            else:
+                _toon_toernooi_resultaat(response.json(), gedraaid_nu=True)
 
 
 # ---------------------------------------------------------------------------

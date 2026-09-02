@@ -76,6 +76,25 @@ def _verzamel_bots_over_weken(hoofdweek, vergelijk_met_week=None):
     return bots, deelnemers_hoofdweek
 
 
+def haal_gecacht_resultaat_op(week, vergelijk_met_week=None):
+    """
+    Haalt het laatst gecachte toernooi-resultaat op zonder OOIT een nieuwe
+    run te starten -- ook niet als er nog niks gecacht is. Voor de docent-knop
+    "uitslag ophalen" op de Streamlit hub: die wil zien wat er nu al bekend is
+    zonder het (mogelijk net lopende) toernooi opnieuw te forceren.
+
+    Retourneert {"gedraaid": False, "week": ..., "vergelijk_met_week": ...} als
+    er nog geen resultaat is voor deze combinatie, anders het opgeslagen
+    resultaat aangevuld met "gedraaid": True.
+    """
+    alle_resultaten = db.laad_toernooi_resultaten()
+    cache_key = str(week) if vergelijk_met_week is None else f"{week}_vs_{vergelijk_met_week}"
+    resultaat = alle_resultaten.get(cache_key)
+    if resultaat is None:
+        return {"gedraaid": False, "week": week, "vergelijk_met_week": vergelijk_met_week}
+    return {**resultaat, "gedraaid": True}
+
+
 def draai_toernooi(week, vergelijk_met_week=None, n_simulaties=5, n_handen=50, forceer_opnieuw=False):
     """
     Draait (of hergebruikt uit cache) het toernooi voor `week`, optioneel

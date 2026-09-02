@@ -9,6 +9,7 @@ Doel: nul handmatige nakijkdruk voor de docent.
 - GET  /export/{week}   -> docent-only voortgangsexport, geen los nakijkwerk nodig
 - GET  /toernooi/{week} -> echt pokertoernooi (PyPokerEngine) tussen alle goedgekeurde bots
 - POST /toernooi/{week}/opnieuw -> docent-only: forceer een nieuwe toernooi-run
+- GET  /toernooi/{week}/resultaat -> docent-only: laatst gecachte uitslag, draait NOOIT zelf een toernooi
 - GET  /locaties/{week} -> geolocaties van alle bots (vanaf Week 5), met eindstand indien bekend
 
 Start lokaal met:  uvicorn main:app --reload
@@ -23,7 +24,7 @@ import database as db
 from bot_validator import valideer_bot_code
 from chart_validator import valideer_chart_json
 from locatie_validator import valideer_locatie
-from toernooi_runner import draai_toernooi
+from toernooi_runner import draai_toernooi, haal_gecacht_resultaat_op
 
 WEEK_VANAF_LOCATIE_VERPLICHT = 5
 
@@ -253,6 +254,21 @@ def toernooi_opnieuw(
 ):
     """Docent-only: forceer een nieuwe toernooi-run (bv. na te late inzendingen)."""
     return draai_toernooi(week, vergelijk_met_week=vergelijk_met_week, forceer_opnieuw=True)
+
+
+@app.get("/toernooi/{week}/resultaat")
+def toernooi_resultaat_ophalen(
+    week: int,
+    vergelijk_met_week: int | None = None,
+    ok: bool = Depends(db.verifieer_docent_token),
+):
+    """
+    Docent-only: haal de laatst gecachte toernooi-uitslag op, ZONDER ooit
+    zelf een toernooi te starten. Voor de docent die tussendoor even wil
+    zien hoe de klas ervoor staat, zonder de (mogelijk voor iedereen net
+    goede) bestaande uitslag te overschrijven met een nieuwe run.
+    """
+    return haal_gecacht_resultaat_op(week, vergelijk_met_week=vergelijk_met_week)
 
 
 @app.get("/locaties/{week}")
