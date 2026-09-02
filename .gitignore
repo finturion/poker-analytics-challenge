@@ -22,3 +22,6 @@ scripts/*nummers*.txt
 # te draaien (bv. via de %%writefile-cel) — dit is ieders eigen huiswerk, hoort
 # nooit in de gedeelde repo terecht te komen.
 notebooks/mijn_bot_week*.py
+
+# Voorbeeldbestand dat Werkcollege 3 (Ronde 0) zelf aanmaakt om read_csv/sep te oefenen.
+notebooks/pokerdata_voorbeeld.csv
