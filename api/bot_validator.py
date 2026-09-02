@@ -18,6 +18,11 @@ TIMEOUT_SECONDS = 8
 MARKER = "###POKERBOT_RESULTAAT###"
 
 TOEGESTANE_ACTIES = {"call", "raise", "fold", "check"}
+# "all_in" mag pas vanaf Week 3 (config["heeft_strategie"]): pas dan kan een
+# bot zijn eigen stack meewegen en dus bewust voor all-in kiezen. Zie ook
+# StudentBotSpeler._ondersteunt_all_in_regels in poker_adapter.py, die
+# hetzelfde onderscheid maakt aan de speel-kant.
+TOEGESTANE_ACTIES_VANAF_WEEK3 = TOEGESTANE_ACTIES | {"all_in"}
 TOEGESTANE_STRATEGIEEN = {"tight", "loose", "balanced", "aggressive"}
 BLUF_KANS_MIN, BLUF_KANS_MAX = 0.0, 1.0
 
@@ -196,14 +201,15 @@ def valideer_bot_code(code: str, week: int, strategie: str | None = None, bluf_k
             "actie_resultaten": None,
         }
 
+    toegestane_acties = TOEGESTANE_ACTIES_VANAF_WEEK3 if config["heeft_strategie"] else TOEGESTANE_ACTIES
     for testgeval, actie in zip(testgevallen, acties):
-        if not isinstance(actie, str) or actie.lower() not in TOEGESTANE_ACTIES:
+        if not isinstance(actie, str) or actie.lower() not in toegestane_acties:
             return {
                 "geldig": False,
                 "foutmelding": (
                     f"Bij hand {testgeval['hand']}"
                     + (f" en stack {testgeval['stack']}" if "stack" in testgeval else "")
-                    + f" gaf je functie '{actie}' terug — verwacht een van {sorted(TOEGESTANE_ACTIES)}."
+                    + f" gaf je functie '{actie}' terug — verwacht een van {sorted(toegestane_acties)}."
                 ),
                 "actie_resultaten": acties,
             }

@@ -43,6 +43,22 @@ def _naar_onze_hand(hole_card):
     return [_RANG_VERTALING.get(kaart[1], kaart[1]) for kaart in hole_card]
 
 
+def _ondersteunt_all_in_regels(kies_actie):
+    """
+    Vanaf Week 3 schrijven studenten kies_actie(hand, stack, strategie) en
+    kunnen ze daarmee bewust reageren op hun eigen stack. Alleen bots met die
+    strategie-parameter krijgen de Week 3-spelregels: max 1 raise per straat,
+    en de mogelijkheid om zelf "all_in" terug te geven. Week 1/2-bots (zonder
+    strategie-parameter) spelen met het oude, ongewijzigde gedrag, zodat
+    al gedraaide toernooien voor die weken niet stiekem veranderen.
+    """
+    try:
+        parameters = inspect.signature(kies_actie).parameters
+    except (TypeError, ValueError):
+        return False
+    return "strategie" in parameters
+
+
 def roep_student_bot_aan(kies_actie, hand, stack, strategie, bluf_kans):
     """
     Roept de functie van de student aan met alleen de argumenten die hij
@@ -82,6 +98,8 @@ class StudentBotSpeler(BasePokerPlayer):
         self._bluf_kans = bluf_kans
         self._huidige_hand_nummer = 0
         self._eerste_actie_deze_hand = None
+        self._raises_deze_straat = 0
+        self._ondersteunt_all_in = _ondersteunt_all_in_regels(kies_actie)
         self.hand_log = []
 
     def declare_action(self, valid_actions, hole_card, round_state):
@@ -90,9 +108,15 @@ class StudentBotSpeler(BasePokerPlayer):
         gekozen = roep_student_bot_aan(
             self._kies_actie, hand, eigen_stack, self._strategie, self._bluf_kans
         )
+        if self._ondersteunt_all_in and gekozen == "raise":
+            if self._raises_deze_straat >= 1:
+                # al één keer geraisd deze straat -- geen re-raise, wel nog callen
+                gekozen = "call"
+            else:
+                self._raises_deze_straat += 1
         if self._eerste_actie_deze_hand is None:
             self._eerste_actie_deze_hand = gekozen
-        return self._naar_geldige_actie(gekozen, valid_actions)
+        return self._naar_geldige_actie(gekozen, valid_actions, self._ondersteunt_all_in)
 
     def _vind_eigen_stack(self, round_state):
         for seat in round_state["seats"]:
@@ -101,19 +125,49 @@ class StudentBotSpeler(BasePokerPlayer):
         return None
 
     @staticmethod
-    def _naar_geldige_actie(gekozen, valid_actions):
+    def _is_geldige_raise(actie_info):
+        bedrag = actie_info["amount"]
+        return not (isinstance(bedrag, dict) and bedrag["min"] == -1)
+
+    @classmethod
+    def _naar_geldige_actie(cls, gekozen, valid_actions, all_in_ondersteund=False):
         """
-        Valt terug op call, dan fold, als de gekozen actie nu niet mag
-        (bv. een bot die altijd 'raise' kiest, terwijl all-in al gebeurd is).
+        Valt terug op call, dan fold, als de gekozen actie nu niet mag.
+
+        Voor bots zonder all-in-regels (Week 1/2) is dit ongewijzigd het
+        oorspronkelijke gedrag: een "raise" telt al als beschikbaar zodra hij
+        in valid_actions voorkomt, ook als PyPokerEngine 'm eigenlijk als
+        onmogelijk markeert (min/max op -1) -- dat leidt dan verderop in de
+        engine tot een automatische fold. Dat is bekend, historisch gedrag en
+        blijft zo, om al gedraaide Week 1/2-toernooien niet te laten
+        verschuiven.
+
+        Voor bots MET all-in-regels (Week 3+) is dit gecorrigeerd: "raise"
+        telt alleen als beschikbaar als hij ook echt een geldig bedrag heeft,
+        anders valt de bot netjes terug op call (die PyPokerEngine zelf
+        automatisch als all-in afhandelt als de stack te klein is om volledig
+        te callen). "all_in" zet de hele stack in: een raise naar het
+        maximale bedrag als dat nog kan, anders een call.
         """
         toegestaan = {a["action"]: a for a in valid_actions}
+
+        if all_in_ondersteund and gekozen == "all_in":
+            raise_info = toegestaan.get("raise")
+            if raise_info and cls._is_geldige_raise(raise_info):
+                return "raise", raise_info["amount"]["max"]
+            gekozen = "call"
+
         volgorde = [gekozen, "call", "fold"]
         for optie in volgorde:
-            if optie in toegestaan:
-                bedrag = toegestaan[optie]["amount"]
-                if isinstance(bedrag, dict):
-                    bedrag = bedrag["min"]
-                return optie, bedrag
+            info = toegestaan.get(optie)
+            if info is None:
+                continue
+            if all_in_ondersteund and optie == "raise" and not cls._is_geldige_raise(info):
+                continue
+            bedrag = info["amount"]
+            if isinstance(bedrag, dict):
+                bedrag = bedrag["min"]
+            return optie, bedrag
 
         eerste = valid_actions[0]
         bedrag = eerste["amount"]
@@ -129,7 +183,7 @@ class StudentBotSpeler(BasePokerPlayer):
         self._eerste_actie_deze_hand = None
 
     def receive_street_start_message(self, street, round_state):
-        pass
+        self._raises_deze_straat = 0
 
     def receive_game_update_message(self, new_action, round_state):
         pass
