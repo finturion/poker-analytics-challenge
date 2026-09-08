@@ -27,6 +27,11 @@ bent in poker. Het houdt ook de ruisgevoelige helft klein: de eindstand van een
 toernooi hangt nu eenmaal deels van de kaarten af, en die helft is met 0,32 van
 de 1,0 punt begrensd.
 
+De prestatiehelft is wél een echte competitie: alleen de top 10 van de eindstand
+levert punten op, exponentieel aflopend (plek 1 krijgt het volle deel, plek 2 nog
+70% daarvan, enzovoort). Wie buiten de top valt krijgt daar niets voor -- maar
+houdt de sprinthelft, dus doorwerken loont ook zonder dat je de beste bot hebt.
+
 WAAROM ALLEEN DE LAATSTE RONDE MEETELT
 --------------------------------------
 Binnen een week draait het toernooi twee keer: woensdag (ronde 1) en later in
@@ -52,7 +57,19 @@ AANDEEL_PRESTATIE = 0.4
 
 # Verdeling binnen de sprint. Moet optellen tot 1,0.
 AANDEEL_WOENSDAG = 0.5
-AANDEEL_VRIJDAG = 0.5
+AANDEEL_DEFINITIEF = 0.5
+
+# De prestatiehelft is een competitie, geen deelnamecijfer: alleen de bovenkant
+# van de eindstand levert punten op, en die loopt exponentieel af. Plek 1 krijgt
+# het volle deel, elke plek daaronder PRESTATIE_FACTOR keer zoveel als de plek
+# erboven, en vanaf PRESTATIE_PLEKKEN + 1 is het nul. Wil je alleen een top 5
+# belonen, dan is PRESTATIE_PLEKKEN = 5 de enige regel die hoeft te veranderen.
+#
+# De factor is 0,8 en niet steiler, omdat een eindcijfer op één decimaal wordt
+# afgerond: bij 0,7 levert plek 8 tot 10 minder dan 0,03 punt op en verdwijnt de
+# onderkant van de top 10 in de afronding. Dan is het een top 5 met een staart.
+PRESTATIE_PLEKKEN = 10
+PRESTATIE_FACTOR = 0.8
 
 # Een bot die op elke testhand hetzelfde antwoordt is technisch geldig maar
 # speelt geen poker (zie bot_validator._is_constante_bot). Dat is geen reden om
@@ -65,7 +82,7 @@ BOT_WEKEN = [
         "bot": "Bot v1",
         "gewicht": 0.0,
         "deadline_woensdag": f"2026-09-02T09:00:00{_ZOMERTIJD}",
-        "deadline_vrijdag": f"2026-09-04T17:00:00{_ZOMERTIJD}",
+        "deadline_definitief": f"2026-09-03T18:00:00{_ZOMERTIJD}",
         "toelichting": "Oefenweek: telt niet mee voor de bonus.",
     },
     {
@@ -73,18 +90,28 @@ BOT_WEKEN = [
         "bot": "Bot v2",
         "gewicht": 0.2,
         "deadline_woensdag": f"2026-09-16T09:00:00{_ZOMERTIJD}",
-        "deadline_vrijdag": f"2026-09-18T12:00:00{_ZOMERTIJD}",
-        "toelichting": "Woensdag Bot v2, vrijdagochtend een verbeterde versie.",
+        "deadline_definitief": f"2026-09-17T18:00:00{_ZOMERTIJD}",
+        "toelichting": "Woensdag Bot v2, donderdag 18:00 een verbeterde versie.",
     },
     {
         "week": 5,
         "bot": "Bot v3",
         "gewicht": 0.8,
         "deadline_woensdag": f"2026-09-30T09:00:00{_ZOMERTIJD}",
-        "deadline_vrijdag": f"2026-10-02T17:00:00{_ZOMERTIJD}",
-        "toelichting": "Woensdag Bot v3, vrijdagmiddag de slotinzending.",
+        # Eén dag later dan de andere weken: dit is de slotinzending waar de
+        # 4 tot 8 uur eigen werk in zit, en die tijd moet er ook zijn.
+        "deadline_definitief": f"2026-10-02T18:00:00{_ZOMERTIJD}",
+        "toelichting": "Woensdag Bot v3, vrijdag 18:00 de slotinzending.",
     },
 ]
+
+_DAGEN = ["maandag", "dinsdag", "woensdag", "donderdag", "vrijdag", "zaterdag", "zondag"]
+
+
+def omschrijf_deadline(deadline_iso):
+    """"2026-09-17T18:00:00+02:00" -> "donderdag 18:00", voor in de uitleg aan studenten."""
+    moment = datetime.fromisoformat(deadline_iso)
+    return f"{_DAGEN[moment.weekday()]} {moment:%H:%M}"
 
 WEKEN = [item["week"] for item in BOT_WEKEN]
 
@@ -130,12 +157,15 @@ def sprintscore(inzendingen, week_item):
     hij doet bij elke testhand hetzelfde -- dan telt het half: ingeleverd is
     ingeleverd, maar het is nog geen pokerbot.
 
-    Vrijdag (de andere helft): een geldige bot vóór de vrijdagdeadline die
-    verschilt van je woensdaginzending. De opdracht is een verbeterde versie,
-    dus dezelfde code opnieuw insturen levert niets op.
+    De tweede deadline (de andere helft): een geldige bot die verschilt van je
+    woensdaginzending. De opdracht is een verbeterde versie, dus dezelfde code
+    opnieuw insturen levert niets op. Die deadline valt op donderdag 18:00,
+    gelijk met de groepscases -- behalve in week 5, waar de slotinzending er
+    een dag langer over mag doen.
     """
     woensdag = _op_tijd(inzendingen, week_item["deadline_woensdag"])
-    vrijdag = _op_tijd(inzendingen, week_item["deadline_vrijdag"])
+    definitief = _op_tijd(inzendingen, week_item["deadline_definitief"])
+    wanneer = omschrijf_deadline(week_item["deadline_definitief"])
 
     if woensdag is None or not woensdag.get("geldig"):
         score_woensdag = 0.0
@@ -147,30 +177,44 @@ def sprintscore(inzendingen, week_item):
         score_woensdag = AANDEEL_WOENSDAG
         uitleg_woensdag = "woensdag een werkende bot ingeleverd"
 
-    if vrijdag is None or not vrijdag.get("geldig"):
-        score_vrijdag = 0.0
-        uitleg_vrijdag = "geen goedgekeurde bot vóór de vrijdagdeadline"
-    elif woensdag is not None and vrijdag.get("bot_code") == woensdag.get("bot_code"):
-        score_vrijdag = 0.0
-        uitleg_vrijdag = "vrijdag dezelfde code als woensdag — geen verbeterde versie"
+    if definitief is None or not definitief.get("geldig"):
+        score_definitief = 0.0
+        uitleg_definitief = f"geen goedgekeurde bot vóór {wanneer}"
+    elif woensdag is not None and definitief.get("bot_code") == woensdag.get("bot_code"):
+        score_definitief = 0.0
+        uitleg_definitief = f"{wanneer} dezelfde code als woensdag — geen verbeterde versie"
     else:
-        score_vrijdag = AANDEEL_VRIJDAG
-        uitleg_vrijdag = "vrijdag een verbeterde versie ingeleverd"
+        score_definitief = AANDEEL_DEFINITIEF
+        uitleg_definitief = f"vóór {wanneer} een verbeterde versie ingeleverd"
 
-    return score_woensdag + score_vrijdag, [uitleg_woensdag, uitleg_vrijdag]
+    return score_woensdag + score_definitief, [uitleg_woensdag, uitleg_definitief]
 
 
 # ---------------------------------------------------------------------------
 # Prestatiescore: je plek in de eindstand van de laatste ronde
 # ---------------------------------------------------------------------------
+def score_voor_plek(plek):
+    """
+    Wat plek `plek` in de eindstand oplevert: 1,0 voor de winnaar, daarna elke
+    plek PRESTATIE_FACTOR keer zoveel als de plek erboven, en 0 buiten de top.
+    """
+    if plek < 1 or plek > PRESTATIE_PLEKKEN:
+        return 0.0
+    return PRESTATIE_FACTOR ** (plek - 1)
+
+
+def prestatietabel():
+    """De hele uitbetaling op een rij, voor in de uitleg aan studenten."""
+    return [(plek, round(score_voor_plek(plek), 4)) for plek in range(1, PRESTATIE_PLEKKEN + 1)]
+
+
 def prestatiescore(eindstand, student_id, deelnemers=None):
     """
-    Score 0..1 op basis van je plek in `eindstand`: de beste krijgt 1,0, de
-    laatste 0,0, de rest lineair daartussen.
+    Score 0..1 op basis van je plek in de eindstand van de competitie.
 
     Op plek in plaats van op chips, omdat chips niet vergelijkbaar zijn tussen
     rondes (in ronde 2 begint iedereen hoger) en één uitschieter anders de hele
-    schaal bepaalt.
+    schaal zou bepalen.
 
     `deelnemers` beperkt het klassement tot echte studenten; de oefenbots die
     het toernooi aanvullen als er nog te weinig inzendingen zijn, horen niet in
@@ -185,13 +229,13 @@ def prestatiescore(eindstand, student_id, deelnemers=None):
     if student_id not in eindstand:
         return 0.0, "niet meegespeeld in dit toernooi"
 
-    aantal = len(eindstand)
-    if aantal == 1:
-        return 1.0, "als enige deelnemer"
-
     op_volgorde = sorted(eindstand.items(), key=lambda kv: -kv[1])
     plek = [naam for naam, _ in op_volgorde].index(student_id) + 1
-    return (aantal - plek) / (aantal - 1), f"plek {plek} van {aantal}"
+    score = score_voor_plek(plek)
+    aantal = len(eindstand)
+    if score == 0.0:
+        return 0.0, f"plek {plek} van {aantal} — buiten de top {PRESTATIE_PLEKKEN}"
+    return score, f"plek {plek} van {aantal}"
 
 
 # ---------------------------------------------------------------------------

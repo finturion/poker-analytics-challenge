@@ -299,6 +299,14 @@ def _docent_bonus(docent_token):
         width="stretch",
     )
 
+    with st.expander("Spelregels: weging, deadlines en uitbetaling per plek"):
+        st.dataframe(pd.DataFrame(data["weken"]), width="stretch")
+        st.caption(
+            "De prestatiehelft is een competitie: alleen deze plekken leveren punten op, "
+            "exponentieel aflopend. Daarbuiten is het nul."
+        )
+        st.dataframe(pd.DataFrame(data["prestatie_per_plek"]), width="stretch")
+
     with st.expander("Opbouw per student"):
         for r in studenten:
             st.markdown(f"**{r['student_id']}** — {r['bonus_afgerond']:.1f} van de {data['maximaal']:.1f}")

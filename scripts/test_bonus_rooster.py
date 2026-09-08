@@ -10,7 +10,16 @@ HIER = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(os.path.dirname(HIER), "api"))
 
 import bonus_rooster as bonus
-from bonus_rooster import BOT_WEKEN, MAX_BONUS, bonus_hele_klas, bonus_per_student, prestatiescore
+from bonus_rooster import (
+    BOT_WEKEN,
+    MAX_BONUS,
+    PRESTATIE_PLEKKEN,
+    bonus_hele_klas,
+    bonus_per_student,
+    prestatiescore,
+    prestatietabel,
+    score_voor_plek,
+)
 
 geslaagd = 0
 
@@ -49,11 +58,42 @@ check(
 )
 
 # ---------------------------------------------------------------------------
-print("\nPrestatiescore")
-eindstand = {"a": 2000, "b": 1500, "c": 1000, "d": 500, "e": 100}
-check(prestatiescore(eindstand, "a")[0] == 1.0, "de winnaar krijgt 1,0")
-check(prestatiescore(eindstand, "e")[0] == 0.0, "de laatste krijgt 0,0")
-check(prestatiescore(eindstand, "c")[0] == 0.5, "de middelste krijgt 0,5")
+print("\nPrestatiescore: exponentieel aflopende top")
+tabel = prestatietabel()
+check(len(tabel) == PRESTATIE_PLEKKEN, f"de tabel dekt precies {PRESTATIE_PLEKKEN} plekken")
+check(score_voor_plek(1) == 1.0, "plek 1 krijgt het volle deel")
+check(
+    all(score_voor_plek(p) > score_voor_plek(p + 1) for p in range(1, PRESTATIE_PLEKKEN)),
+    "elke plek levert minder op dan de plek erboven",
+)
+check(
+    score_voor_plek(PRESTATIE_PLEKKEN + 1) == 0.0,
+    f"buiten de top {PRESTATIE_PLEKKEN} is het nul",
+)
+check(
+    abs(score_voor_plek(3) - score_voor_plek(2) * (score_voor_plek(2) / score_voor_plek(1))) < 1e-9,
+    "de afname is exponentieel: elke stap is dezelfde factor",
+)
+check(
+    0.8 * 0.4 * score_voor_plek(PRESTATIE_PLEKKEN) >= 0.04,
+    "plek 10 levert genoeg op om niet weg te ronden op één decimaal",
+)
+
+# 44 studenten, zoals de echte klas
+eindstand = {f"s{i:02d}": 3000 - i * 10 for i in range(44)}
+check(prestatiescore(eindstand, "s00")[0] == 1.0, "de winnaar van 44 krijgt 1,0")
+check(
+    prestatiescore(eindstand, f"s{PRESTATIE_PLEKKEN - 1:02d}")[0] == score_voor_plek(PRESTATIE_PLEKKEN),
+    "de laatste plek binnen de top krijgt nog iets",
+)
+check(
+    prestatiescore(eindstand, f"s{PRESTATIE_PLEKKEN:02d}")[0] == 0.0,
+    "de eerste plek buiten de top krijgt niets",
+)
+check(
+    f"buiten de top {PRESTATIE_PLEKKEN}" in prestatiescore(eindstand, "s30")[1],
+    "en dat staat er ook bij, zodat niemand hoeft te raden",
+)
 check(prestatiescore(eindstand, "z")[0] == 0.0, "wie niet meespeelde krijgt 0,0")
 check(prestatiescore({}, "a")[0] is None, "zonder toernooi is de score onbekend, niet 0")
 check(
@@ -67,10 +107,10 @@ print("\nVier profielen door het hele schema")
 # Vier studenten: de trouwe zwoeger, de woensdag-stub, de laatbloeier en de
 # student die alleen op vrijdag opduikt.
 def week_inzendingen(week, wo_code, vr_code, wo_constant=False):
-    """Bouwt de inzendingen van één student in één week: woensdag vroeg, vrijdag laat."""
+    """Bouwt de inzendingen van één student in één week: woensdag vroeg, tweede deadline net op tijd."""
     item = WEEK[week]
     wo_moment = item["deadline_woensdag"].replace("09:00", "08:30")
-    vr_moment = item["deadline_vrijdag"].replace("17:00", "16:00").replace("12:00", "11:00")
+    vr_moment = item["deadline_definitief"].replace("18:00", "17:00")
     inzendingen = []
     if wo_code is not None:
         inzendingen.append(inzending(wo_moment, wo_code, constant=wo_constant))
@@ -93,20 +133,30 @@ submissions = {
         "vrijdagmens": week_inzendingen(5, None, "vr5"),
     },
 }
+# Een realistisch veld: 40 naamloze klasgenoten eromheen, zodat de top 10 ook
+# echt een top 10 is. Met een handjevol bots zit iedereen in de prijzen en meet
+# de test niets.
+def veld(posities):
+    """posities: {naam: chips}. Vult aan tot 44 bots met een spreiding eromheen."""
+    eindstand = dict(posities)
+    for i in range(44 - len(posities)):
+        eindstand[f"klasgenoot_{i:02d}"] = 2000 - i * 25
+    return {"eindstand_per_bot": eindstand, "namen_deelnemers": list(eindstand)}
+
+
 toernooien = {
-    "3": {"eindstand_per_bot": {"zwoeger": 1200, "stub": 900, "vrijdagmens": 1000},
-          "namen_deelnemers": ["zwoeger", "stub", "vrijdagmens"]},
-    "5": {"eindstand_per_bot": {"zwoeger": 1100, "stub": 900, "laatbloeier": 1000, "vrijdagmens": 950},
-          "namen_deelnemers": ["zwoeger", "stub", "laatbloeier", "vrijdagmens"]},
-    "5_ronde2": {"eindstand_per_bot": {"zwoeger": 2300, "stub": 1800, "laatbloeier": 2100, "vrijdagmens": 1900},
-                 "namen_deelnemers": ["zwoeger", "stub", "laatbloeier", "vrijdagmens"]},
+    # zwoeger wint; laatbloeier net in de top; vrijdagmens halverwege; stub onderaan
+    "3": veld({"zwoeger": 3000, "laatbloeier": 1850, "vrijdagmens": 1400, "stub": 900}),
+    "5": veld({"zwoeger": 2900, "laatbloeier": 1900, "vrijdagmens": 1350, "stub": 850}),
+    "5_ronde2": veld({"zwoeger": 3100, "laatbloeier": 1875, "vrijdagmens": 1300, "stub": 800}),
 }
 
 resultaten = {r["student_id"]: r for r in bonus_hele_klas(submissions, toernooien)}
 for student_id, r in sorted(resultaten.items(), key=lambda kv: -kv[1]["bonus"]):
     week5 = [w for w in r["per_week"] if w["week"] == 5][0]
     print(f"    {student_id:12} bonus {r['bonus']:.3f} -> {r['bonus_afgerond']:.1f}"
-          f"   (week5: sprint {week5['sprintscore']:.2f}, prestatie {week5['prestatiescore']:.2f})")
+          f"   (week5: sprint {week5['sprintscore']:.2f}, prestatie {week5['prestatiescore']:.2f}"
+          f" — {week5['uitleg'][-1]})")
 
 check(
     resultaten["zwoeger"]["bonus"] > resultaten["laatbloeier"]["bonus"] > resultaten["stub"]["bonus"],
@@ -119,12 +169,16 @@ check(
 week3_stub = [w for w in resultaten["stub"]["per_week"] if w["week"] == 3][0]
 check(
     week3_stub["sprintscore"] == 0.25,
-    "een woensdag-stub zonder vervolg haalt een kwart van de sprint (half woensdag, niets vrijdag)",
+    "een woensdag-stub zonder vervolg haalt een kwart van de sprint",
 )
 week5_stub = [w for w in resultaten["stub"]["per_week"] if w["week"] == 5][0]
 check(
     "geen verbeterde versie" in " ".join(week5_stub["uitleg"]),
-    "dezelfde code opnieuw insturen levert geen vrijdagpunten op",
+    "dezelfde code opnieuw insturen levert geen punten voor de tweede deadline op",
+)
+check(
+    week5_stub["prestatiescore"] == 0.0,
+    "en onderaan het veld van 44 levert de competitie ook niets op",
 )
 week1 = [w for w in resultaten["zwoeger"]["per_week"] if w["week"] == 1][0]
 check(week1["punten"] == 0.0, "week 1 levert geen punten op, ook niet voor de zwoeger")
@@ -132,11 +186,13 @@ check(week1["punten"] == 0.0, "week 1 levert geen punten op, ook niet voor de zw
 # ---------------------------------------------------------------------------
 print("\nAlleen de laatste ronde telt")
 check(
-    bonus._laatste_ronde(toernooien, 5)["eindstand_per_bot"]["zwoeger"] == 2300,
+    bonus._laatste_ronde(toernooien, 5)["eindstand_per_bot"]["zwoeger"]
+    == toernooien["5_ronde2"]["eindstand_per_bot"]["zwoeger"],
     "week 5 pakt ronde 2, niet ronde 1",
 )
 check(
-    bonus._laatste_ronde(toernooien, 3)["eindstand_per_bot"]["zwoeger"] == 1200,
+    bonus._laatste_ronde(toernooien, 3)["eindstand_per_bot"]["zwoeger"]
+    == toernooien["3"]["eindstand_per_bot"]["zwoeger"],
     "week 3 pakt ronde 1, want ronde 2 bestaat daar niet",
 )
 check(bonus._laatste_ronde(toernooien, 4) is None, "een week zonder toernooi geeft None")
@@ -146,7 +202,7 @@ print("\nDeadlines")
 te_laat = {
     "5": [
         inzending(WEEK[5]["deadline_woensdag"].replace("09:00", "09:30"), "wo5"),
-        inzending(WEEK[5]["deadline_vrijdag"].replace("17:00", "23:00"), "vr5"),
+        inzending(WEEK[5]["deadline_definitief"].replace("17:00", "23:00"), "vr5"),
     ]
 }
 r = bonus_per_student("treuzelaar", te_laat, {})
@@ -157,11 +213,11 @@ check(
 )
 check(
     week5["sprintscore"] == 0.5,
-    "maar die inzending telt wel als 'vóór vrijdag' -- de vrijdaghelft blijft staan",
+    "maar telt wel als 'vóór de tweede deadline' -- die helft blijft staan",
 )
 check(
     "geen goedgekeurde bot vóór de vrijdagdeadline" not in week5["uitleg"],
-    "de inzending van 23:00 is te laat, die van 09:30 redt de vrijdaghelft",
+    "de inzending van na de deadline is te laat, die van 09:30 redt die helft",
 )
 
 alleen_woensdag = {"5": [inzending(WEEK[5]["deadline_woensdag"].replace("09:00", "08:00"), "wo5")]}
