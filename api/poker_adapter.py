@@ -28,7 +28,7 @@ import inspect
 import random
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeoutError
 
-from pypokerengine.api.game import setup_config, start_poker
+from pypokerengine.api.game import Dealer, setup_config, start_poker
 from pypokerengine.players import BasePokerPlayer
 
 # PyPokerEngine gebruikt "T" voor Tien; wij gebruiken overal "10" (zie Week 1).
@@ -260,10 +260,21 @@ def _normaliseer_bot_invoer(bot_invoer):
     }
 
 
-def speel_tafel(bots, tafel_nummer, n_handen=STANDAARD_N_HANDEN, seed=None):
+def speel_tafel(bots, tafel_nummer, n_handen=STANDAARD_N_HANDEN, seed=None, startstacks=None):
     """
     bots: dict {bot_naam: kies_actie-functie of {"kies_actie", "strategie", "bluf_kans"}},
     2 tot TAFEL_GROOTTE_MAX bots.
+
+    startstacks: optioneel {bot_naam: chips}. Zonder dit begint iedereen op
+    STANDAARD_INITIAL_STACK. Mét dit begint elke bot met zijn eigen aantal
+    chips -- dat is wat een vervolgronde nodig heeft, waarin je verder speelt
+    met wat je de vorige ronde hebt overgehouden.
+
+    PyPokerEngine kent maar één initial_stack voor de hele tafel, dus we
+    gebruiken hier de Dealer rechtstreeks: die maakt bij register_player de
+    Player-objecten aan, en dáárna kunnen we hun stack per speler zetten,
+    vóór de eerste hand wordt gedeeld.
+
     Retourneert het hand-log van alle bots aan deze tafel samen, met
     tafel_nummer erbij zodat je resultaten van meerdere tafels kan combineren.
     """
@@ -273,19 +284,22 @@ def speel_tafel(bots, tafel_nummer, n_handen=STANDAARD_N_HANDEN, seed=None):
     if seed is not None:
         random.seed(seed)
 
-    config = setup_config(
-        max_round=n_handen,
-        initial_stack=STANDAARD_INITIAL_STACK,
-        small_blind_amount=STANDAARD_SMALL_BLIND,
-    )
+    dealer = Dealer(STANDAARD_SMALL_BLIND, STANDAARD_INITIAL_STACK, 0)
+    dealer.set_verbose(0)
+
     spelers = {}
     for bot_naam, bot_invoer in bots.items():
         info = _normaliseer_bot_invoer(bot_invoer)
         speler = StudentBotSpeler(bot_naam, info["kies_actie"], strategie=info["strategie"], bluf_kans=info["bluf_kans"])
         spelers[bot_naam] = speler
-        config.register_player(name=bot_naam, algorithm=speler)
+        dealer.register_player(bot_naam, speler)
 
-    start_poker(config, verbose=0)
+    if startstacks:
+        for speler_object in dealer.table.seats.players:
+            if speler_object.name in startstacks:
+                speler_object.stack = int(startstacks[speler_object.name])
+
+    dealer.start_game(n_handen)
 
     log = []
     for speler in spelers.values():
@@ -307,7 +321,23 @@ def _verdeel_in_tafels(bot_namen, rng):
     return tafels
 
 
-def speel_toernooi(bots, n_simulaties=5, n_handen=STANDAARD_N_HANDEN, seed=0):
+def bereken_startstacks(vorige_eindstand, bonus=STANDAARD_INITIAL_STACK):
+    """
+    Zet de eindstand van een vorige ronde om in startstacks voor de volgende.
+
+    Iedereen krijgt `bonus` chips erbij, zodat niemand uitgesloten raakt omdat
+    hij de blinds niet meer kan betalen -- ook een bot die de vorige ronde
+    helemaal is uitgespeeld begint dus weer met een volwaardige stack. Wat je
+    daarboven hebt overgehouden, neem je mee.
+
+    Dat is het hele punt van doorspelen: je woensdag-inzending bepaalt waarmee
+    je donderdag aan tafel gaat, dus een placeholder inleveren kost je echte
+    chips in plaats van niets.
+    """
+    return {naam: int(round(stand)) + bonus for naam, stand in vorige_eindstand.items()}
+
+
+def speel_toernooi(bots, n_simulaties=5, n_handen=STANDAARD_N_HANDEN, seed=0, startstacks=None):
     """
     bots: dict {bot_naam: kies_actie-functie of {"kies_actie", "strategie", "bluf_kans"}}.
 
@@ -315,6 +345,11 @@ def speel_toernooi(bots, n_simulaties=5, n_handen=STANDAARD_N_HANDEN, seed=0):
     opnieuw willekeurig over tafels van maximaal TAFEL_GROOTTE_MAX bots. Zo
     weet je per bot hoe hij presteert over meerdere tafels en meerdere
     simulaties heen, niet slechts één toevallige zit.
+
+    startstacks: optioneel {bot_naam: chips}, bijvoorbeeld uit
+    bereken_startstacks() van de vorige ronde. Elke simulatie begint met
+    dezelfde startstacks -- de simulaties zijn parallelle werelden, geen
+    opeenvolgende rondes.
 
     Retourneert {"hand_log": [...], "eindstand_per_bot": {...}}.
     """
@@ -329,7 +364,10 @@ def speel_toernooi(bots, n_simulaties=5, n_handen=STANDAARD_N_HANDEN, seed=0):
         for tafel_index, namen_aan_tafel in enumerate(tafels):
             bots_aan_tafel = {naam: bots[naam] for naam in namen_aan_tafel}
             tafel_seed = seed * 10_000 + simulatie_nummer * 100 + tafel_index
-            tafel_log = speel_tafel(bots_aan_tafel, tafel_index, n_handen=n_handen, seed=tafel_seed)
+            tafel_log = speel_tafel(
+                bots_aan_tafel, tafel_index, n_handen=n_handen, seed=tafel_seed,
+                startstacks=startstacks,
+            )
             for rij in tafel_log:
                 volledig_log.append({**rij, "simulatie": simulatie_nummer})
 
