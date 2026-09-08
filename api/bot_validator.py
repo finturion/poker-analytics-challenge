@@ -178,6 +178,21 @@ def _bouw_testgevallen(config: dict, strategie, bluf_kans, parameternamen: set[s
     return gevallen
 
 
+def _is_constante_bot(acties: list) -> bool:
+    """
+    True als de bot op ALLE testgevallen precies dezelfde actie teruggeeft.
+
+    Dat is technisch prima code -- `return "fold"` draait zonder fouten -- maar
+    het is geen pokerbot: hij kijkt niet naar zijn kaarten, zijn stack of de
+    ronde. Dit is geen reden om af te keuren (een bot mag nou eenmaal heel
+    tight zijn), maar het is wél iets wat de docent wil zien, en wat de student
+    als hint terugkrijgt bij het inleveren.
+    """
+    if len(acties) < 2:
+        return False
+    return len({str(a).lower() for a in acties}) == 1
+
+
 def valideer_bot_code(code: str, week: int, strategie: str | None = None, bluf_kans: float | None = None) -> dict:
     """
     Retourneert {"geldig": bool, "foutmelding": str | None, "actie_resultaten": list | None}.
@@ -188,17 +203,17 @@ def valideer_bot_code(code: str, week: int, strategie: str | None = None, bluf_k
     en geeft daarbij steeds een herkenbare actie terug.
     """
     if week not in VERWACHTE_FUNCTIES:
-        return {"geldig": False, "foutmelding": f"Onbekende week: {week}", "actie_resultaten": None}
+        return {"geldig": False, "foutmelding": f"Onbekende week: {week}", "actie_resultaten": None, "constante_bot": False}
 
     config = VERWACHTE_FUNCTIES[week]
 
     strategie_fout = _valideer_strategie_en_bluf_kans(config, strategie, bluf_kans)
     if strategie_fout:
-        return {"geldig": False, "foutmelding": strategie_fout, "actie_resultaten": None}
+        return {"geldig": False, "foutmelding": strategie_fout, "actie_resultaten": None, "constante_bot": False}
 
     verboden_reden = _bevat_verboden_imports(code)
     if verboden_reden:
-        return {"geldig": False, "foutmelding": verboden_reden, "actie_resultaten": None}
+        return {"geldig": False, "foutmelding": verboden_reden, "actie_resultaten": None, "constante_bot": False}
 
     functienaam = config["functienaam"]
     if not _bevat_functie(code, functienaam):
@@ -206,6 +221,7 @@ def valideer_bot_code(code: str, week: int, strategie: str | None = None, bluf_k
             "geldig": False,
             "foutmelding": f"Ik kan geen functie met de naam '{functienaam}()' vinden in je bestand.",
             "actie_resultaten": None,
+            "constante_bot": False,
         }
 
     parameternamen = _functie_parameternamen(code, functienaam)
@@ -242,13 +258,14 @@ def valideer_bot_code(code: str, week: int, strategie: str | None = None, bluf_k
             "geldig": False,
             "foutmelding": f"Je bot-code draaide langer dan {TIMEOUT_SECONDS} seconden (oneindige loop?).",
             "actie_resultaten": None,
+            "constante_bot": False,
         }
     finally:
         os.remove(tijdelijk_pad)
 
     if proces.returncode != 0 or MARKER not in proces.stdout:
         foutregel = proces.stderr.strip().splitlines()[-1] if proces.stderr.strip() else "Onbekende fout."
-        return {"geldig": False, "foutmelding": f"Je bot-code crasht: {foutregel}", "actie_resultaten": None}
+        return {"geldig": False, "foutmelding": f"Je bot-code crasht: {foutregel}", "actie_resultaten": None, "constante_bot": False}
 
     try:
         resultaat_json = proces.stdout.split(MARKER, 1)[1].strip().splitlines()[0]
@@ -258,6 +275,7 @@ def valideer_bot_code(code: str, week: int, strategie: str | None = None, bluf_k
             "geldig": False,
             "foutmelding": "Kon het resultaat van je functie niet uitlezen.",
             "actie_resultaten": None,
+            "constante_bot": False,
         }
 
     toegestane_acties = TOEGESTANE_ACTIES_MET_STACK if config["heeft_stack"] else TOEGESTANE_ACTIES
@@ -275,6 +293,12 @@ def valideer_bot_code(code: str, week: int, strategie: str | None = None, bluf_k
                     f" gaf je functie '{actie}' terug — verwacht een van {sorted(toegestane_acties)}."
                 ),
                 "actie_resultaten": acties,
+                "constante_bot": False,
             }
 
-    return {"geldig": True, "foutmelding": None, "actie_resultaten": acties}
+    return {
+        "geldig": True,
+        "foutmelding": None,
+        "actie_resultaten": acties,
+        "constante_bot": _is_constante_bot(acties),
+    }
