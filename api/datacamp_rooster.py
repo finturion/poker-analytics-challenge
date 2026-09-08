@@ -27,6 +27,50 @@ de deadline is, is geen achterstand.
 """
 from datetime import date
 
+# ---------------------------------------------------------------------------
+# Voorstel voor volgend semester (besproken sep 2026, nog niet doorgevoerd)
+#
+# Niet aangepast omdat de titels en deadlines hieronder een-op-een moeten
+# kloppen met de assignments in DataCamp zelf: loopt dit bestand daarop voor,
+# dan meldt de hub courses als "gemist" die dat niet zijn. Zet het pas om als
+# de assignments klaarstaan.
+#
+#   week 1  Introduction to Python                              verplicht
+#           Intermediate Python                                 verplicht
+#           Data Manipulation with pandas                       verplicht   <- uit week 2
+#   week 2  Introduction to Data Visualization with Matplotlib  verplicht   <- uit week 1
+#           Introduction to Data Visualization with Seaborn     aanbevolen
+#   week 3  Introduction to Functions in Python                 verplicht
+#           Introduction to Data Visualization with Plotly      verplicht
+#   week 4  Joining Data with pandas                            verplicht   <- nieuw
+#   week 5  Cleaning Data in Python                             verplicht
+#           Exploratory Data Analysis in Python                 aanbevolen
+#   week 6  Data Communication Concepts                         aanbevolen
+#
+# Waarom deze verschuivingen:
+#
+# - pandas naar week 1, omdat WC3 (week 2) sinds de herindeling de pandas-
+#   introductie doet. Stond een week ná het werkcollege dat het voorbereidt.
+# - Matplotlib naar week 2, omdat WC1 er 3 aanroepen mee doet en WC3 er 36.
+#   In week 1 stond hij op de verkeerde plek.
+# - Joining Data in week 4: WC5 leert de join op woensdag van week 3, en
+#   Case 2 (week 3-4) eist er een. Het week 4-tentamen toetst merge niet, dus
+#   het botst niet met de toetsweek.
+# - Seaborn aanbevolen: 2 aanroepen in de hele cursus en 0 toetsvragen. LET OP:
+#   staat als VA-course ingeroosterd en het Titanic-template vraagt er expliciet
+#   om ("Gebruik Seaborn in plaats van Matplotlib"), dus eerst afstemmen met de
+#   VA-kant -- die kan hem nodig hebben voor zijn eigen criteria.
+# - Exploratory Data Analysis aanbevolen: verkennen, groupby en value_counts
+#   doen studenten in WC2, WC3 en WC9 al met de hand.
+# - Data Communication Concepts aanbevolen: WC9 behandelt informatiearchitectuur
+#   zelf, en presenteren zit sinds sep 2026 in hoorcollege 2.
+# - Week 4 verder leeg: toetsweek plus de afronding van Case 2.
+#
+# Working with Categorical Data (nu week 6) is in dit voorstel weggelaten: die
+# is aan geen enkel werkcollege te koppelen. Zit hij er voor Case 3 in, dan
+# hoort hij erbij te blijven.
+# ---------------------------------------------------------------------------
+
 ROOSTER = [
     {"code": "IDS 1", "titel": "Introduction to Python", "week": 1, "rooster_deadline": "2026-09-04", "deadline": "2026-09-11", "verplicht": True},
     {"code": "IDS 2", "titel": "Intermediate Python", "week": 1, "rooster_deadline": "2026-09-04", "deadline": "2026-09-11", "verplicht": True},
