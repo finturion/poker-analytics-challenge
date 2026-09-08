@@ -62,14 +62,15 @@ AANDEEL_DEFINITIEF = 0.5
 # De prestatiehelft is een competitie, geen deelnamecijfer: alleen de bovenkant
 # van de eindstand levert punten op, en die loopt exponentieel af. Plek 1 krijgt
 # het volle deel, elke plek daaronder PRESTATIE_FACTOR keer zoveel als de plek
-# erboven, en vanaf PRESTATIE_PLEKKEN + 1 is het nul. Wil je alleen een top 5
-# belonen, dan is PRESTATIE_PLEKKEN = 5 de enige regel die hoeft te veranderen.
+# erboven, en vanaf PRESTATIE_PLEKKEN + 1 is het nul.
 #
-# De factor is 0,8 en niet steiler, omdat een eindcijfer op één decimaal wordt
-# afgerond: bij 0,7 levert plek 8 tot 10 minder dan 0,03 punt op en verdwijnt de
-# onderkant van de top 10 in de afronding. Dan is het een top 5 met een staart.
-PRESTATIE_PLEKKEN = 10
-PRESTATIE_FACTOR = 0.8
+# Met factor 0,7 loopt het snel af: 1,00 - 0,70 - 0,49 - 0,34 - 0,24 - ... en bij
+# plek 10 is het precies nul. Het zwaartepunt ligt dus op het podium; wie tiende
+# wordt heeft geen voordeel op wie dertigste wordt. Dat is de bedoeling: de
+# competitie hoort de bovenkant te belonen, en wie daarbuiten valt houdt nog
+# altijd de hele sprinthelft.
+PRESTATIE_PLEKKEN = 9
+PRESTATIE_FACTOR = 0.7
 
 # Een bot die op elke testhand hetzelfde antwoordt is technisch geldig maar
 # speelt geen poker (zie bot_validator._is_constante_bot). Dat is geen reden om

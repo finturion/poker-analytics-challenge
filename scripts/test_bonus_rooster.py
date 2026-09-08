@@ -75,8 +75,12 @@ check(
     "de afname is exponentieel: elke stap is dezelfde factor",
 )
 check(
-    0.8 * 0.4 * score_voor_plek(PRESTATIE_PLEKKEN) >= 0.04,
-    "plek 10 levert genoeg op om niet weg te ronden op één decimaal",
+    abs(score_voor_plek(2) - 0.7) < 1e-9 and abs(score_voor_plek(3) - 0.49) < 1e-9,
+    "de ladder is 1,00 - 0,70 - 0,49: het zwaartepunt ligt op het podium",
+)
+check(
+    score_voor_plek(10) == 0.0,
+    "vanaf plek 10 levert de competitie niets meer op",
 )
 
 # 44 studenten, zoals de echte klas
