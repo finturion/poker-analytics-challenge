@@ -27,6 +27,7 @@ REVIEWS_FILE = "reviews_db.json"
 TOKENS_FILE = "tokens_db.json"
 DOCENT_TOKEN_FILE = "docent_token.json"
 TOERNOOI_RESULTATEN_FILE = "toernooi_resultaten_db.json"
+DATACAMP_FILE = "datacamp_db.json"
 
 security_bearer = HTTPBearer()
 
@@ -118,6 +119,22 @@ def laad_reviews() -> dict:
 
 def sla_reviews_op(data: dict):
     _sla_op(REVIEWS_FILE, data)
+
+
+def laad_datacamp() -> dict:
+    """
+    Vorm: {"laatste": "2026-09-08", "snapshots": {"2026-09-08": {...}}}.
+
+    Eén sleutel per peildatum, zodat je later kunt terugkijken hoe de klas er
+    halverwege het blok voor stond -- handig bij een discussie over "ik had het
+    wél gedaan". De snapshots zijn klein (een dict per student), dus alle tien
+    blokweken passen ruim in één kv-regel.
+    """
+    return _laad(DATACAMP_FILE)
+
+
+def sla_datacamp_op(data: dict):
+    _sla_op(DATACAMP_FILE, data)
 
 
 def bootstrap_geheimen_uit_omgeving():

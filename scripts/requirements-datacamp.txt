@@ -1,0 +1,5 @@
+# Alleen nodig voor scripts/datacamp_snapshot.py (de wekelijkse DataCamp-scrape).
+# Na installeren eenmalig ook de browser zelf ophalen:
+#     python -m playwright install chromium
+playwright
+requests

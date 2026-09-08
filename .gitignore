@@ -4,6 +4,7 @@ api/submissions_db.json
 api/gallery_db.json
 api/reviews_db.json
 api/toernooi_resultaten_db.json
+api/datacamp_db.json
 api/tokens_db.json
 api/docent_token.json
 
@@ -25,3 +26,8 @@ notebooks/mijn_bot_week*.py
 
 # Voorbeeldbestand dat Werkcollege 3 (Ronde 0) zelf aanmaakt om read_csv/sep te oefenen.
 notebooks/pokerdata_voorbeeld.csv
+
+# DataCamp-koppeling en -snapshots: bevatten namen, studentnummers en
+# e-mailadressen van echte studenten. Blijft lokaal, nooit in git.
+scripts/klaslijst_datacamp.csv
+scripts/datacamp_snapshots/

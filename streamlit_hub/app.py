@@ -5,6 +5,8 @@ Studenten loggen in met hun student_id + token, kiezen een week, en
 beoordelen anonieme grafieken/kaarten van klasgenoten op Visual Hierarchy.
 Een docent-tabblad toont de voortgang van de hele klas en kan het toernooi
 opnieuw draaien — zonder dat er ergens handmatig nagekeken hoeft te worden.
+Het DataCamp-tabblad laat elke student zijn eigen roostervoortgang zien
+(en de docent die van de hele klas).
 
 Start lokaal met: streamlit run app.py
 (zorg dat de FastAPI-backend in ../api al draait: uvicorn main:app --reload)
@@ -274,6 +276,9 @@ def docent_tab():
             st.dataframe(pd.DataFrame(response.json()), width="stretch")
 
     st.divider()
+    _docent_datacamp(docent_token)
+
+    st.divider()
     st.markdown("**Toernooi-uitslag**")
     vergelijk_met = st.text_input("Vergelijk met week (optioneel, bv. 1)", key="vergelijk_met_week")
     params = {}
@@ -301,15 +306,141 @@ def docent_tab():
                 _toon_toernooi_resultaat(response.json(), gedraaid_nu=True)
 
 
+
+# ---------------------------------------------------------------------------
+# DataCamp-tabblad (student ziet alleen zijn eigen stand)
+# ---------------------------------------------------------------------------
+STATUS_ICOON = {"af": "✅", "te laat af": "🟠", "gemist": "❌", "open": "⬜️"}
+
+
+def _toon_klascijfers(klas):
+    """
+    Bewust geen namen: de klas mag zien hoe de groep ervoor staat, niet wie
+    er achterloopt. Dit blok mag dus gerust op een scherm in het lokaal.
+    """
+    kolom_gemiddelde, kolom_positie = st.columns(2)
+    kolom_gemiddelde.metric("Klasgemiddelde", f"{klas['gemiddeld_af']} courses af")
+    if "jij_staat_boven_percentage" in klas:
+        kolom_positie.metric("Jij staat boven", f"{klas['jij_staat_boven_percentage']}% van de klas")
+    verdeling = klas.get("verdeling_af") or {}
+    if verdeling:
+        st.caption(f"Verdeling over {klas['aantal_studenten']} studenten met een DataCamp-account:")
+        st.bar_chart(pd.DataFrame({"studenten": verdeling.values()}, index=list(verdeling.keys())))
+        st.caption("Horizontaal: aantal afgeronde courses. Verticaal: hoeveel studenten daar staan.")
+
+
+def datacamp_tab():
+    st.subheader("Jouw DataCamp-stand")
+    if not ingelogd():
+        st.info("Vul links je Student ID en token in om je eigen stand te zien.")
+        return
+
+    response = api_get(f"/datacamp/stand/{st.session_state.student_id}", st.session_state.token)
+    if response.status_code == 404:
+        st.info("Er is nog geen DataCamp-stand ingelezen. Vraag je docent om de wekelijkse update.")
+        return
+    if response.status_code != 200:
+        st.warning(f"Kon je DataCamp-stand niet ophalen ({response.status_code}): {_foutmelding(response)}")
+        return
+
+    stand = response.json()
+    st.caption(f"Stand van {stand['peildatum']} — de docent werkt dit wekelijks bij.")
+
+    if not stand["gevonden"]:
+        st.error(stand["boodschap"])
+        _toon_klascijfers(stand["klas"])
+        return
+
+    kolom_af, kolom_verstreken, kolom_laat, kolom_xp = st.columns(4)
+    kolom_af.metric("Courses af", f"{stand['af']} / {stand['totaal']}")
+    kolom_verstreken.metric("Deadlines verstreken", stand["van_verstreken"])
+    kolom_laat.metric("Na de deadline af", stand["te_laat"])
+    kolom_xp.metric("XP dit blok", f"{stand['xp']:,}".replace(",", "."))
+
+    if stand["gemist"]:
+        st.error(f"Verstreken deadline nog niet af: {', '.join(stand['gemist'])}")
+    else:
+        st.success("Je hebt alle verstreken deadlines gehaald.")
+
+    tabel = pd.DataFrame(
+        [
+            {
+                "": STATUS_ICOON.get(regel["status"], ""),
+                "Code": regel["code"],
+                "Course": regel["titel"],
+                "Deadline": regel["deadline"],
+                "Afgerond op": regel["afgerond_op"] or "—",
+                "Status": regel["status"],
+            }
+            for regel in stand["courses"]
+        ]
+    )
+    st.dataframe(tabel, width="stretch", hide_index=True)
+
+    st.divider()
+    _toon_klascijfers(stand["klas"])
+
+
+# ---------------------------------------------------------------------------
+# Docent: DataCamp-voortgang van de hele klas
+# ---------------------------------------------------------------------------
+def _docent_datacamp(docent_token):
+    st.markdown("**DataCamp-voortgang**")
+    if not st.button("DataCamp-overzicht ophalen"):
+        return
+
+    response = api_get("/datacamp/overzicht", docent_token)
+    if response.status_code == 404:
+        st.info("Nog geen snapshot opgeslagen. Draai scripts/datacamp_snapshot.py --stuur-naar-hub.")
+        return
+    if response.status_code != 200:
+        st.error(f"Kon overzicht niet ophalen ({response.status_code}): {_foutmelding(response)}")
+        return
+
+    overzicht = response.json()
+    st.caption(f"Peildatum {overzicht['peildatum']} (opgehaald {overzicht['opgehaald_op']}).")
+    st.dataframe(pd.DataFrame(overzicht["studenten"]), width="stretch", hide_index=True)
+
+    achterblijvers = overzicht["achterblijvers"]
+    if achterblijvers:
+        st.warning(f"{len(achterblijvers)} student(en) met een verstreken deadline nog open.")
+        adressen = "; ".join(a["email"] for a in achterblijvers if a.get("email"))
+        st.text_area("E-mailadressen achterblijvers (kopieer naar de BCC-regel)", adressen, height=80)
+        st.text_area(
+            "Concept-herinnering",
+            "Hoi,\n\n"
+            "Je DataCamp-opdrachten uit het rooster staan nog open. In DataCamp zie je bij "
+            "Assignments precies welke; ik zie de stand van de hele klas wekelijks.\n\n"
+            "Loop je vast, kom langs in het werkcollege.\n\nGroet, Jerome",
+            height=150,
+        )
+    else:
+        st.success("Niemand heeft een verstreken deadline openstaan.")
+
+    if overzicht["zonder_account"]:
+        st.error(
+            f"Geen DataCamp-account ({len(overzicht['zonder_account'])}): "
+            f"{', '.join(overzicht['zonder_account'])}. Zij krijgen geen assignment-mails en "
+            "staan in geen enkel overzicht."
+        )
+    if overzicht["niet_gekoppeld"]:
+        st.info(
+            "DataCamp-accounts zonder studentnummer in de klaslijst: "
+            f"{', '.join(overzicht['niet_gekoppeld'])}."
+        )
+
+
 # ---------------------------------------------------------------------------
 def main():
     init_state()
     st.title("🃏 Poker Analytics — Peer Review Hub")
     login_sidebar()
 
-    tab_review, tab_docent = st.tabs(["Peer review", "Docent"])
+    tab_review, tab_datacamp, tab_docent = st.tabs(["Peer review", "DataCamp", "Docent"])
     with tab_review:
         peer_review_tab()
+    with tab_datacamp:
+        datacamp_tab()
     with tab_docent:
         docent_tab()
 

@@ -11,6 +11,9 @@ Doel: nul handmatige nakijkdruk voor de docent.
 - POST /toernooi/{week}/opnieuw -> docent-only: forceer een nieuwe toernooi-run
 - GET  /toernooi/{week}/resultaat -> docent-only: laatst gecachte uitslag, draait NOOIT zelf een toernooi
 - GET  /locaties/{week} -> geolocaties van alle bots (vanaf Week 5), met eindstand indien bekend
+- POST /datacamp/snapshot -> docent-only: wekelijkse DataCamp-voortgang wegschrijven
+- GET  /datacamp/overzicht -> docent-only: hele klas langs de roosterdeadlines, incl. achterblijvers
+- GET  /datacamp/stand/{student_id} -> student ziet zijn EIGEN DataCamp-stand + anoniem klasgemiddelde
 
 Start lokaal met:  uvicorn main:app --reload
 """
@@ -21,6 +24,7 @@ from fastapi import Depends, FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
 import database as db
+import datacamp_rooster as rooster
 from bot_validator import valideer_bot_code
 from chart_validator import valideer_chart_json
 from locatie_validator import valideer_locatie
@@ -68,6 +72,32 @@ class PeerReview(BaseModel):
     kleur_contrast_opmerking: str = Field(..., min_length=1)
     actietitel_score: int = Field(..., ge=1, le=5)
     actietitel_opmerking: str = Field(..., min_length=1)
+
+
+class DataCampStudent(BaseModel):
+    studentnummer: str
+    naam: str | None = None
+    team: str | None = None
+    klas: str | None = None
+    datacamp_email: str | None = None
+    xp: int = 0
+    chapters: int = 0
+    courses: dict[str, str] = Field(
+        default_factory=dict, description="{course-titel: afrondingsdatum YYYY-MM-DD}"
+    )
+
+
+class DataCampSnapshot(BaseModel):
+    """Ruwe feiten uit DataCamp; het beoordelen gebeurt in datacamp_rooster.py."""
+
+    opgehaald_op: str = Field(..., description="ISO-datum(tijd) van de scrape")
+    studenten: list[DataCampStudent]
+    zonder_account: list[str] = Field(
+        default_factory=list, description="Namen uit de klaslijst zonder DataCamp-account"
+    )
+    niet_gekoppeld: list[str] = Field(
+        default_factory=list, description="DataCamp-e-mails die niet aan een studentnummer te koppelen zijn"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -323,3 +353,122 @@ def export(week: int, ok: bool = Depends(db.verifieer_docent_token)):
             }
         )
     return overzicht
+
+
+# ---------------------------------------------------------------------------
+# DataCamp-voortgang
+# ---------------------------------------------------------------------------
+def _laatste_snapshot() -> dict | None:
+    data = db.laad_datacamp()
+    laatste = data.get("laatste")
+    if not laatste:
+        return None
+    return data.get("snapshots", {}).get(laatste)
+
+
+@app.post("/datacamp/snapshot")
+def datacamp_snapshot_opslaan(snapshot: DataCampSnapshot, ok: bool = Depends(db.verifieer_docent_token)):
+    """
+    Docent-only: de wekelijkse scrape wegschrijven (scripts/datacamp_snapshot.py).
+
+    Eén snapshot per peildatum. Draai je op dezelfde dag twee keer, dan
+    overschrijft de tweede run de eerste -- dat is bedoeld, zo blijft er per
+    dag één waarheid staan in plaats van een rij bijna-identieke kopieën.
+    """
+    data = db.laad_datacamp()
+    snapshots = data.get("snapshots", {})
+    peildatum = snapshot.opgehaald_op[:10]
+    snapshots[peildatum] = snapshot.model_dump()
+    db.sla_datacamp_op({"laatste": max(snapshots), "snapshots": snapshots})
+    return {"opgeslagen_voor": peildatum, "aantal_studenten": len(snapshot.studenten)}
+
+
+@app.get("/datacamp/overzicht")
+def datacamp_overzicht(ok: bool = Depends(db.verifieer_docent_token)):
+    """Docent-only: de hele klas langs de roosterdeadlines, achterstand bovenaan."""
+    snapshot = _laatste_snapshot()
+    if snapshot is None:
+        raise HTTPException(status_code=404, detail="Nog geen DataCamp-snapshot opgeslagen.")
+
+    peildatum = snapshot["opgehaald_op"][:10]
+    regels = []
+    for student in snapshot["studenten"]:
+        vat = rooster.samenvatting(student["courses"], peildatum)
+        regels.append(
+            {
+                "studentnummer": student["studentnummer"],
+                "naam": student.get("naam"),
+                "team": student.get("team"),
+                "klas": student.get("klas"),
+                "email": student.get("datacamp_email"),
+                "af": vat["af"],
+                "van_verstreken": vat["verstreken"],
+                "te_laat": vat["te_laat"],
+                "gemist": ", ".join(vat["gemist"]),
+                "xp": student.get("xp", 0),
+                "chapters": student.get("chapters", 0),
+            }
+        )
+    regels.sort(key=lambda r: (-len(r["gemist"].split(", ")) if r["gemist"] else 0, r["af"], -r["xp"]))
+
+    return {
+        "peildatum": peildatum,
+        "opgehaald_op": snapshot["opgehaald_op"],
+        "rooster": rooster.ROOSTER,
+        "studenten": regels,
+        "achterblijvers": [r for r in regels if r["gemist"]],
+        "zonder_account": snapshot.get("zonder_account", []),
+        "niet_gekoppeld": snapshot.get("niet_gekoppeld", []),
+    }
+
+
+@app.get("/datacamp/stand/{student_id}")
+def datacamp_eigen_stand(student_id: str, ok: bool = Depends(db.verifieer_student_token)):
+    """
+    De student ziet zijn EIGEN regel plus geanonimiseerde klascijfers.
+
+    Bewust geen namen of e-mails van klasgenoten in het antwoord: de klas mag
+    weten hoe de groep ervoor staat, niet wie er achterloopt. Wat een student
+    hier ziet, moet hij ook op een scherm in het lokaal mogen zien.
+    """
+    snapshot = _laatste_snapshot()
+    if snapshot is None:
+        raise HTTPException(status_code=404, detail="Nog geen DataCamp-snapshot opgeslagen.")
+
+    peildatum = snapshot["opgehaald_op"][:10]
+    ikzelf = next((s for s in snapshot["studenten"] if s["studentnummer"] == student_id), None)
+
+    alle_af = [rooster.samenvatting(s["courses"], peildatum)["af"] for s in snapshot["studenten"]]
+    klas = {
+        "aantal_studenten": len(alle_af),
+        "gemiddeld_af": round(sum(alle_af) / len(alle_af), 1) if alle_af else 0,
+        "verdeling_af": {str(n): alle_af.count(n) for n in sorted(set(alle_af))},
+    }
+
+    if ikzelf is None:
+        # Geen DataCamp-account gevonden bij dit studentnummer -- dat is zelf
+        # het belangrijkste bericht dat deze student kan krijgen.
+        return {
+            "peildatum": peildatum,
+            "gevonden": False,
+            "boodschap": (
+                "We vinden geen DataCamp-account bij jouw studentnummer. Kijk of je de uitnodiging "
+                "voor de groep 'Minor Data Science - 2627 - S1' hebt geaccepteerd, en meld het bij je docent."
+            ),
+            "klas": klas,
+        }
+
+    vat = rooster.samenvatting(ikzelf["courses"], peildatum)
+    beter_dan = len([n for n in alle_af if n < vat["af"]])
+    return {
+        "peildatum": peildatum,
+        "gevonden": True,
+        "af": vat["af"],
+        "totaal": vat["totaal"],
+        "van_verstreken": vat["verstreken"],
+        "te_laat": vat["te_laat"],
+        "gemist": vat["gemist"],
+        "xp": ikzelf.get("xp", 0),
+        "courses": rooster.status_per_course(ikzelf["courses"], peildatum),
+        "klas": {**klas, "jij_staat_boven_percentage": round(100 * beter_dan / len(alle_af)) if alle_af else 0},
+    }

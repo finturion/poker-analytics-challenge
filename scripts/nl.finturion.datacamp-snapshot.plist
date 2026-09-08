@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  LaunchAgent voor de wekelijkse DataCamp-snapshot: elke maandag 11:00.
+
+  Installeer deze niet met de hand: draai ./installeer_launchagent.sh in deze
+  map. Dat script kopieert de plist naar ~/Library/LaunchAgents, zet het
+  ProgramArguments-pad naar de lokale runtime-map (launchd mag niets in iCloud
+  Drive lezen) en laadt de agent.
+
+  Nu direct testen:
+      launchctl kickstart -k gui/$(id -u)/nl.finturion.datacamp-snapshot
+  Stoppen:
+      launchctl bootout gui/$(id -u)/nl.finturion.datacamp-snapshot
+
+  Sliep de Mac maandag om 11:00? Dan draait launchd de gemiste run bij de
+  eerstvolgende keer dat de Mac wakker is: precies daarom is dit een
+  LaunchAgent en geen cron-regel.
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>nl.finturion.datacamp-snapshot</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/zsh</string>
+        <string>/Users/jerome/Library/Mobile Documents/com~apple~CloudDocs/Full_Stack_dev/HvA_voorbereidingen/IDS_2026_2027_SEM1/Poker_Analytics_2026/scripts/datacamp_snapshot_wekelijks.sh</string>
+    </array>
+
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Weekday</key><integer>1</integer>
+        <key>Hour</key><integer>11</integer>
+        <key>Minute</key><integer>0</integer>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <false/>
+
+    <key>StandardOutPath</key>
+    <string>/Users/jerome/Library/Logs/datacamp-snapshot.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/jerome/Library/Logs/datacamp-snapshot.log</string>
+</dict>
+</plist>
