@@ -239,19 +239,30 @@ def peer_review_tab():
 # ---------------------------------------------------------------------------
 def _toon_toernooi_resultaat(resultaat, gedraaid_nu):
     """Rendert eindstand_per_bot als tabel. gedraaid_nu onderscheidt de twee knoppen in het succesbericht."""
+    ronde = resultaat.get("ronde", 1)
     if gedraaid_nu:
         st.success(
-            f"Toernooi opnieuw gedraaid: {resultaat['n_bots']} bots "
+            f"Toernooi ronde {ronde} gedraaid: {resultaat['n_bots']} bots "
             f"({resultaat['aangevuld_met_oefenbots']} oefenbot(s) aangevuld)."
         )
     else:
-        st.success(f"Laatst bekende uitslag: {resultaat['n_bots']} bots.")
+        st.success(f"Laatst bekende uitslag (ronde {ronde}): {resultaat['n_bots']} bots.")
+
+    startstacks = resultaat.get("startstacks") or {}
+    if startstacks:
+        st.caption(
+            "Deze ronde is doorgespeeld met de chips uit de vorige ronde "
+            "+ 1000 voor iedereen — de kolom 'startstack' laat zien waar elke bot begon."
+        )
 
     eindstand = resultaat.get("eindstand_per_bot") or {}
     if eindstand:
         eindstand_df = pd.DataFrame(
             sorted(eindstand.items(), key=lambda kv: -kv[1]), columns=["bot", "eindstand"]
         )
+        if startstacks:
+            eindstand_df["startstack"] = eindstand_df["bot"].map(startstacks)
+            eindstand_df["winst_deze_ronde"] = eindstand_df["eindstand"] - eindstand_df["startstack"]
         st.dataframe(eindstand_df, width="stretch")
     else:
         st.info(resultaat.get("boodschap", "Nog geen eindstand beschikbaar."))
@@ -281,7 +292,18 @@ def docent_tab():
     st.divider()
     st.markdown("**Toernooi-uitslag**")
     vergelijk_met = st.text_input("Vergelijk met week (optioneel, bv. 1)", key="vergelijk_met_week")
-    params = {}
+    ronde = st.number_input(
+        "Ronde",
+        min_value=1,
+        value=1,
+        step=1,
+        key="toernooi_ronde",
+        help=(
+            "Ronde 1 is de woensdag-run. Vanaf ronde 2 speelt iedereen door met de chips "
+            "uit de vorige ronde + 1000 erbij, en blijft de uitslag van ronde 1 gewoon bewaard."
+        ),
+    )
+    params = {"ronde": int(ronde)}
     if vergelijk_met:
         params["vergelijk_met_week"] = int(vergelijk_met)
 
@@ -293,7 +315,7 @@ def docent_tab():
             if response.status_code != 200:
                 st.error(f"Mislukt ({response.status_code}): {_foutmelding(response)}")
             elif not response.json().get("gedraaid"):
-                st.info("Nog geen toernooi gedraaid voor deze (week/vergelijk-met-week)-combinatie.")
+                st.info("Nog geen toernooi gedraaid voor deze (week/ronde/vergelijk-met-week)-combinatie.")
             else:
                 _toon_toernooi_resultaat(response.json(), gedraaid_nu=False)
 

@@ -155,17 +155,26 @@ def inleveren(
         }
         db.sla_gallery_op(gallery)
 
+    if geldig:
+        boodschap = "Ingeleverd en technisch goedgekeurd. Je grafiek staat nu klaar voor peer-review."
+        if bot_resultaat.get("constante_bot"):
+            # Geen afkeuring: dit mág. Maar de student hoort te weten dat zijn
+            # bot bij elke testhand hetzelfde doet, want in het toernooi
+            # verliest zo'n bot chips die hij in de volgende ronde mist.
+            boodschap += (
+                " Let op: je bot geeft bij elke testhand dezelfde actie terug —"
+                " hij kijkt dus niet naar zijn kaarten of zijn stack."
+            )
+    else:
+        boodschap = "Ingeleverd, maar nog niet goedgekeurd — los de problemen hieronder op en lever opnieuw in."
+
     return {
         "geldig": geldig,
         "poging_nummer": len(submissions[week_key][student_id]),
         "bot_check": bot_resultaat,
         "chart_check": chart_resultaat,
         "locatie_check": locatie_resultaat,
-        "boodschap": (
-            "Ingeleverd en technisch goedgekeurd. Je grafiek staat nu klaar voor peer-review."
-            if geldig
-            else "Ingeleverd, maar nog niet goedgekeurd — los de problemen hieronder op en lever opnieuw in."
-        ),
+        "boodschap": boodschap,
     }
 
 
@@ -259,6 +268,7 @@ def toernooi(
     week: int,
     student_id: str,
     vergelijk_met_week: int | None = None,
+    ronde: int = 1,
     ok: bool = Depends(db.verifieer_student_token),
 ):
     """
@@ -271,25 +281,33 @@ def toernooi(
     (bv. Week 3 vs. Week 1): elke bot-naam wordt dan "student_id__w{week}",
     zodat je eigen oude en nieuwe bot naast elkaar in dezelfde uitslag staan.
 
+    Met `ronde` draai je meerdere toernooien in dezelfde week zonder dat ze
+    elkaars uitslag overschrijven. Ronde 1 is de woensdag-run; vanaf ronde 2
+    speelt iedereen door met de chips uit de vorige ronde + 1000 erbij.
+
     hand_log kun je direct in een DataFrame zetten: pd.DataFrame(response.json()["hand_log"])
     """
-    return draai_toernooi(week, vergelijk_met_week=vergelijk_met_week)
+    return draai_toernooi(week, vergelijk_met_week=vergelijk_met_week, ronde=ronde)
 
 
 @app.post("/toernooi/{week}/opnieuw")
 def toernooi_opnieuw(
     week: int,
     vergelijk_met_week: int | None = None,
+    ronde: int = 1,
     ok: bool = Depends(db.verifieer_docent_token),
 ):
     """Docent-only: forceer een nieuwe toernooi-run (bv. na te late inzendingen)."""
-    return draai_toernooi(week, vergelijk_met_week=vergelijk_met_week, forceer_opnieuw=True)
+    return draai_toernooi(
+        week, vergelijk_met_week=vergelijk_met_week, forceer_opnieuw=True, ronde=ronde
+    )
 
 
 @app.get("/toernooi/{week}/resultaat")
 def toernooi_resultaat_ophalen(
     week: int,
     vergelijk_met_week: int | None = None,
+    ronde: int = 1,
     ok: bool = Depends(db.verifieer_docent_token),
 ):
     """
@@ -298,7 +316,7 @@ def toernooi_resultaat_ophalen(
     zien hoe de klas ervoor staat, zonder de (mogelijk voor iedereen net
     goede) bestaande uitslag te overschrijven met een nieuwe run.
     """
-    return haal_gecacht_resultaat_op(week, vergelijk_met_week=vergelijk_met_week)
+    return haal_gecacht_resultaat_op(week, vergelijk_met_week=vergelijk_met_week, ronde=ronde)
 
 
 @app.get("/locaties/{week}")
@@ -347,6 +365,9 @@ def export(week: int, ok: bool = Depends(db.verifieer_docent_token)):
                 "student_id": student_id,
                 "aantal_pogingen": len(inzendingen),
                 "technisch_goedgekeurd": submission["geldig"],
+                # Geen afkeuring, wel zichtbaar: deze bot doet bij elke testhand
+                # hetzelfde en kijkt dus niet naar kaarten of stack.
+                "constante_bot": submission.get("bot_check", {}).get("constante_bot", False),
                 "reviews_gegeven": reviews_gegeven,
                 "voldaan": submission["geldig"] and reviews_gegeven >= MIN_REVIEWS_VOOR_VOLDAAN,
                 "laatst_ingeleverd_op": submission["ingeleverd_op"],

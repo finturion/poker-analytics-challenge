@@ -8,7 +8,7 @@ klasgenoten ziet spelen. Resultaten worden per (week, vergelijk_met_week)
 gecached, zodat een toernooi maar één keer per combinatie hoeft te draaien.
 """
 import database as db
-from poker_adapter import speel_toernooi
+from poker_adapter import bereken_startstacks, speel_toernooi
 
 # Reservebots vullen de tafel aan als er nog te weinig geldige inzendingen zijn
 # (bv. vroeg in de week, of tijdens het uitproberen van deze API). Ze spelen
@@ -76,7 +76,23 @@ def _verzamel_bots_over_weken(hoofdweek, vergelijk_met_week=None):
     return bots, deelnemers_hoofdweek
 
 
-def haal_gecacht_resultaat_op(week, vergelijk_met_week=None):
+def _cache_sleutel(week, vergelijk_met_week=None, ronde=1):
+    """
+    De sleutel waaronder een toernooi-uitkomst wordt bewaard.
+
+    De ronde hoort erin. Zonder ronde in de sleutel overschrijft de tweede run
+    van een week de eerste -- en juist die eerste (woensdag) is het bewijs
+    waarop de woensdag-inzending wordt beoordeeld, en de data waarmee het
+    werkcollege van die dag werkt.
+
+    Ronde 1 houdt bewust de oude sleutel ("5" of "5_vs_1"), zodat alles wat
+    vóór deze wijziging is gedraaid gewoon vindbaar blijft.
+    """
+    basis = str(week) if vergelijk_met_week is None else f"{week}_vs_{vergelijk_met_week}"
+    return basis if ronde == 1 else f"{basis}_ronde{ronde}"
+
+
+def haal_gecacht_resultaat_op(week, vergelijk_met_week=None, ronde=1):
     """
     Haalt het laatst gecachte toernooi-resultaat op zonder OOIT een nieuwe
     run te starten -- ook niet als er nog niks gecacht is. Voor de docent-knop
@@ -88,17 +104,54 @@ def haal_gecacht_resultaat_op(week, vergelijk_met_week=None):
     resultaat aangevuld met "gedraaid": True.
     """
     alle_resultaten = db.laad_toernooi_resultaten()
-    cache_key = str(week) if vergelijk_met_week is None else f"{week}_vs_{vergelijk_met_week}"
-    resultaat = alle_resultaten.get(cache_key)
+    resultaat = alle_resultaten.get(_cache_sleutel(week, vergelijk_met_week, ronde))
     if resultaat is None:
-        return {"gedraaid": False, "week": week, "vergelijk_met_week": vergelijk_met_week}
+        return {
+            "gedraaid": False,
+            "week": week,
+            "vergelijk_met_week": vergelijk_met_week,
+            "ronde": ronde,
+        }
     return {**resultaat, "gedraaid": True}
 
 
-def draai_toernooi(week, vergelijk_met_week=None, n_simulaties=5, n_handen=50, forceer_opnieuw=False):
+def _startstacks_uit_vorige_ronde(alle_resultaten, week, vergelijk_met_week, ronde):
+    """
+    De startstacks voor `ronde`, afgeleid uit de eindstand van de ronde ervoor.
+
+    Retourneert None voor ronde 1 en ook als de vorige ronde niet (meer) in de
+    cache staat -- dan begint iedereen gewoon weer op de standaardstack, wat
+    het oude gedrag is.
+    """
+    if ronde <= 1:
+        return None
+    vorige = alle_resultaten.get(_cache_sleutel(week, vergelijk_met_week, ronde - 1))
+    if not vorige or not vorige.get("eindstand_per_bot"):
+        return None
+    return bereken_startstacks(vorige["eindstand_per_bot"])
+
+
+def draai_toernooi(
+    week,
+    vergelijk_met_week=None,
+    n_simulaties=5,
+    n_handen=50,
+    forceer_opnieuw=False,
+    ronde=1,
+):
     """
     Draait (of hergebruikt uit cache) het toernooi voor `week`, optioneel
     samengevoegd met de bots van `vergelijk_met_week`.
+
+    `ronde` maakt meerdere toernooien binnen dezelfde week mogelijk zonder dat
+    ze elkaar overschrijven: ronde 1 is de woensdag-run, ronde 2 de run later
+    in de week. Elke ronde krijgt een eigen cachesleutel én een eigen seed.
+
+    Vanaf ronde 2 spelen de bots door met wat ze verdiend hebben: hun stack is
+    de eindstand van de vorige ronde + 1000 voor iedereen. Wie op woensdag niet
+    (of met een niks-doende bot) meedeed, begint dus achter op wie dat wel deed.
+    De bot zelf mag tussen de rondes wél vernieuwd zijn -- er wordt altijd de
+    nieuwste goedgekeurde inzending gebruikt; alleen de chips zijn erfelijk.
 
     Retourneert:
         {
@@ -107,12 +160,14 @@ def draai_toernooi(week, vergelijk_met_week=None, n_simulaties=5, n_handen=50, f
             "n_bots": int,
             "namen_deelnemers": [...],       # bot-namen van `week` zelf
             "aangevuld_met_oefenbots": int,
+            "ronde": int,
+            "startstacks": {...} | None,     # None in ronde 1
             "hand_log": [...],
             "eindstand_per_bot": {...},
         }
     """
     alle_resultaten = db.laad_toernooi_resultaten()
-    cache_key = str(week) if vergelijk_met_week is None else f"{week}_vs_{vergelijk_met_week}"
+    cache_key = _cache_sleutel(week, vergelijk_met_week, ronde)
 
     if not forceer_opnieuw and cache_key in alle_resultaten:
         return alle_resultaten[cache_key]
@@ -132,6 +187,7 @@ def draai_toernooi(week, vergelijk_met_week=None, n_simulaties=5, n_handen=50, f
         resultaat = {
             "week": week,
             "vergelijk_met_week": vergelijk_met_week,
+            "ronde": ronde,
             "n_bots": len(bots),
             "namen_deelnemers": namen_hoofdweek,
             "aangevuld_met_oefenbots": aangevuld,
@@ -141,14 +197,24 @@ def draai_toernooi(week, vergelijk_met_week=None, n_simulaties=5, n_handen=50, f
         }
         return resultaat
 
-    uitkomst = speel_toernooi(bots, n_simulaties=n_simulaties, n_handen=n_handen, seed=week)
+    startstacks = _startstacks_uit_vorige_ronde(alle_resultaten, week, vergelijk_met_week, ronde)
+
+    uitkomst = speel_toernooi(
+        bots,
+        n_simulaties=n_simulaties,
+        n_handen=n_handen,
+        seed=week * 10 + ronde,
+        startstacks=startstacks,
+    )
 
     resultaat = {
         "week": week,
         "vergelijk_met_week": vergelijk_met_week,
+        "ronde": ronde,
         "n_bots": len(bots),
         "namen_deelnemers": namen_hoofdweek,
         "aangevuld_met_oefenbots": aangevuld,
+        "startstacks": startstacks,
         "hand_log": uitkomst["hand_log"],
         "eindstand_per_bot": uitkomst["eindstand_per_bot"],
     }
