@@ -352,7 +352,7 @@ def datacamp_tab():
         return
 
     kolom_af, kolom_verstreken, kolom_laat, kolom_xp = st.columns(4)
-    kolom_af.metric("Courses af", f"{stand['af']} / {stand['totaal']}")
+    kolom_af.metric("Verplicht af", f"{stand['af']} / {stand['totaal']}")
     kolom_verstreken.metric("Deadlines verstreken", stand["van_verstreken"])
     kolom_laat.metric("Na de deadline af", stand["te_laat"])
     kolom_xp.metric("XP dit blok", f"{stand['xp']:,}".replace(",", "."))
@@ -362,13 +362,22 @@ def datacamp_tab():
     else:
         st.success("Je hebt alle verstreken deadlines gehaald.")
 
+    # Aanbevolen courses staan bewust apart en zonder waarschuwing: die tellen
+    # niet mee voor je eindresultaat, dus een gemiste deadline is er geen.
+    if stand.get("aanbevolen_totaal"):
+        st.caption(
+            f"Daarnaast {stand['aanbevolen_af']} van de {stand['aanbevolen_totaal']} aanbevolen "
+            "courses af. Die tellen niet mee voor je eindresultaat — ze verdiepen de stof."
+        )
+
     tabel = pd.DataFrame(
         [
             {
                 "": STATUS_ICOON.get(regel["status"], ""),
                 "Code": regel["code"],
                 "Course": regel["titel"],
-                "Deadline": regel["deadline"],
+                "Soort": "verplicht" if regel.get("verplicht", True) else "aanbevolen",
+                "Deadline": regel["deadline"] if regel.get("verplicht", True) else "—",
                 "Afgerond op": regel["afgerond_op"] or "—",
                 "Status": regel["status"],
             }

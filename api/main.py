@@ -468,6 +468,8 @@ def datacamp_eigen_stand(student_id: str, ok: bool = Depends(db.verifieer_studen
         "van_verstreken": vat["verstreken"],
         "te_laat": vat["te_laat"],
         "gemist": vat["gemist"],
+        "aanbevolen_af": vat["aanbevolen_af"],
+        "aanbevolen_totaal": vat["aanbevolen_totaal"],
         "xp": ikzelf.get("xp", 0),
         "courses": rooster.status_per_course(ikzelf["courses"], peildatum),
         "klas": {**klas, "jij_staat_boven_percentage": round(100 * beter_dan / len(alle_af)) if alle_af else 0},
