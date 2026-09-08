@@ -268,6 +268,43 @@ def _toon_toernooi_resultaat(resultaat, gedraaid_nu):
         st.info(resultaat.get("boodschap", "Nog geen eindstand beschikbaar."))
 
 
+def _docent_bonus(docent_token):
+    """De bonusstand van de hele klas, met de opbouw per bot-week uitklapbaar."""
+    st.markdown("**Bonuspunten pokerlijn**")
+    if not st.button("Bonusstand ophalen", help="Week 1 telt niet mee, week 3 voor 20%, week 5 voor 80%."):
+        return
+
+    response = api_get("/bonus", docent_token)
+    if response.status_code != 200:
+        st.error(f"Mislukt ({response.status_code}): {_foutmelding(response)}")
+        return
+
+    data = response.json()
+    studenten = data.get("studenten") or []
+    if not studenten:
+        st.info("Nog geen inzendingen, dus nog geen bonus om te tonen.")
+        return
+
+    st.dataframe(
+        pd.DataFrame(
+            [
+                {
+                    "student_id": r["student_id"],
+                    "bonus": r["bonus_afgerond"],
+                    **{f"week {w['week']}": w["punten"] for w in r["per_week"]},
+                }
+                for r in studenten
+            ]
+        ),
+        width="stretch",
+    )
+
+    with st.expander("Opbouw per student"):
+        for r in studenten:
+            st.markdown(f"**{r['student_id']}** — {r['bonus_afgerond']:.1f} van de {data['maximaal']:.1f}")
+            st.dataframe(pd.DataFrame(r["per_week"]), width="stretch")
+
+
 def docent_tab():
     st.subheader("Docent-overzicht")
     docent_token = st.text_input("Docent-token", type="password", key="docent_token")
@@ -288,6 +325,9 @@ def docent_tab():
 
     st.divider()
     _docent_datacamp(docent_token)
+
+    st.divider()
+    _docent_bonus(docent_token)
 
     st.divider()
     st.markdown("**Toernooi-uitslag**")

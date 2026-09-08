@@ -11,6 +11,8 @@ Doel: nul handmatige nakijkdruk voor de docent.
 - POST /toernooi/{week}/opnieuw -> docent-only: forceer een nieuwe toernooi-run
 - GET  /toernooi/{week}/resultaat -> docent-only: laatst gecachte uitslag, draait NOOIT zelf een toernooi
 - GET  /locaties/{week} -> geolocaties van alle bots (vanaf Week 5), met eindstand indien bekend
+- GET  /bonus/{student_id} -> student ziet zijn EIGEN bonuspunt met de opbouw per week
+- GET  /bonus            -> docent-only: de bonus van de hele klas
 - POST /datacamp/snapshot -> docent-only: wekelijkse DataCamp-voortgang wegschrijven
 - GET  /datacamp/overzicht -> docent-only: hele klas langs de roosterdeadlines, incl. achterblijvers
 - GET  /datacamp/stand/{student_id} -> student ziet zijn EIGEN DataCamp-stand + anoniem klasgemiddelde
@@ -25,6 +27,7 @@ from pydantic import BaseModel, Field
 
 import database as db
 import datacamp_rooster as rooster
+from bonus_rooster import BOT_WEKEN, MAX_BONUS, bonus_hele_klas, bonus_per_student
 from bot_validator import valideer_bot_code
 from chart_validator import valideer_chart_json
 from locatie_validator import valideer_locatie
@@ -374,6 +377,42 @@ def export(week: int, ok: bool = Depends(db.verifieer_docent_token)):
             }
         )
     return overzicht
+
+
+# ---------------------------------------------------------------------------
+# Bonuspunten pokerlijn
+# ---------------------------------------------------------------------------
+def _inzendingen_per_week(student_id: str) -> dict:
+    """{weeknummer: [inzending, ...]} voor één student, over alle weken heen."""
+    return {
+        week_key: inzendingen_per_student[student_id]
+        for week_key, inzendingen_per_student in db.laad_submissions().items()
+        if student_id in inzendingen_per_student
+    }
+
+
+@app.get("/bonus/{student_id}")
+def bonus(student_id: str, ok: bool = Depends(db.verifieer_student_token)):
+    """
+    Je bonuspunt voor de pokerlijn, met de opbouw erbij.
+
+    Per bot-week zie je je sprintscore (op tijd een echte bot ingeleverd en
+    daarna verbeterd) en je prestatiescore (je plek in de eindstand van de
+    laatste ronde). Week 1 telt niet mee, week 3 voor 20% en week 5 voor 80%.
+    Zolang het toernooi van een week nog niet gedraaid is, staat de
+    prestatiescore op null -- dat is "nog niet bekend", geen nul.
+    """
+    return bonus_per_student(student_id, _inzendingen_per_week(student_id), db.laad_toernooi_resultaten())
+
+
+@app.get("/bonus")
+def bonus_overzicht(ok: bool = Depends(db.verifieer_docent_token)):
+    """Docent-only: de bonus van de hele klas, hoogste eerst, met de opbouw per week."""
+    return {
+        "maximaal": MAX_BONUS,
+        "weging": {item["week"]: item["gewicht"] for item in BOT_WEKEN},
+        "studenten": bonus_hele_klas(db.laad_submissions(), db.laad_toernooi_resultaten()),
+    }
 
 
 # ---------------------------------------------------------------------------
