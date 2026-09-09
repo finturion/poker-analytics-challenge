@@ -80,14 +80,16 @@ def _heeft_parameter(kies_actie, naam):
 
 def _ondersteunt_grote_raise(kies_actie):
     """
-    "grote_raise" mag pas vanaf Week 5, en de gate is "strategie" in de signatuur.
+    "grote_raise" mag vanaf Week 3, op hetzelfde signaal als all-in: "stack".
 
-    Dezelfde logica als bij all-in: een bot krijgt een spelregel er alleen bij als
-    hij het gereedschap heeft om die zinvol te gebruiken. Inzetgrootte kiezen is
-    pas een keuze als je ook een strategie en een bluf-kans hebt -- anders is
-    "groot inzetten" niets meer dan een tweede woord voor raise.
+    Stond eerst op "strategie" (Week 5), met het argument dat inzetgrootte pas een
+    keuze is als je een strategie en een bluf-kans hebt. Dat argument houdt geen
+    stand: vanaf Week 3 heeft een bot pot odds en een winkans, en dat is precies
+    wat je nodig hebt om te bepalen hóeveel je inzet. En het is de eerste vraag
+    die een student stelt zodra hij de regels leert -- "hoeveel is een raise?" --
+    dus die kun je daar beter meteen beantwoorden.
     """
-    return _heeft_parameter(kies_actie, "strategie")
+    return _heeft_parameter(kies_actie, "stack")
 
 
 def _ondersteunt_all_in_regels(kies_actie):

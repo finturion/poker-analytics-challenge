@@ -23,10 +23,10 @@ TOEGESTANE_ACTIES = {"call", "raise", "fold", "check"}
 # _ondersteunt_all_in_regels in poker_adapter.py, dat aan de speel-kant op
 # exact hetzelfde signaal ("stack" in de signatuur) gate't.
 TOEGESTANE_ACTIES_MET_STACK = TOEGESTANE_ACTIES | {"all_in"}
-# "grote_raise" mag pas vanaf Week 5, waar de bot ook een strategie en een
-# bluf_kans heeft. Inzetgrootte kiezen is pas een keuze als je iets hebt om die
-# keuze op te baseren; zonder dat is het een tweede woord voor raise. Zie
-# _ondersteunt_grote_raise in poker_adapter.py, dat op hetzelfde signaal gate't.
+# "grote_raise" mag vanaf Week 3, op hetzelfde signaal als all_in: de bot kent
+# zijn stack. Vanaf die week heeft hij ook pot odds en een winkans, en dat is wat
+# je nodig hebt om te bepalen hóeveel je inzet. Zie _ondersteunt_grote_raise in
+# poker_adapter.py, dat op hetzelfde signaal gate't.
 TOEGESTANE_ACTIES_MET_SIZING = TOEGESTANE_ACTIES_MET_STACK | {"grote_raise"}
 TOEGESTANE_STRATEGIEEN = {"tight", "loose", "balanced", "aggressive"}
 BLUF_KANS_MIN, BLUF_KANS_MAX = 0.0, 1.0
@@ -51,7 +51,7 @@ VERWACHTE_FUNCTIES = {
     1: {"functienaam": "kies_actie", "heeft_stack": False, "heeft_strategie": False,
         "heeft_bluf_kans": False, "heeft_sizing": False},
     3: {"functienaam": "kies_actie", "heeft_stack": True, "heeft_strategie": False,
-        "heeft_bluf_kans": False, "heeft_sizing": False},
+        "heeft_bluf_kans": False, "heeft_sizing": True},
     5: {"functienaam": "kies_actie", "heeft_stack": True, "heeft_strategie": True,
         "heeft_bluf_kans": True, "heeft_sizing": True},
 }
