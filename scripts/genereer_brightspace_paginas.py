@@ -161,7 +161,13 @@ WEKEN = [
             ("Week5_Werkcollege8.ipynb", "Werkcollege 8 — Resultaten, verfijnen en de aftrap van de laatste case",
              None),
         ],
-        "hulpbestanden": [],
+        "hulpbestanden": [
+            ("_hulpfuncties.py", "Hulpfuncties",
+             "Hetzelfde bestand als in week 1. Werkcollege 7 importeert het, dus zet je "
+             "notebook in dezelfde map als je werk van week 1 en 3, of kopieer dit bestand "
+             "erheen. Je eigen <code>mijn_bot_week3.py</code> heb je er ook bij nodig: "
+             "daar begin je Bot v3 mee."),
+        ],
         "powerpoints": [],
         "deadlines": [
             ("woensdag 09:00", "Bot v3 — <strong>dit toernooi telt mee</strong>: 1e 0,5 · 2e 0,4 · 3e 0,3 · 4e 0,2 · 5e 0,1"),
@@ -186,12 +192,18 @@ WEKEN = [
             ("oefenbots.csv", "Oefenbots met gemeente",
              "In de map data/ naast je notebook."),
             ("gemeenten_nl_fallback.geojson", "Gemeentegrenzen (reservebestand)",
-             "Alleen nodig als de PDOK-API niet reageert; het notebook haalt de grenzen "
-             "normaal zelf via de API op."),
+             "Ook in de map <code>data/</code>. Alleen nodig als de PDOK-API niet reageert; "
+             "het notebook haalt de grenzen normaal zelf via de API op, en dat ophalen is "
+             "onderdeel van de opdracht."),
         ],
         "powerpoints": [],
         "deadlines": [],
-        "let_op": None,
+        "let_op": "Dit notebook heeft <code>geopandas</code> nodig, en dat is de enige "
+                  "package van het hele blok die soms niet in één keer installeert. Doe dat "
+                  "vóór het werkcollege: <code>pip install geopandas folium</code>. Lukt het "
+                  "niet, meld het dan vooraf — tijdens het werkcollege een installatie "
+                  "uitzoeken kost je de hele les. De kaart gebruikt de uitslag van het "
+                  "toernooi van vrijdag in week 5, dus de eindstand van de hele reeks.",
     },
 ]
 
@@ -295,11 +307,18 @@ def weekpagina(w: dict) -> str:
     if w["let_op"]:
         delen.append(f'<h2>Let op</h2>\n<p>{w["let_op"]}</p>')
 
+    # Alleen in een week waarin er iets in te leveren valt. In week 2, 4 en 6
+    # staat er geen botdeadline, en dan is een uitleg over lever_in() een
+    # instructie voor iets wat deze week niet gebeurt.
+    if w["deadlines"]:
+        delen.append(
+            '<h2>Inleveren</h2>\n'
+            '<p>Inleveren doe je in het notebook zelf, met <code>lever_in()</code>. Je mag zo '
+            'vaak opnieuw inleveren als je wilt; het systeem gebruikt altijd je laatste '
+            'inzending. Je studentnummer en token staan bovenaan je notebook.</p>'
+        )
+
     delen.append(
-        '<h2>Inleveren</h2>\n'
-        '<p>Inleveren doe je in het notebook zelf, met <code>lever_in()</code>. Je mag zo '
-        'vaak opnieuw inleveren als je wilt; het systeem gebruikt altijd je laatste '
-        'inzending. Je studentnummer en token staan bovenaan je notebook.</p>\n'
         f'<p><a rel="noopener" href="{API}/docs" target="_blank">API-documentatie</a> — '
         'voor wie de resultaten zelf uit de API wil ophalen.</p>'
     )
