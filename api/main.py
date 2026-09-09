@@ -12,6 +12,7 @@ Doel: nul handmatige nakijkdruk voor de docent.
 - GET  /toernooi/{week}/resultaat -> docent-only: laatst gecachte uitslag, draait NOOIT zelf een toernooi
 - GET  /locaties/{week} -> geolocaties van alle bots (vanaf Week 5), met eindstand indien bekend
 - POST /bot-test/{student_id} -> test de bot van een klasgenoot op je eigen situaties (geen code)
+- GET  /referentiebots/{week} -> de vaste meetlat-bots: altijd hun beschrijving, vanaf Week 5 ook hun code
 - GET  /bonus/{student_id} -> student ziet zijn EIGEN bonuspunt met de opbouw per week
 - GET  /bonus            -> docent-only: de bonus van de hele klas
 - POST /datacamp/snapshot -> docent-only: wekelijkse DataCamp-voortgang wegschrijven
@@ -37,6 +38,8 @@ from bonus_rooster import (
     puntentabel,
 )
 from bot_validator import MAX_TESTGEVALLEN_PEER, speel_testgevallen, valideer_bot_code
+from referentiebots import beschrijvingen as referentie_beschrijvingen
+from referentiebots import OPENBAAR_VANAF_WEEK, broncode as referentie_broncode
 from chart_validator import valideer_chart_json
 from locatie_validator import valideer_locatie
 from toernooi_runner import draai_toernooi, haal_gecacht_resultaat_op
@@ -406,6 +409,29 @@ def export(week: int, ok: bool = Depends(db.verifieer_docent_token)):
             }
         )
     return overzicht
+
+
+@app.get("/referentiebots/{week}")
+def referentiebots(week: int, student_id: str, ok: bool = Depends(db.verifieer_student_token)):
+    """
+    De referentiebots die deze week meespelen: een vaste meetlat.
+
+    Ze veranderen nooit, dus "ik zit boven de pot-odds-bot" betekent elke week
+    hetzelfde — anders dan je plek in de klas, die meebeweegt met wat iedereen
+    inlevert. Ze spelen echt mee in het toernooi en beïnvloeden de chips, maar ze
+    staan niet in de puntenladder: die wordt alleen over studenten gerekend.
+
+    Hun beschrijving en niveau zijn altijd zichtbaar — een meetlat waarvan je niet
+    weet wat hij doet is geen meetlat. De broncode komt er vanaf Week 5 bij, als de
+    pokerlijn afrondt: dan valt er nog van te leren voor je slotinzending, en het
+    kost niemand een bonuspunt want het is docentcode.
+    """
+    return {
+        "week": week,
+        "bots": referentie_beschrijvingen(week),
+        "broncode_openbaar_vanaf_week": OPENBAAR_VANAF_WEEK,
+        "broncode": referentie_broncode(week),
+    }
 
 
 @app.post("/bot-test/{student_id}")

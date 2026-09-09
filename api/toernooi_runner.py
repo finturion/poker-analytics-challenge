@@ -9,6 +9,7 @@ gecached, zodat een toernooi maar één keer per combinatie hoeft te draaien.
 """
 import database as db
 from bonus_rooster import BONUSWEEK
+from referentiebots import referentiebots_voor
 from poker_adapter import bereken_startstacks, speel_toernooi
 
 # Reservebots vullen de tafel aan als er nog te weinig geldige inzendingen zijn
@@ -221,6 +222,7 @@ def draai_toernooi(
             "n_bots": int,
             "namen_deelnemers": [...],       # bot-namen van `week` zelf
             "aangevuld_met_oefenbots": int,
+            "referentiebots": [...],         # spelen mee, tellen niet voor de bonus
             "ronde": int,
             "formatief": bool,               # True = oefenronde, telt niet mee
             "n_simulaties": int,             # over hoeveel simulaties gemiddeld is
@@ -243,6 +245,14 @@ def draai_toernooi(
     if vergelijk_met_week is None:
         namen_hoofdweek = list(bots.keys())
 
+    # De referentiebots komen HIER, ná het vastleggen van namen_hoofdweek. Dat is
+    # geen detail: bonus_rooster rekent de puntenladder alleen over die lijst, dus
+    # een referentiebot die de hele klas verslaat pakt niemand zijn bonus af. Hij
+    # beïnvloedt wel de chips aan tafel -- hij speelt echt mee.
+    referentie = referentiebots_voor(week)
+    for naam, info in referentie.items():
+        bots.setdefault(naam, info)
+
     aangevuld = 0
     for oefen_naam, oefen_functie in OEFENBOTS.items():
         if len(bots) >= 2:
@@ -259,6 +269,7 @@ def draai_toernooi(
             "n_bots": len(bots),
             "namen_deelnemers": namen_hoofdweek,
             "aangevuld_met_oefenbots": aangevuld,
+            "referentiebots": sorted(referentie),
             "n_simulaties": n_simulaties,
             "hand_log": [],
             "eindstand_per_bot": {},
@@ -284,6 +295,7 @@ def draai_toernooi(
         "n_bots": len(bots),
         "namen_deelnemers": namen_hoofdweek,
         "aangevuld_met_oefenbots": aangevuld,
+        "referentiebots": sorted(referentie),
         "n_simulaties": n_simulaties,
         "startstacks": startstacks,
         "hand_log": uitkomst["hand_log"],
