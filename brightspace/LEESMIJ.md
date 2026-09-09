@@ -45,6 +45,15 @@ houden daar hun eigen URL. Een student die zo'n URL uit een eerdere periode nog
 heeft, kan die mogelijk blijven openen. Test dat met een studentaccount voordat
 je een bestand er alvast neerzet.
 
+## Bewust kaal
+
+De pagina's gebruiken alleen `h1`, `h2`, `p`, `ul`/`li`, `a`, `strong` en `code`
+-- dezelfde vorm als de bestaande Brightspace-pagina, met de HvA-shell eromheen.
+Geen panels, jumbotrons, tabellen of glyphicons. Die maken de pagina drukker
+zonder dat een student er iets aan heeft, en als je er later met de hand in knipt
+is een half kapot panel lastiger te zien dan een verdwaalde alinea. Elke pagina
+is 2 tot 3,5 KB.
+
 ## Wat het script controleert
 
 Na het schrijven controleert het script de zeven bestanden:

@@ -98,7 +98,7 @@ WEKEN = [
     },
     {
         "week": 2,
-        "titel": "Visual Maandag — ruis, focal points en ordening",
+        "titel": "Visual Maandag: ruis, focal points en ordening",
         "lead": "Deze week geen nieuwe botversie. Je leert grafieken lezen en maken met "
                 "de data die je bot heeft opgeleverd.",
         "werkcolleges": [
@@ -115,7 +115,7 @@ WEKEN = [
     },
     {
         "week": 3,
-        "titel": "Bot v2 — functies, dictionaries, pandas en Plotly",
+        "titel": "Bot v2: functies, dictionaries, pandas en Plotly",
         "lead": "Je bot krijgt er informatie bij: zijn stack, de ronde en de echte "
                 "spelregels. Twee deadlines deze week.",
         "werkcolleges": [
@@ -140,7 +140,7 @@ WEKEN = [
     },
     {
         "week": 4,
-        "titel": "Visual Maandag — spaghetti-grafieken, kleurcontrast en storytelling",
+        "titel": "Visual Maandag: spaghetti-grafieken, kleurcontrast en storytelling",
         "lead": "Toetsweek en de afronding van Case 2. Geen nieuwe botversie.",
         "werkcolleges": [
             ("Week4_Werkcollege6.ipynb", "Werkcollege 6 — Visual Maandag", None),
@@ -152,7 +152,7 @@ WEKEN = [
     },
     {
         "week": 5,
-        "titel": "Bot v3 — en de week waarin de bonuspunten vallen",
+        "titel": "Bot v3, en de week waarin de bonuspunten vallen",
         "lead": "Drie dagen, twee toernooien die meetellen en een oefenronde ertussen. "
                 "Hier is de volle 1,0 bonuspunt te verdienen.",
         "werkcolleges": [
@@ -175,7 +175,7 @@ WEKEN = [
     },
     {
         "week": 6,
-        "titel": "Visual Maandag — Information Architecture & Progressive Disclosure",
+        "titel": "Visual Maandag: Information Architecture & Progressive Disclosure",
         "lead": "De afsluiting van de pokerlijn: de eindstand op de kaart van Nederland, "
                 "en hoe je een dashboard opbouwt dat iemand anders kan lezen.",
         "werkcolleges": [
@@ -197,6 +197,13 @@ WEKEN = [
 
 # ---------------------------------------------------------------------------
 # HTML-bouwstenen. Bootstrap 3-klassen die het HvA-template ondersteunt.
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# HTML. Bewust kaal: koppen, alinea's, links en lijsten -- dezelfde vorm als de
+# bestaande Brightspace-pagina, met de HvA-shell eromheen. Geen panels,
+# jumbotrons, tabellen of glyphicons: die maken de pagina drukker zonder dat de
+# student er iets aan heeft, en ze zijn met de hand niet te onderhouden.
 # ---------------------------------------------------------------------------
 
 KOP = """<!DOCTYPE html>
@@ -225,7 +232,7 @@ VOET = """</div>
 
 
 # Bestanden die op Brightspace anders heten dan in deze repo. De controle
-# hieronder kijkt of het bronbestand bestaat; zonder deze tabel zou hij op zo'n
+# onderaan kijkt of het bronbestand bestaat; zonder deze tabel zou hij op zo'n
 # bestand vals alarm slaan. Verandert de naam op Brightspace, dan hier ook.
 ANDERE_NAAM_OP_BRIGHTSPACE = {
     "Uitleg Powerpoint Week 1 - Werkcollege 1.pptx": "powerpoints/Pokerbot_Upgrade_Week1.pptx",
@@ -233,110 +240,63 @@ ANDERE_NAAM_OP_BRIGHTSPACE = {
 
 
 def bestandslink(pad: str, label: str) -> str:
-    return (f'<a rel="noopener" href="{BASISPAD}/{pad}" target="_blank">'
-            f'{html.escape(label)}</a>')
+    return (f'<p><a rel="noopener" href="{BASISPAD}/{pad}" target="_blank">'
+            f'{html.escape(label)}</a></p>')
 
 
-def lijstgroep(items: list[tuple[str, str, str | None]], icoon: str) -> str:
+def bestandenblok(items) -> str:
+    """Link, en daaronder als losse alinea waar het bestand moet staan."""
     regels = []
     for pad, label, toelichting in items:
-        extra = f'<br><small class="text-muted">{toelichting}</small>' if toelichting else ""
-        regels.append(
-            f'<li class="list-group-item">'
-            f'<span class="glyphicon glyphicon-{icoon}" aria-hidden="true"></span> '
-            f'{bestandslink(pad, label)}{extra}</li>'
-        )
-    return '<ul class="list-group">\n' + "\n".join(regels) + '\n</ul>'
-
-
-def paneel(titel: str, inhoud: str, soort: str = "default") -> str:
-    return (f'<div class="panel panel-{soort}">\n'
-            f'<div class="panel-heading"><h3 class="panel-title">{titel}</h3></div>\n'
-            f'{inhoud}\n</div>')
-
-
-def deadlinetabel(deadlines: list[tuple[str, str]]) -> str:
-    rijen = "\n".join(
-        f'<tr><td><strong>{wanneer}</strong></td><td>{wat}</td></tr>'
-        for wanneer, wat in deadlines
-    )
-    return ('<table class="table table-striped">\n<tbody>\n'
-            + rijen + '\n</tbody>\n</table>')
-
-
-def datacamp_van_week(week: int) -> list[dict]:
-    return [c for c in datacamp_rooster.ROOSTER if c["week"] == week]
+        regels.append(bestandslink(pad, label))
+        if toelichting:
+            regels.append(f"<p>{toelichting}</p>")
+    return "\n".join(regels)
 
 
 def weekpagina(w: dict) -> str:
     ma, vr = weekdatums(w["week"])
     titel = f'Week {w["week"]} — {w["titel"]}'
-    onderdelen = [KOP.format(
+    delen = [KOP.format(
         titel=html.escape(f'{titel} | Pokerbot Analytics Challenge'),
         omschrijving=html.escape(w["lead"]),
     )]
 
-    onderdelen.append(
-        f'<h1>{html.escape(titel)}</h1>\n'
-        f'<p class="lead">{html.escape(w["lead"])}</p>\n'
-        f'<p><small class="text-muted">Pokerbot Analytics Challenge · '
-        f'{datum_nl(ma)} t/m {datum_nl(vr)} 2026</small></p>'
-    )
+    delen.append(f'<h1>{html.escape(titel)}</h1>')
+    delen.append(f'<p>{html.escape(w["lead"])}</p>')
+    delen.append(f'<p>Pokerbot Analytics Challenge · {datum_nl(ma)} t/m {datum_nl(vr)} 2026</p>')
 
     if w["deadlines"]:
-        onderdelen.append(paneel(
-            '<span class="glyphicon glyphicon-time" aria-hidden="true"></span> '
-            'Wat moet er wanneer binnen zijn?',
-            deadlinetabel(w["deadlines"]),
-            "warning",
-        ))
+        regels = "\n".join(f'<li><strong>{wanneer}</strong> — {wat}</li>'
+                           for wanneer, wat in w["deadlines"])
+        delen.append(f'<h2>Deadlines</h2>\n<ul>\n{regels}\n</ul>')
     else:
-        onderdelen.append(
-            '<div class="alert alert-info" role="alert">'
-            '<span class="glyphicon glyphicon-info-sign" aria-hidden="true"></span> '
-            'Deze week lever je geen nieuwe botversie in.</div>'
-        )
+        delen.append('<h2>Deadlines</h2>\n'
+                     '<p>Deze week lever je geen nieuwe botversie in.</p>')
 
-    onderdelen.append(paneel(
-        'Notebooks',
-        lijstgroep(w["werkcolleges"], "book"),
-    ))
+    delen.append('<h2>Notebooks</h2>\n' + bestandenblok(w["werkcolleges"]))
 
     if w["hulpbestanden"]:
-        onderdelen.append(paneel(
-            'Hulpbestanden',
-            lijstgroep(w["hulpbestanden"], "paperclip"),
-        ))
+        delen.append('<h2>Hulpbestanden</h2>\n' + bestandenblok(w["hulpbestanden"]))
 
     if w["powerpoints"]:
-        onderdelen.append(paneel(
-            'Slides',
-            lijstgroep([(p, l, None) for p, l in w["powerpoints"]], "picture"),
-        ))
+        delen.append('<h2>Slides</h2>\n'
+                     + bestandenblok([(p, l, None) for p, l in w["powerpoints"]]))
 
     dc = datacamp_van_week(w["week"])
     if dc:
-        rijen = "\n".join(
-            f'<tr><td>{c["code"]}</td><td>{html.escape(c["titel"])}</td>'
-            f'<td>{datum_nl(date.fromisoformat(c["deadline"]))}</td></tr>'
+        regels = "\n".join(
+            f'<li>{c["code"]} — {html.escape(c["titel"])}, '
+            f'vóór {datum_nl(date.fromisoformat(c["deadline"]))}</li>'
             for c in dc
         )
-        onderdelen.append(paneel(
-            'DataCamp deze week',
-            '<table class="table table-striped">\n<thead><tr>'
-            '<th>Course</th><th>Titel</th><th>Deadline</th></tr></thead>\n'
-            f'<tbody>\n{rijen}\n</tbody>\n</table>',
-        ))
+        delen.append(f'<h2>DataCamp deze week</h2>\n<ul>\n{regels}\n</ul>')
 
     if w["let_op"]:
-        onderdelen.append(
-            '<div class="well">\n'
-            '<h3><span class="glyphicon glyphicon-pushpin" aria-hidden="true"></span> Let op</h3>\n'
-            f'<p>{w["let_op"]}</p>\n</div>'
-        )
+        delen.append(f'<h2>Let op</h2>\n<p>{w["let_op"]}</p>')
 
-    onderdelen.append(
-        '<h2>Hoe je inlevert</h2>\n'
+    delen.append(
+        '<h2>Inleveren</h2>\n'
         '<p>Inleveren doe je in het notebook zelf, met <code>lever_in()</code>. Je mag zo '
         'vaak opnieuw inleveren als je wilt; het systeem gebruikt altijd je laatste '
         'inzending. Je studentnummer en token staan bovenaan je notebook.</p>\n'
@@ -344,78 +304,71 @@ def weekpagina(w: dict) -> str:
         'voor wie de resultaten zelf uit de API wil ophalen.</p>'
     )
 
-    onderdelen.append(VOET)
-    return "\n".join(onderdelen)
+    delen.append(VOET)
+    return "\n".join(delen)
+
+
+def datacamp_van_week(week: int) -> list[dict]:
+    return [c for c in datacamp_rooster.ROOSTER if c["week"] == week]
 
 
 def overzichtspagina() -> str:
-    onderdelen = [KOP.format(
+    delen = [KOP.format(
         titel="Pokerbot Analytics Challenge | Introduction to Data Science",
         omschrijving="Weekoverzicht van de Pokerbot Analytics Challenge: "
                      "wat je per week bouwt, inlevert en wanneer.",
     )]
 
-    onderdelen.append(
-        '<div class="jumbotron">\n<h1>Pokerbot Analytics Challenge</h1>\n'
-        '<p class="lead">Zes weken, drie botversies, maximaal 1,0 bonuspunt.</p>\n</div>'
-    )
+    delen.append('<h1>Pokerbot Analytics Challenge</h1>')
+    delen.append('<p>Zes weken, drie botversies, maximaal 1,0 bonuspunt.</p>')
 
-    onderdelen.append(
-        '<div class="well">\n'
-        '<h3><span class="glyphicon glyphicon-star" aria-hidden="true"></span> Hoe je het bonuspunt verdient</h3>\n'
+    delen.append(
+        '<h2>Hoe je het bonuspunt verdient</h2>\n'
         '<p>Alleen in <strong>week 5</strong>. Daar draaien twee toernooien die meetellen: '
-        'woensdagochtend met je woensdagbot en na de slotdeadline van vrijdag met je definitieve bot. '
-        'In elk toernooi levert je plek punten op — eerste 0,5, tweede 0,4, derde 0,3, vierde 0,2, '
-        'vijfde 0,1, daarna niets. Twee keer 0,5 is samen het maximum van 1,0.</p>\n'
-        '<p>Week 1 en 3 leveren geen punten op. Dat zijn de weken waarin je leert hoe je een bot '
-        'bouwt en verbetert — met echte toernooien en echte uitslagen, maar zonder punten.</p>\n</div>'
+        'woensdagochtend met je woensdagbot en na de slotdeadline van vrijdag met je '
+        'definitieve bot. In elk toernooi levert je plek punten op — eerste 0,5, tweede 0,4, '
+        'derde 0,3, vierde 0,2, vijfde 0,1, daarna niets. Twee keer 0,5 is samen het '
+        'maximum van 1,0.</p>\n'
+        '<p>Week 1 en 3 leveren geen punten op. Dat zijn de weken waarin je leert hoe je een '
+        'bot bouwt en verbetert — met echte toernooien en echte uitslagen, maar zonder '
+        'punten.</p>'
     )
 
-    rijen = []
+    regels = []
     for w in WEKEN:
         ma, vr = weekdatums(w["week"])
-        wat = ("nieuwe botversie" if w["deadlines"] else "geen botdeadline")
-        badge = ('<span class="label label-warning">bonuspunten</span>'
-                 if w["week"] == 5 else f'<span class="label label-default">{wat}</span>')
-        rijen.append(
-            f'<tr><td><strong>Week {w["week"]}</strong><br>'
-            f'<small class="text-muted">{datum_nl(ma)}–{datum_nl(vr)}</small></td>'
-            f'<td>{html.escape(w["titel"])}<br>'
-            f'<small class="text-muted">{html.escape(w["lead"])}</small></td>'
-            f'<td>{badge}</td></tr>'
+        wat = "nieuwe botversie" if w["deadlines"] else "geen botdeadline"
+        if w["week"] == 5:
+            wat = "nieuwe botversie, en hier vallen de bonuspunten"
+        regels.append(
+            f'<li><strong>Week {w["week"]}</strong> ({datum_nl(ma)}–{datum_nl(vr)}) — '
+            f'{html.escape(w["titel"])}. {wat.capitalize()}.</li>'
         )
+    delen.append('<h2>De zes weken</h2>\n<ul>\n' + "\n".join(regels) + '\n</ul>')
 
-    onderdelen.append(paneel(
-        'De zes weken',
-        '<table class="table table-striped">\n<thead><tr>'
-        '<th>Wanneer</th><th>Waar het over gaat</th><th></th></tr></thead>\n'
-        f'<tbody>\n{chr(10).join(rijen)}\n</tbody>\n</table>',
-    ))
-
-    onderdelen.append(
-        '<h2>Elke week hetzelfde ritme</h2>\n'
-        '<ul>\n'
+    delen.append(
+        '<h2>Elke week hetzelfde ritme</h2>\n<ul>\n'
         '<li><strong>woensdag 09:00</strong> — je bot moet binnen zijn, want het toernooi '
         'speelt met de bots die er op dat moment zijn.</li>\n'
         '<li><strong>woensdag in het werkcollege</strong> — je ziet de uitslag en analyseert '
         'hoe je bot speelde.</li>\n'
-        '<li><strong>donderdag 18:00</strong> — een verbeterde versie inleveren (in week 5: '
-        'vrijdag 18:00, want dat is de slotdeadline van de hele challenge).</li>\n'
+        '<li><strong>donderdag 18:00</strong> — een verbeterde versie inleveren. In week 5 is '
+        'dat vrijdag 18:00, want dat is de slotdeadline van de hele challenge.</li>\n'
         '</ul>'
     )
 
-    onderdelen.append(
-        '<h2>Hoe je inlevert</h2>\n'
+    delen.append(
+        '<h2>Inleveren</h2>\n'
         '<p>Alles gaat via het notebook van die week: <code>lever_in()</code> stuurt je bot in, '
-        'en de cellen eronder halen de uitslag op. Zo vaak opnieuw inleveren als je wilt — '
-        'het systeem gebruikt altijd je laatste inzending. Je studentnummer en token krijg je '
-        'in week 1 en die blijven het hele blok geldig.</p>\n'
+        'en de cellen eronder halen de uitslag op. Zo vaak opnieuw inleveren als je wilt — het '
+        'systeem gebruikt altijd je laatste inzending. Je studentnummer en token krijg je in '
+        'week 1 en die blijven het hele blok geldig.</p>\n'
         f'<p><a rel="noopener" href="{API}/docs" target="_blank">API-documentatie</a> — '
         'voor wie de resultaten zelf uit de API wil ophalen.</p>'
     )
 
-    onderdelen.append(VOET)
-    return "\n".join(onderdelen)
+    delen.append(VOET)
+    return "\n".join(delen)
 
 
 def controleer(paden: list[str]) -> None:
