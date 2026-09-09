@@ -8,6 +8,7 @@ klasgenoten ziet spelen. Resultaten worden per (week, vergelijk_met_week)
 gecached, zodat een toernooi maar één keer per combinatie hoeft te draaien.
 """
 import database as db
+from bonus_rooster import BONUSWEEK
 from poker_adapter import bereken_startstacks, speel_toernooi
 
 # Reservebots vullen de tafel aan als er nog te weinig geldige inzendingen zijn
@@ -74,6 +75,35 @@ def _verzamel_bots_over_weken(hoofdweek, vergelijk_met_week=None):
             if week == hoofdweek:
                 deelnemers_hoofdweek.append(bot_naam)
     return bots, deelnemers_hoofdweek
+
+
+# Hoeveel keer het hele veld opnieuw over de tafels wordt verdeeld. De eindstand
+# is het gemiddelde over deze simulaties, dus dit getal bepaalt hoeveel van de
+# uitslag skill is en hoeveel toeval.
+#
+# In de bonusweek staat er iets op het spel, dus meten we serieuzer: 30 in plaats
+# van 5 simulaties. Dat is 1500 handen per bot in plaats van 250. Gemeten met 44
+# bots kost dat 16 seconden per run in plaats van 3, en het maakt de onderkant van
+# de ranglijst betrouwbaar. De exacte top-5-volgorde wordt er níet reproduceerbaar
+# van -- bots van gelijke sterkte liggen dichter bij elkaar dan de ruis, en dat
+# los je niet op met simuleren. Zie scripts/meet_toernooi_variantie.py.
+#
+# De andere weken houden 5. Daar telt de uitslag niet mee voor punten; hij is
+# invoer voor de visualisatie-opdracht van de week erna, en die heeft geen 1500
+# handen per bot nodig. Het scheelt de studenten een download van 6 MB.
+STANDAARD_N_SIMULATIES = 5
+N_SIMULATIES_BONUSWEEK = 30
+
+
+def n_simulaties_voor(week):
+    """
+    Hoeveel simulaties een toernooi in deze week draait.
+
+    Op week en niet op ronde, zodat de formatieve donderdagronde in de bonusweek
+    net zo zwaar meet als de ronde die hij voorspelt. Een repetitie met een
+    andere steekproefgrootte voorspelt niets.
+    """
+    return N_SIMULATIES_BONUSWEEK if week == BONUSWEEK else STANDAARD_N_SIMULATIES
 
 
 def _cache_sleutel(week, vergelijk_met_week=None, ronde=1, formatief=False):
@@ -146,7 +176,7 @@ def _startstacks_uit_vorige_ronde(alle_resultaten, week, vergelijk_met_week, ron
 def draai_toernooi(
     week,
     vergelijk_met_week=None,
-    n_simulaties=5,
+    n_simulaties=None,
     n_handen=50,
     forceer_opnieuw=False,
     ronde=1,
@@ -188,11 +218,15 @@ def draai_toernooi(
             "aangevuld_met_oefenbots": int,
             "ronde": int,
             "formatief": bool,               # True = oefenronde, telt niet mee
+            "n_simulaties": int,             # over hoeveel simulaties gemiddeld is
             "startstacks": {...} | None,     # None in ronde 1
             "hand_log": [...],
             "eindstand_per_bot": {...},
         }
     """
+    if n_simulaties is None:
+        n_simulaties = n_simulaties_voor(week)
+
     alle_resultaten = db.laad_toernooi_resultaten()
     cache_key = _cache_sleutel(week, vergelijk_met_week, ronde, formatief)
 
@@ -219,6 +253,7 @@ def draai_toernooi(
             "n_bots": len(bots),
             "namen_deelnemers": namen_hoofdweek,
             "aangevuld_met_oefenbots": aangevuld,
+            "n_simulaties": n_simulaties,
             "hand_log": [],
             "eindstand_per_bot": {},
             "boodschap": "Nog geen 2 geldige inzendingen — toernooi kan nog niet draaien.",
@@ -243,6 +278,7 @@ def draai_toernooi(
         "n_bots": len(bots),
         "namen_deelnemers": namen_hoofdweek,
         "aangevuld_met_oefenbots": aangevuld,
+        "n_simulaties": n_simulaties,
         "startstacks": startstacks,
         "hand_log": uitkomst["hand_log"],
         "eindstand_per_bot": uitkomst["eindstand_per_bot"],
