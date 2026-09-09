@@ -4,5 +4,4 @@ seaborn
 plotly
 requests
 geopandas
-geodatasets
 folium
