@@ -161,6 +161,7 @@ class StudentBotSpeler(BasePokerPlayer):
         self._hand_deze_hand = None
         self._eerste_actie_deze_hand = None
         self._raises_deze_straat = 0
+        self._huidige_straat = None
         self._ondersteunt_all_in = _ondersteunt_all_in_regels(kies_actie)
         self._ondersteunt_grote_raise = _ondersteunt_grote_raise(kies_actie)
         self._acties_deze_hand = []
@@ -277,6 +278,7 @@ class StudentBotSpeler(BasePokerPlayer):
 
     def receive_street_start_message(self, street, round_state):
         self._raises_deze_straat = 0
+        self._huidige_straat = street
 
     def receive_game_update_message(self, new_action, round_state):
         if new_action["player_uuid"] == self.uuid:
@@ -285,6 +287,11 @@ class StudentBotSpeler(BasePokerPlayer):
             "bot_naam": self._uuid_naar_naam.get(new_action["player_uuid"], "onbekend"),
             "actie": new_action["action"],
             "bedrag": new_action["amount"],
+            # De straat waarin deze actie viel. De lijst loopt over de HELE hand --
+            # dat zegt de parameternaam ook -- en werd zonder dit label een val:
+            # gemeten stond er in 35% van de beslissingen een raise in terwijl
+            # niemand op déze straat verhoogde. Met dit label kun je filteren.
+            "ronde": self._huidige_straat,
         })
 
     def receive_round_result_message(self, winners, hand_info, round_state):
@@ -300,7 +307,16 @@ class StudentBotSpeler(BasePokerPlayer):
                 # drempels van tegenstanders leesbaar uit hun eigen log, en dat
                 # is een legitieme pokervaardigheid: de hand is afgelopen.
                 "hand": self._hand_deze_hand,
-                "actie": self._eerste_actie_deze_hand or "fold",
+                # actie is None als de bot deze hand niet aan de beurt kwam. Dat
+                # gebeurt vaker dan je denkt: iedereen foldde naar zijn blind (dan
+                # wón hij juist), of hij is uitgespeeld en heeft geen chips meer.
+                # Hier stond eerst `or "fold"`, en dat was een leugen: gemeten
+                # kreeg 5% van de fold-regels een POSITIEVE winst, en 55% van alle
+                # regels kwam van bots met stack 0 die gewoon doorschreven. Elke
+                # analyse van "wat leverde elke actie op" werd daar fout van.
+                "actie": self._eerste_actie_deze_hand,
+                "aan_zet": self._eerste_actie_deze_hand is not None,
+                "uitgespeeld": eigen_stack == 0,
                 "stack": eigen_stack,
             }
         )
@@ -376,10 +392,14 @@ def _verdeel_in_tafels(bot_namen, rng):
     rng.shuffle(namen)
     tafels = [namen[i : i + TAFEL_GROOTTE_MAX] for i in range(0, len(namen), TAFEL_GROOTTE_MAX)]
 
-    # Een tafel met maar 1 bot kan niet spelen: voeg 'm bij de vorige tafel.
+    # Een tafel met maar 1 bot kan niet spelen. Die bot bij de vorige tafel
+    # plakken gaf een tafel van TAFEL_GROOTTE_MAX + 1 -- bij 7 bots één tafel van
+    # 7, en bij 44 studenten plus 5 referentiebots precies hetzelfde. Zeven-handed
+    # poker speelt tighter dan de 6-max die de rest van het toernooi speelt, dus
+    # dat is geen detail. In plaats daarvan halen we een bot van de vórige tafel
+    # erbij, zodat er twee tafels van 2 en 6 ontstaan in plaats van één van 7.
     if len(tafels) >= 2 and len(tafels[-1]) < 2:
-        tafels[-2].extend(tafels[-1])
-        tafels.pop()
+        tafels[-1].append(tafels[-2].pop())
     return tafels
 
 
