@@ -98,23 +98,48 @@ def _volledig_deck():
     return [Card(kleur, rang) for kleur in _KLEUREN for rang in range(2, 15)]
 
 
-def schat_winkans(hand, simulaties=1000, seed=None):
+def schat_winkans(hand, simulaties=1000, seed=None, tegenstanders=1):
     """
     Monte Carlo-schatting van je winkans preflop: hoeveel procent van de tijd
-    wint `hand` van een willekeurige tegenstander, over `simulaties` volledig
-    uitgespeelde (willekeurige) borden?
+    wint `hand`, over `simulaties` volledig uitgespeelde (willekeurige) borden?
 
     hand: lijst met 2 kaartWAARDEN, zoals overal in de cursus (bv. ["A", "K"]).
     De kleur van je eigen kaarten maakt voor de winkans niet uit en wordt
     willekeurig gekozen; PyPokerEngine's eigen hand-evaluatie (dus inclusief
-    flush/straat) bepaalt per simulatie wie wint. Gelijkspel telt als een
-    halve overwinning.
+    flush/straat) bepaalt per simulatie wie wint.
 
-    Duurt bij de standaard 1000 simulaties ongeveer 30-50 milliseconden --
-    ruim binnen de 2 seconden die het toernooi je per beslissing geeft
-    (BESLISSING_TIMEOUT_SECONDS in poker_adapter.py), ook als je 'm bij elke
-    hand preflop aanroept.
+    TEGENSTANDERS IS HET BELANGRIJKSTE ARGUMENT
+    -------------------------------------------
+    Standaard rekent hij tegen ÉÉN tegenstander, en dat is bijna nooit de
+    situatie waarin je bot zit. Aan een tafel van zes moet je van vijf mensen
+    winnen, en dat is een heel andere vraag:
+
+        schat_winkans(["A", "A"], tegenstanders=1)   ->  ongeveer 85%
+        schat_winkans(["A", "A"], tegenstanders=5)   ->  ongeveer 50%
+        schat_winkans(["7", "2"], tegenstanders=1)   ->  ongeveer 34%
+        schat_winkans(["7", "2"], tegenstanders=5)   ->  ongeveer  9%
+
+    Vergelijk je een kop-op-kop-winkans met pot odds aan een volle tafel, dan
+    denk je systematisch dat je meer kans hebt dan waar is -- en dan zegt de
+    rekensom "call" met 7-2 omdat 34% een prijs van 17% lijkt te verslaan. Dat
+    is geen theoretisch probleem: een bot die precies dat doet werd in een
+    testtoernooi de zwakste van zeven en brandde op 73% van de tafels af.
+
+    Gebruik dus het aantal tegenstanders dat er écht is. In het toernooi zit je
+    aan een tafel van maximaal zes, dus `tegenstanders=5` als iedereen nog
+    meedoet en minder zodra er gefold is.
+
+    Gelijkspel telt als een halve overwinning, ook als je met meer dan één
+    tegenstander gelijk eindigt -- de pot wordt dan immers gedeeld.
+
+    Duurt bij de standaard 1000 simulaties en één tegenstander ongeveer 30-50
+    milliseconden -- ruim binnen de 2 seconden die het toernooi je per
+    beslissing geeft (BESLISSING_TIMEOUT_SECONDS in poker_adapter.py). Met vijf
+    tegenstanders is het ongeveer twee keer zo langzaam.
     """
+    if tegenstanders < 1:
+        raise ValueError("tegenstanders moet minstens 1 zijn")
+
     rng = random.Random(seed)
     overwinningen = 0.0
     for _ in range(simulaties):
@@ -131,14 +156,16 @@ def schat_winkans(hand, simulaties=1000, seed=None):
 
         resterend = [k for k in deck if k not in gebruikt]
         rng.shuffle(resterend)
-        tegenstander_hole = resterend[:2]
-        bord = resterend[2:7]
+        handen_tegen = [resterend[2 * i:2 * i + 2] for i in range(tegenstanders)]
+        bord = resterend[2 * tegenstanders:2 * tegenstanders + 5]
 
         mijn_sterkte = HandEvaluator.eval_hand(eigen_hole, bord)
-        tegen_sterkte = HandEvaluator.eval_hand(tegenstander_hole, bord)
-        if mijn_sterkte > tegen_sterkte:
+        sterktes_tegen = [HandEvaluator.eval_hand(h, bord) for h in handen_tegen]
+        beste_tegen = max(sterktes_tegen)
+
+        if mijn_sterkte > beste_tegen:
             overwinningen += 1
-        elif mijn_sterkte == tegen_sterkte:
+        elif mijn_sterkte == beste_tegen:
             overwinningen += 0.5
 
     return round(100 * overwinningen / simulaties, 1)

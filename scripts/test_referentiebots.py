@@ -24,6 +24,7 @@ twee liggen te dicht bij elkaar. Dat is precies wat dit script hoort te melden.
 """
 import inspect
 import os
+import random
 import statistics
 import sys
 
@@ -37,9 +38,14 @@ from referentiebots import (OPENBAAR_VANAF_WEEK, REFERENTIEBOTS,
                             WEKEN_MET_REFERENTIEBOTS, beschrijvingen,
                             broncode, referentiebots_voor)
 
+# De bots zitten nu in een pakket met een `module` per bot in plaats van een losse
+# functie; deze helper houdt de rest van het script gelijk.
+for _info in REFERENTIEBOTS.values():
+    _info.setdefault("kies_actie", _info["module"].kies_actie)
+
 TOEGESTANE_PARAMETERS = {"hand", "stack", "ronde", "pot", "inzet_om_te_callen",
                          "tegenstander_acties_deze_hand", "strategie", "bluf_kans"}
-SEEDS = [51, 52, 53, 54, 55]
+SEEDS = [11, 22, 33, 44, 55, 66, 77, 88]
 N_SIMULATIES = 20
 
 geslaagd = 0
@@ -57,7 +63,23 @@ def check(voorwaarde, omschrijving):
 
 
 # ---------------------------------------------------------------------------
-print("1. Parameternamen — de stille killer\n")
+print("0. Kopieën in api/ gelijk aan de werkplaats in mijn_bots/\n")
+# render.yaml deployt met rootDir: api, dus alleen api/ komt op de server. De
+# originelen in mijn_bots/ zijn de werkplaats. Lopen die twee uit elkaar, dan
+# werkt het lokaal en niet in productie -- de ergste soort verschil.
+WERKPLAATS = os.path.join(os.path.dirname(HIER), "mijn_bots")
+PAKKET = os.path.join(os.path.dirname(HIER), "api", "referentiebots")
+for naam, info in sorted(REFERENTIEBOTS.items()):
+    bestand = os.path.basename(info["module"].__file__)
+    origineel = os.path.join(WERKPLAATS, bestand)
+    kopie = os.path.join(PAKKET, bestand)
+    if not os.path.exists(origineel):
+        check(True, f"{bestand}: geen origineel in mijn_bots/ (alleen in api/) — prima")
+        continue
+    with open(origineel, "rb") as a, open(kopie, "rb") as b:
+        check(a.read() == b.read(), f"{bestand}: api/-kopie is gelijk aan mijn_bots/")
+
+print("\n1. Parameternamen — de stille killer\n")
 for naam, info in sorted(REFERENTIEBOTS.items()):
     parameters = set(inspect.signature(info["kies_actie"]).parameters)
     onbekend = parameters - TOEGESTANE_PARAMETERS
@@ -101,63 +123,94 @@ check(set(REFERENTIEBOTS) == set(referentiebots_voor(WEKEN_MET_REFERENTIEBOTS[0]
       f"alle bots spelen mee in week {WEKEN_MET_REFERENTIEBOTS[0]}")
 check(referentiebots_voor(1) == {}, "in week 1 spelen ze niet mee")
 niveaus = [r["niveau"] for r in beschrijvingen(WEKEN_MET_REFERENTIEBOTS[-1])]
-check(len(niveaus) == len(set(niveaus)), f"elk niveau komt één keer voor: {niveaus}")
+check(niveaus == sorted(niveaus), f"de niveaus zijn oplopend gesorteerd: {niveaus}")
+check(min(niveaus) == 1 and set(niveaus) == set(range(1, max(niveaus) + 1)),
+      f"de niveaus zijn 1 t/m {max(niveaus)} zonder gaten")
 check(all(r["beschrijving"].strip() for r in beschrijvingen(5)), "elke bot heeft een beschrijving")
 check(broncode(3) is None, "in week 3 is de broncode nog niet openbaar")
 check(broncode(OPENBAAR_VANAF_WEEK) is not None, f"vanaf week {OPENBAAR_VANAF_WEEK} wel")
 
 # ---------------------------------------------------------------------------
-print(f"\n4. Lopen de niveaus op? ({len(SEEDS)} seeds x {N_SIMULATIES} simulaties)\n")
-if len(REFERENTIEBOTS) < 2:
-    print("  (minder dan twee bots — niets te vergelijken)")
-else:
-    veld = referentiebots_voor(WEKEN_MET_REFERENTIEBOTS[-1])
-    # aanvullen tot een realistische tafel, anders spelen ze alleen tegen elkaar
-    RANG = {"A": 14, "K": 13, "Q": 12, "J": 11, "10": 10, "9": 9, "8": 8,
-            "7": 7, "6": 6, "5": 5, "4": 4, "3": 3, "2": 2}
+print(f"\n4. Lopen de niveaus op in het veld dat er echt komt? "
+      f"({len(SEEDS)} seeds x {N_SIMULATIES} simulaties)\n")
 
-    def maak_vulbot(drempel):
-        def kies_actie(hand, stack, ronde):
-            waarde = max(RANG[hand[0]], RANG[hand[1]]) + (4 if hand[0] == hand[1] else 0)
-            return "raise" if waarde >= drempel else ("call" if waarde >= drempel - 3 else "fold")
-        return kies_actie
+# Meten tegen 44 studentachtige bots, niet tegen elkaar. Dat is geen detail: in
+# een veld met alleen deze vijf en twee andere bots was PotOdds de zwakste van
+# allemaal, en hier is hij dat niet. Een niveau is een eigenschap van een bot
+# TUSSEN ANDEREN, en het veld dat telt is een klas van 44.
+RANG = {"A": 14, "K": 13, "Q": 12, "J": 11, "10": 10, "9": 9, "8": 8,
+        "7": 7, "6": 6, "5": 5, "4": 4, "3": 3, "2": 2}
 
-    for i in range(12):
-        veld[f"_vulbot_{i}"] = {"kies_actie": maak_vulbot(15 - (i % 8)),
-                                "strategie": "tight", "bluf_kans": 0.1}
 
-    per_bot = {}
-    for seed in SEEDS:
-        uitslag = speel_toernooi(veld, n_simulaties=N_SIMULATIES, n_handen=50, seed=seed)
-        for naam in REFERENTIEBOTS:
-            per_bot.setdefault(naam, []).append(uitslag["eindstand_per_bot"][naam])
+def maak_studentbot(drempel, groot_vanaf, allin_onder):
+    def kies_actie(hand, stack, ronde, strategie, bluf_kans):
+        if allin_onder and stack < allin_onder:
+            return "all_in"
+        waarde = max(RANG[hand[0]], RANG[hand[1]]) + (4 if hand[0] == hand[1] else 0)
+        if waarde >= drempel:
+            if groot_vanaf and waarde >= groot_vanaf:
+                return "grote_raise"
+            return "raise"
+        return "call" if waarde >= drempel - 3 else "fold"
+    return kies_actie
 
-    gemiddeld = {naam: statistics.mean(v) for naam, v in per_bot.items()}
-    ruis = statistics.mean(max(v) - min(v) for v in per_bot.values())
 
-    print(f"  {'bot':26}{'niveau':>8}{'eindstand':>12}{'spreiding':>12}")
-    op_niveau = sorted(REFERENTIEBOTS, key=lambda n: REFERENTIEBOTS[n]["niveau"])
-    for naam in op_niveau:
-        v = per_bot[naam]
-        print(f"  {naam:26}{REFERENTIEBOTS[naam]['niveau']:>8}{gemiddeld[naam]:>12.0f}"
-              f"{max(v) - min(v):>12.0f}")
-    print(f"\n  gemiddelde ruis binnen één bot: {ruis:.0f} chips")
+rng = random.Random(2)
+veld = {}
+for i in range(44):
+    drempel = rng.choice([6, 8, 9, 10, 11, 11, 12, 12, 13, 13, 14, 15])
+    veld[f"_student_{i:02d}"] = {
+        "kies_actie": maak_studentbot(drempel,
+                                      drempel + 3 if rng.random() < 0.4 else None,
+                                      150 if rng.random() < 0.5 else 0),
+        "strategie": rng.choice(["tight", "loose", "balanced", "aggressive"]),
+        "bluf_kans": round(rng.uniform(0, 0.4), 2),
+    }
+veld.update(referentiebots_voor(WEKEN_MET_REFERENTIEBOTS[-1]))
 
-    verwacht = op_niveau
-    gemeten = sorted(REFERENTIEBOTS, key=lambda n: gemiddeld[n])
-    check(verwacht == gemeten,
-          "de gemeten orde klopt met de opgegeven niveaus"
-          + ("" if verwacht == gemeten else f" — gemeten: {gemeten}"))
+per_bot = {}
+for seed in SEEDS:
+    uitslag = speel_toernooi(veld, n_simulaties=N_SIMULATIES, n_handen=50, seed=seed)
+    for naam, stand in uitslag["eindstand_per_bot"].items():
+        per_bot.setdefault(naam, []).append(stand)
 
-    verschillen = [(a, b, gemiddeld[b] - gemiddeld[a])
-                   for a, b in zip(op_niveau, op_niveau[1:])]
-    krap = [(a, b, d) for a, b, d in verschillen if d <= ruis / 2]
-    check(not krap,
-          f"elk niveau ligt duidelijk boven het vorige (drempel: halve ruis = {ruis / 2:.0f} chips)")
-    for a, b, d in krap:
-        print(f"      {a} en {b} verschillen maar {d:.0f} chips — dat is te weinig om")
-        print(f"      betrouwbaar te scheiden. Zet ze verder uit elkaar, of voeg ze samen:")
-        print(f"      twee niveaus die niemand kan onderscheiden zijn één niveau.")
+gemiddeld = {naam: statistics.mean(per_bot[naam]) for naam in REFERENTIEBOTS}
+fouten = {naam: statistics.stdev(per_bot[naam]) / len(per_bot[naam]) ** 0.5
+          for naam in REFERENTIEBOTS}
+studenten = sorted(statistics.mean(v) for n, v in per_bot.items() if n.startswith("_student_"))
+volgorde = sorted(per_bot, key=lambda n: -statistics.mean(per_bot[n]))
+
+print(f"  {'bot':26}{'niveau':>7}{'gemiddeld':>11}{'± se':>7}{'plek':>13}")
+for naam in sorted(REFERENTIEBOTS, key=lambda n: (REFERENTIEBOTS[n]["niveau"], n)):
+    print(f"  {naam:26}{REFERENTIEBOTS[naam]['niveau']:>7}{gemiddeld[naam]:>11.0f}"
+          f"{fouten[naam]:>7.0f}{volgorde.index(naam) + 1:>9} /{len(volgorde):>3}")
+print(f"\n  studenten in dit testveld: mediaan {statistics.median(studenten):.0f}, "
+      f"laagste {studenten[0]:.0f}, hoogste {studenten[-1]:.0f}")
+
+# Groepen vergelijken, niet losse bots: bots met hetzelfde niveau horen niet
+# onderscheidbaar te zijn, en opeenvolgende niveaus juist wel.
+groepen = {}
+for naam, info in REFERENTIEBOTS.items():
+    groepen.setdefault(info["niveau"], []).append(naam)
+
+print()
+for niveau, namen in sorted(groepen.items()):
+    if len(namen) < 2:
+        continue
+    waarden = [gemiddeld[n] for n in namen]
+    grootste = max(abs(a - b) for a in waarden for b in waarden)
+    se = max(fouten[n] for n in namen)
+    check(grootste <= 2 * se,
+          f"niveau {niveau} bevat {len(namen)} bots die elkaars gelijke zijn "
+          f"(grootste verschil {grootste:.0f}, 2×se {2 * se:.0f})")
+
+for lager, hoger in zip(sorted(groepen), sorted(groepen)[1:]):
+    a = statistics.mean(gemiddeld[n] for n in groepen[lager])
+    b = statistics.mean(gemiddeld[n] for n in groepen[hoger])
+    se = max(max(fouten[n] for n in groepen[lager]), max(fouten[n] for n in groepen[hoger]))
+    check(b - a > 2 * se,
+          f"niveau {hoger} ligt aantoonbaar boven niveau {lager} "
+          f"({b - a:+.0f}, 2×se {2 * se:.0f})")
 
 print(f"\n{geslaagd} checks geslaagd" + (f", {len(problemen)} MISLUKT:" if problemen else "."))
 for p in problemen:

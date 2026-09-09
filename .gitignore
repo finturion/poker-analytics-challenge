@@ -35,3 +35,7 @@ scripts/datacamp_snapshots/
 # Ruwe PDOK-download voor de gemeentekaart: 97 MB, alleen een cache.
 # scripts/genereer_gemeentedata.py haalt hem opnieuw op als hij ontbreekt.
 notebooks/data/_gemeenten_ruw.geojson
+
+# Output van scripts/vergelijk_mijn_bots.py: een hand-log van een paar MB dat
+# het script zelf opnieuw genereert. De bots in mijn_bots/ horen wel in git.
+mijn_bots/uitkomsten/
