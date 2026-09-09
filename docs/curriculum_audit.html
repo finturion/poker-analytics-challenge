@@ -360,6 +360,8 @@
       <div class="toc-group-label">Analyse</div>
       <a href="#botversies">Bot v1, v2 en v3</a>
       <a href="#bonus">Het bonuspunt</a>
+      <a href="#referentiebots">De meetlat: 5 bots</a>
+      <a href="#winkans">Vier gerepareerde defecten</a>
       <a href="#toetsing">Toetsing &amp; oefenstof</a>
       <a href="#matrix">Dekking pokerregels</a>
       <a href="#cases">Wat toetsen de cases?</a>
@@ -368,9 +370,9 @@
 
   <main>
     <header class="hero">
-      <div class="eyebrow">Curriculum-audit · 9 werkcolleges · bijgewerkt 9 sep 2026 · week 3 herzien</div>
+      <div class="eyebrow">Curriculum-audit · 9 werkcolleges · bijgewerkt 9 sep 2026 · week 3 herzien · vijf referentiebots</div>
       <h1>Wat leren studenten, hoe leren ze het, en welk deel van poker hebben we eigenlijk gedekt?</h1>
-      <p class="lede">Een volledige doorlichting van Week 1 t/m 6 van de Poker Analytics Challenge: per werkcollege wat er behandeld wordt, of dat actief, uitvoerend of uitleggend gebeurt, en welke pokerregels er impliciet of expliciet in zitten — inclusief waar dat nog rammelt. Deze versie is bijgewerkt na de opvolging: de join, de window-functies, Streamlit en de schriftelijke toetsing zitten er nu in — en het bonuspunt is voor het eerst helemaal uitgewerkt, inclusief de meting die laat zien hoeveel van een toernooi-uitslag skill is en hoeveel toeval. En week 3 en 5 zijn opnieuw verkaveld: geo eruit waar het niet hoorde, inzetgrootte erin waar de vraag vanzelf opkomt.</p>
+      <p class="lede">Een volledige doorlichting van Week 1 t/m 6 van de Poker Analytics Challenge: per werkcollege wat er behandeld wordt, of dat actief, uitvoerend of uitleggend gebeurt, en welke pokerregels er impliciet of expliciet in zitten — inclusief waar dat nog rammelt. Deze versie is bijgewerkt na de opvolging: de join, de window-functies, Streamlit en de schriftelijke toetsing zitten er nu in — en het bonuspunt is voor het eerst helemaal uitgewerkt, inclusief de meting die laat zien hoeveel van een toernooi-uitslag skill is en hoeveel toeval. En week 3 en 5 zijn opnieuw verkaveld: geo eruit waar het niet hoorde, inzetgrootte erin waar de vraag vanzelf opkomt. Sinds deze versie speelt er ook een vaste meetlat mee — vijf referentiebots met een opgeschreven strategie — en die legde vier defecten in de engine en de lesstof bloot die er anders in waren blijven staan.</p>
       <div class="hero-stats">
         <div class="stat-tile"><div class="n">9</div><div class="l">werkcolleges geaudit</div></div>
         <div class="stat-tile"><div class="n">~21,3</div><div class="l">uur in de notebooks</div></div>
@@ -568,10 +570,11 @@
         <div class="wc-head">
           <div class="row1">
             <div><div class="weeklabel">Week 3 · Werkcollege 4</div><h3>Van de spelregels naar een bot die rekent</h3></div>
-            <div class="total-time">~115 min + 4–8 u</div>
+            <div class="total-time">~123 min + 4–8 u</div>
           </div>
           <p class="theme">Het zwaartepunt van de hele pokerlijn, na een tweede herindeling: handsterkte, winkans en de pot-odds-beslisregel zijn hierheen verhuisd uit WC5, zodat de hele arc — spelregels → wat wint er → hoe váák win je → wat doe je daarmee — in één werkcollege staat, en vóór de woensdag-deadline in plaats van erna. Deel 2 blijft de enige plek die de echte Texas Hold'em-regels uitlegt. Dat deel is na een ronde docentfeedback van 9 naar 16 minuten gegaan: de regels worden nu ook <b>in code opgebouwd</b>, straat voor straat, met twee azen tegen 7-8 schoppen waarbij de leiding op de river omklapt. Het échte werk zit in Deel 7: 4 tot 8 uur eigen botwerk. De Streamlit-opstap die hier stond is verhuisd naar WC5, waar hij direct na de aftrap van Case 2 landt. 24 TODO&#39;s in de code.</p>
-          <p class="theme" style="margin-top:8px"><b>Twee fouten gevonden bij die feedbackronde.</b> Het notebook zei dat elke raise de <em>small</em> blind toevoegt (+10); gemeten is het de <em>big</em> blind, dus +20 in 72% van de gevallen en +10 in 28% — de bijbehorende controlevraag had dus een verkeerd antwoord. En een voorbeeldhand gebruikte schoppen twee terwijl die al op het bord lag: dezelfde kaart op twee plekken, waar de hulpfunctie niet over klaagt.</p>
+          <p class="theme" style="margin-top:8px"><b>Drie fouten gevonden bij die feedbackronde.</b> Het notebook zei dat elke raise de <em>small</em> blind toevoegt (+10); gemeten is het de <em>big</em> blind, dus +20 in 72% van de gevallen en +10 in 28% — de bijbehorende controlevraag had dus een verkeerd antwoord. Een voorbeeldhand gebruikte schoppen twee terwijl die al op het bord lag: dezelfde kaart op twee plekken, waar de hulpfunctie niet over klaagt. En een uitleg zei dat een hand &quot;een paar tweeën&quot; oplevert waar het in werkelijkheid twee paar is — uitgevoerd, niet gelezen.</p>
+          <p class="theme" style="margin-top:8px"><b>Deel 5 en 6 zijn herzien om de belangrijkste fout van alle:</b> <span class="mono">schat_winkans</span> rekende tegen één tegenstander en de les liet dat vergelijken met de prijs aan een tafel van zes. Zie <a href="#winkans">De winkans klopte niet met de tafel</a>.</p>
           <div class="mixbar-wrap">
             <div class="mixbar"><span class="actief" style="width:62%"></span><span class="uitvoeren" style="width:26%"></span><span class="uitleg" style="width:12%"></span></div>
             <div class="mixbar-legend"><span><i class="dot" style="background:var(--cat-actief)"></i><b>62%</b> actief</span><span><i class="dot" style="background:var(--cat-uitvoeren)"></i><b>26%</b> uitvoeren</span><span><i class="dot" style="background:var(--cat-uitleg)"></i><b>12%</b> uitleg</span></div>
@@ -1308,6 +1311,112 @@
           <h4>Twee dingen die de opzet in de infrastructuur nodig had</h4>
           <p><b>De cache per ronde.</b> Alle rondes van alle weken stonden samen in één JSONB-blob, die volledig werd gelezen én herschreven bij elke aanroep — ook bij een cache-hit, en ook voor de bonusberekening van elke student. Met bijna 5 MB hand-log per ronde liep dat op naar tientallen megabytes per request. Elke ronde staat nu apart; rondes onder de oude sleutel blijven leesbaar, dus er was geen migratie nodig.</p>
           <p style="margin-top:8px"><b>De vlag <span class="mono">constante_bot</span>.</b> <span class="mono">return "fold"</span> draait zonder fouten en is dus technisch geldig, maar het is geen pokerbot: hij kijkt niet naar kaarten, stack of ronde. Afkeuren is te streng — een bot mág heel tight zijn — maar onzichtbaar laten is te soepel nu de woensdaguitslag doortelt. De vlag staat op elk validatieresultaat, komt terug in de inlever-respons als hint aan de student, en in de docent-export als kolom.</p>
+        </div>
+      </div>
+    </section>
+
+
+    <section id="referentiebots" class="wide" style="max-width:none">
+      <div class="section-head" style="max-width:900px">
+        <div class="kicker">Nieuw</div>
+        <h2>Een vaste meetlat: vijf referentiebots</h2>
+        <p>De uitslag van een toernooi zegt alleen iets over de klas van díe week. Verandert iedereen zijn bot, dan verschuift het hele veld en weet een student nog niet of híj beter is geworden. Daarom spelen er in week 3 en 5 vijf bots mee die nooit veranderen, elk met één opgeschreven beslissings-driver.</p>
+        <p style="margin-top:10px">Ze heten <b>geen AI-bots</b>, en dat is een keuze. Noem je ze zo, dan is de impliciete boodschap &quot;een taalmodel is hier de maatstaf&quot; — en dat nodigt precies de vergelijking uit die je niet wil. De vraag hoort te zijn waar je staat ten opzichte van gedrag dat je precies kent, niet of een model het beter kan.</p>
+        <p style="margin-top:10px">Ze kunnen <b>geen bonuspunten afpakken</b>. De toernooirunner voegt ze toe ná het vastleggen van de deelnemerslijst, en de puntenladder wordt alleen over die lijst gerekend. Ze beïnvloeden wel de chips aan tafel — ze spelen echt mee — maar niet de verdeling van de punten. Getest met een bot die 9999 chips haalt: hij komt niet in de verdeling voor.</p>
+      </div>
+
+      <div class="matrix-scroll">
+        <table class="matrix" style="min-width:900px">
+          <thead>
+            <tr>
+              <th class="concept-col" style="min-width:210px">Bot</th>
+              <th style="width:70px">Niveau</th>
+              <th>Gemiddeld</th><th>± se</th><th>Plek van 49</th>
+              <th style="text-align:left; min-width:260px">Waar zijn beslissing op hangt</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td class="concept-col">Tafellezer</td><td>1</td><td>733</td><td>44</td><td>44e</td>
+              <td style="text-align:left;font-size:0.82rem">Wat de tegenstanders deze hand deden. Verliest zelden groot, wint ook nooit groot: min-raist zijn goede handen.</td></tr>
+            <tr><td class="concept-col">PotOdds</td><td>1</td><td>877</td><td>89</td><td>37e</td>
+              <td style="text-align:left;font-size:0.82rem">De prijs die de pot vraagt. Doet mee met matige handen als het bijna niets kost — en dat is zijn zwakte.</td></tr>
+            <tr><td class="concept-col">Allrounder</td><td>2</td><td>1090</td><td>96</td><td>14e</td>
+              <td style="text-align:left;font-size:0.82rem">Alle vier de drivers opgeteld tot één getal. Doet alles een beetje, niets uitgesproken.</td></tr>
+            <tr><td class="concept-col">Bluffer</td><td>3</td><td>1585</td><td>150</td><td>2e</td>
+              <td style="text-align:left;font-size:0.82rem">Bluf-odds: hoe vaak moet deze inzet werken om winst te maken?</td></tr>
+            <tr><td class="concept-col">Inzetgrootte</td><td>3</td><td>1616</td><td>193</td><td>1e</td>
+              <td style="text-align:left;font-size:0.82rem">Hoeveel hij inzet: het minimum, 200 of alles. Zijn voorsprong komt bijna volledig uit preflop-agressie.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="matrix-legend" style="max-width:900px">
+        <span class="item">Gemeten in het veld dat er echt komt: 44 studentachtige bots + deze vijf, 8 seeds × 20 simulaties. De mediaanstudent haalde 998.</span>
+      </div>
+
+      <div class="gap-grid" style="max-width:900px; margin-top:18px">
+        <div class="gap-card" style="border-left-color:var(--gold)">
+          <h4>◐ Drie niveaus, niet vijf — en dat is een meetuitkomst</h4>
+          <p>Tafellezer en PotOdds verschillen <b>−145 ± 100</b>; Bluffer en Inzetgrootte <b>+32 ± 244</b>. Die paren zijn niet te scheiden, dus ze krijgen hetzelfde niveau. De twee stappen ertussen zijn wél aantoonbaar: +285 en +510 tegen een 2×se van 192 en 385.</p>
+          <div class="fix"><b>Waarom dat uitmaakt:</b> vijf treden opschrijven maakt van &quot;ik zit boven niveau 3&quot; een bewering die de data niet draagt. Bij deze variantie is een ladder met te veel sporten erger dan een korte.</div>
+        </div>
+        <div class="gap-card" style="border-left-color:var(--gold)">
+          <h4>◐ Een niveau is geen eigenschap van een bot</h4>
+          <p>In een toernooi met alleen deze bots onderling was PotOdds de <em>zwakste van allemaal</em>. Tussen 44 studenten staat hij 37e, boven Tafellezer. Zijn spel veranderde niet; het veld veranderde.</p>
+          <div class="fix"><b>Dus:</b> het harnas meet in het realistische veld en niet in een onderling toernooi, en het klaagt als de orde verschuift. Zonder dat zou een niveau een getal zijn dat toevallig ergens uitkwam.</div>
+        </div>
+        <div class="gap-card" style="border-left-color:var(--crit)">
+          <h4>✗ De bovengrens is in de meting onbereikbaar</h4>
+          <p>Bluffer en Inzetgrootte staan 1e en 2e van 49, met 1585 en 1616 tegen 1285 voor de beste testbot. Geen enkele simulatiestudent kwam erboven.</p>
+          <div class="fix"><b>Zo staat het er ook:</b> hun beschrijving zegt &quot;verslaan is een stretchdoel, niet de verwachting&quot;. De testbots zijn simpele drempelbots, dus echte studenten met 4 tot 8 uur werk komen mogelijk hoger — maar reken er niet op.</div>
+        </div>
+        <div class="gap-card" style="border-left-color:var(--good)">
+          <h4>✓ De ondergrens werkt precies goed</h4>
+          <p>Tafellezer (44e) en PotOdds (37e) staan onder de mediaanstudent. De meeste studenten verslaan ze, en dat is wat je van een onderste trede wil: een vloer die je hoort te halen, niet een lat waar je onderdoor duikt.</p>
+        </div>
+        <div class="gap-card" style="border-left-color:var(--crit)">
+          <h4>✗ Geen enkel notebook noemt ze &mdash; nog niet</h4>
+          <p>Backend, endpoints en testharnas staan er; de lesstof niet. Zoek je in alle negen notebooks op &quot;referentiebot&quot;, dan zijn er <b>nul</b> treffers. De bots zitten dus w&eacute;l in het toernooi van week 3, en studenten zien in hun uitslag vijf namen die niemand heeft uitgelegd.</p>
+          <div class="fix"><b>Wat er nog moet:</b> in Werkcollege 5 een introductie met de niveautabel en het advies waar je op mag mikken, en in Werkcollege 7 of 8 het moment waarop de code opengaat en studenten hun eigen beslisregel naast een uitgeschreven regel leggen. Dat tweede is het punt van openbaar maken; zonder dat is het alleen een naam in een ranglijst.</div>
+        </div>
+      </div>
+
+      <div class="callout open" style="max-width:900px; margin-top:18px">
+        <div class="icon">&#128268;</div>
+        <div>
+          <h4>Waar de bestanden staan, en waarom dat niet vrijblijvend is</h4>
+          <p><span class="mono">render.yaml</span> deployt met <span class="mono">rootDir: api</span>, dus alleen die map komt op de server. Een referentiebot in een andere map werkt lokaal en ontbreekt in productie — het ergste soort verschil, want het toernooi draait dan gewoon door met minder bots. De vijf staan daarom in <span class="mono">api/referentiebots/</span>, met de originelen elders als werkplaats, en <span class="mono">scripts/test_referentiebots.py</span> controleert byte-voor-byte dat de twee niet uit elkaar lopen.</p>
+          <p style="margin-top:8px">Dat harnas doet meer: het controleert de parameternamen (een naam die niet klopt laat een bot stil élke hand folden), dat elke bot geldige acties geeft en niet crasht, dat de zichtbaarheid per week klopt, en dan de niveaus. 41 checks.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="winkans" class="wide" style="max-width:none">
+      <div class="section-head" style="max-width:900px">
+        <div class="kicker">Gerepareerd</div>
+        <h2>Vier defecten die de bots blootlegden</h2>
+        <p>Het bouwen van die vijf bots was ook een test van de engine, en die ging op vier punten door de mand. Alle vier zijn nagemeten voordat ze hier staan; het waren alle vier echte defecten en geen misverstanden.</p>
+      </div>
+
+      <div class="gap-grid" style="max-width:900px">
+        <div class="gap-card" style="border-left-color:var(--crit)">
+          <h4>De winkans klopte niet met de tafel</h4>
+          <p><span class="mono">schat_winkans</span> rekende tegen precies <b>één</b> tegenstander, en Werkcollege 4 liet studenten dat getal vergelijken met de prijs aan een tafel van zes. Dat is systematisch te optimistisch: A-A gaat van 85% naar 50% en 7-2 van 34% naar 9% als je van vijf mensen moet winnen.</p>
+          <div class="fix"><b>Wat dat kost, gemeten:</b> een bot die precies deze regel met kop-op-kop-getallen toepaste werd de zwakste van zeven — deed met 77% van zijn handen mee, verloor 34 chips per call, brandde op 73% van de tafels af. De functie heeft nu <span class="mono">tegenstanders=1</span> als parameter, en Deel 6 rekent de regel twee keer uit: met 1 tegenstander zegt hij CALL met 7-2, met 5 zegt hij FOLD. Zelfde regel, tegengesteld advies.</div>
+        </div>
+        <div class="gap-card" style="border-left-color:var(--crit)">
+          <h4>Het hand-log noemde &quot;niet aan de beurt&quot; ook fold</h4>
+          <p>Het log schreef <span class="mono">eerste_actie or &quot;fold&quot;</span>. Een bot die niet aan zet kwam — iedereen foldde naar zijn blind, of hij was al uitgespeeld — kreeg dus ook <span class="mono">fold</span>. Gemeten had <b>5%</b> van de fold-regels een positieve winst (die bots wónnen die hand) en kwam <b>55%</b> van alle regels van bots met stack 0 die gewoon doorschreven.</p>
+          <div class="fix"><b>Dat corrumpeerde precies de opdrachten die erop leunen:</b> &quot;wat leverde elke actie op&quot; in WC8 Deel 3 en de forensics in WC5 Deel 3. <span class="mono">actie</span> is nu leeg als er niet gekozen is, met <span class="mono">aan_zet</span> en <span class="mono">uitgespeeld</span> erbij. Na de fix: nul fold-regels met positieve winst.</div>
+        </div>
+        <div class="gap-card" style="border-left-color:var(--crit)">
+          <h4>De tegenstander-acties hadden geen straat</h4>
+          <p><span class="mono">tegenstander_acties_deze_hand</span> loopt over alle vier de straten en werd niet per straat gewist. Test je op &quot;heeft iemand geraised?&quot;, dan zie je op de river nog de raise van preflop. Gemeten in <b>17%</b> van de beslissingen.</p>
+          <div class="fix"><b>Werkcollege 7 leerde letterlijk de foute versie.</b> Elke actie heeft nu een veld <span class="mono">ronde</span>; het voorbeeld filtert daarop en er staat een kader bij dat de val benoemt, met drie testsituaties die het verschil laten zien.</div>
+        </div>
+        <div class="gap-card" style="border-left-color:var(--warn)">
+          <h4>Tafels van zeven</h4>
+          <p>Een restgroep van één bot werd bij de vorige tafel geplakt, wat een tafel van <span class="mono">TAFEL_GROOTTE_MAX + 1</span> gaf. Bij 44 studenten plus vijf referentiebots is de rest precies één, dus dat was geen hypothetisch geval — en 7-handed poker speelt tighter dan de 6-max die de rest van het toernooi speelt.</p>
+          <div class="fix"><b>Nu</b> wordt er een bot van de vorige tafel gehaald: 49 bots geeft tafels van 2, 5 en zeven keer 6, in plaats van één van 7.</div>
         </div>
       </div>
     </section>
