@@ -31,3 +31,7 @@ notebooks/pokerdata_voorbeeld.csv
 # e-mailadressen van echte studenten. Blijft lokaal, nooit in git.
 scripts/klaslijst_datacamp.csv
 scripts/datacamp_snapshots/
+
+# Ruwe PDOK-download voor de gemeentekaart: 97 MB, alleen een cache.
+# scripts/genereer_gemeentedata.py haalt hem opnieuw op als hij ontbreekt.
+notebooks/data/_gemeenten_ruw.geojson
