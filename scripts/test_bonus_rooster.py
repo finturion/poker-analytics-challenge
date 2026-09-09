@@ -105,9 +105,9 @@ toernooien = {
     f"{BONUSWEEK}_ronde2": ronde2,
 }
 submissions = {str(BONUSWEEK): {naam: [{"geldig": True}] for naam in ["anna", "bram", "cem", "dana", "eva"]}}
-resultaten = {r["student_id"]: r for r in bonus_hele_klas(submissions, toernooien)}
+resultaten = {r["student_id"]: r for r in bonus_hele_klas(submissions, toernooien.get)}
 
-for r in bonus_hele_klas(submissions, toernooien):
+for r in bonus_hele_klas(submissions, toernooien.get):
     regels = "  |  ".join(f"{p['toernooi']}: {p['uitleg']} → {p['punten']}" for p in r["per_ronde"])
     print(f"    {r['student_id']:6} {r['bonus']:.1f}   {regels}")
 
@@ -162,12 +162,12 @@ check(
 # ---------------------------------------------------------------------------
 print("\nEen toernooi dat nog niet gedraaid is")
 alleen_ronde1 = {str(BONUSWEEK): ronde1}
-r = bonus_per_student("anna", alleen_ronde1)
+r = bonus_per_student("anna", alleen_ronde1.get)
 check(r["per_ronde"][0]["punten"] == 0.5, "het gedraaide toernooi levert gewoon punten op")
 check(r["per_ronde"][1]["punten"] is None, "het toernooi dat nog moet komen geeft null, niet 0")
 check(r["bonus"] == 0.5, "en telt dus nog niet mee in het totaal")
 
-r = bonus_per_student("anna", {})
+r = bonus_per_student("anna", {}.get)
 check(r["bonus"] == 0.0, "zonder enig toernooi is de bonus 0,0")
 check(
     all(p["punten"] is None for p in r["per_ronde"]),
@@ -186,14 +186,14 @@ met_oefenronde = {
         "formatief": True,
     },
 }
-r_eva = bonus_per_student("eva", met_oefenronde)
+r_eva = bonus_per_student("eva", met_oefenronde.get)
 check(r_eva["bonus"] == 0.0, "eerste worden in de oefenronde levert 0,0 op")
 check(
     r_eva["per_ronde"][1]["punten"] is None,
     "het vrijdagtoernooi staat nog steeds op 'nog niet gedraaid'",
 )
 check(
-    bonus_per_student("anna", met_oefenronde)["bonus"] == 0.5,
+    bonus_per_student("anna", met_oefenronde.get)["bonus"] == 0.5,
     "en de echte woensdaguitslag blijft gewoon staan",
 )
 
@@ -204,7 +204,7 @@ groot = {
     "namen_deelnemers": [f"s{i:02d}" for i in range(44)],
 }
 uitslagen = {str(BONUSWEEK): groot}
-verdeeld = [bonus_per_student(f"s{i:02d}", uitslagen)["per_ronde"][0]["punten"] for i in range(44)]
+verdeeld = [bonus_per_student(f"s{i:02d}", uitslagen.get)["per_ronde"][0]["punten"] for i in range(44)]
 check(verdeeld[:5] == [0.5, 0.4, 0.3, 0.2, 0.1], "de top 5 van 44 krijgt de hele ladder")
 check(set(verdeeld[5:]) == {0.0}, "de andere 39 krijgen niets voor dit toernooi")
 check(
@@ -212,8 +212,32 @@ check(
     f"er wordt per toernooi precies {sum(PUNTEN_PER_PLEK)} punt uitgekeerd, ongeacht de klasgrootte",
 )
 check(
-    f"buiten de top {len(PUNTEN_PER_PLEK)}" in bonus_per_student("s20", uitslagen)["per_ronde"][0]["uitleg"],
+    f"buiten de top {len(PUNTEN_PER_PLEK)}" in bonus_per_student("s20", uitslagen.get)["per_ronde"][0]["uitleg"],
     "en wie erbuiten valt leest dat er ook",
+)
+
+# ---------------------------------------------------------------------------
+print("\nEr worden alleen de rondes gelezen die meetellen")
+gelezen = []
+
+
+def tel_lezen(sleutel):
+    gelezen.append(sleutel)
+    return toernooien.get(sleutel)
+
+
+bonus_hele_klas({str(BONUSWEEK): {n: [{"geldig": True}] for n in "abcdefgh"}}, tel_lezen)
+check(
+    len(gelezen) == len(GESCOORDE_RONDES),
+    f"acht studenten leiden tot {len(GESCOORDE_RONDES)} leesacties, niet tot acht keer zoveel",
+)
+check(
+    set(gelezen) == {str(BONUSWEEK), f"{BONUSWEEK}_ronde2"},
+    "en dat zijn precies de twee rondes die punten opleveren",
+)
+check(
+    not any("formatief" in s for s in gelezen),
+    "de oefenronde wordt niet eens opgehaald",
 )
 
 print(f"\n{geslaagd} checks geslaagd.")

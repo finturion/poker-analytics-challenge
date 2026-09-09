@@ -352,7 +352,7 @@ def locaties(week: int, student_id: str, ok: bool = Depends(db.verifieer_student
     """
     week_key = str(week)
     submissions = db.laad_submissions().get(week_key, {})
-    eindstand_per_bot = db.laad_toernooi_resultaten().get(week_key, {}).get("eindstand_per_bot", {})
+    eindstand_per_bot = (db.laad_toernooi_resultaat(week_key) or {}).get("eindstand_per_bot", {})
 
     resultaat = []
     for bot_student_id, inzendingen in submissions.items():
@@ -429,7 +429,7 @@ def bonus(student_id: str, ok: bool = Depends(db.verifieer_student_token)):
     Een toernooi dat nog niet gedraaid is geeft punten: null -- dat is "nog
     niet bekend", geen nul.
     """
-    resultaat = bonus_per_student(student_id, db.laad_toernooi_resultaten())
+    resultaat = bonus_per_student(student_id, db.laad_toernooi_resultaat)
     return {**resultaat, "spelregels": _spelregels()}
 
 
@@ -438,7 +438,7 @@ def bonus_overzicht(ok: bool = Depends(db.verifieer_docent_token)):
     """Docent-only: de bonus van de hele klas, hoogste eerst, met de opbouw per week."""
     return {
         **_spelregels(),
-        "studenten": bonus_hele_klas(db.laad_submissions(), db.laad_toernooi_resultaten()),
+        "studenten": bonus_hele_klas(db.laad_submissions(), db.laad_toernooi_resultaat),
     }
 
 

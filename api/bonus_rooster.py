@@ -131,9 +131,15 @@ def puntenverdeling(toernooi):
     return verdeling
 
 
-def bonus_per_student(student_id, toernooi_resultaten):
+def bonus_per_student(student_id, haal_uitslag):
     """
     De bonus van één student, met per toernooi wat het opleverde en waarom.
+
+    `haal_uitslag` is een functie die één cachesleutel aanneemt en de uitslag
+    van die toernooironde teruggeeft, of None als die nog niet gedraaid is --
+    in de API is dat database.laad_toernooi_resultaat. Een functie en geen
+    dictionary, omdat elke ronde apart wordt opgeslagen: zo worden alleen de
+    twee rondes gelezen die meetellen, en niet alles wat er ooit is gedraaid.
 
     Retourneert {"bonus": float, "per_ronde": [...]}. Een toernooi dat nog niet
     gedraaid is levert punten: null op -- dat is "nog niet bekend", geen nul.
@@ -142,7 +148,7 @@ def bonus_per_student(student_id, toernooi_resultaten):
     totaal = 0.0
 
     for ronde, omschrijving in sorted(GESCOORDE_RONDES.items()):
-        toernooi = toernooi_resultaten.get(_cache_sleutel(BONUSWEEK, ronde)) or {}
+        toernooi = haal_uitslag(_cache_sleutel(BONUSWEEK, ronde)) or {}
         verdeling = puntenverdeling(toernooi)
 
         if not verdeling:
@@ -198,18 +204,25 @@ def bonus_per_student(student_id, toernooi_resultaten):
     }
 
 
-def bonus_hele_klas(submissions, toernooi_resultaten):
+def bonus_hele_klas(submissions, haal_uitslag):
     """
     Hetzelfde voor iedereen die ooit iets heeft ingeleverd, hoogste bonus eerst.
 
     `submissions` is de hele db.laad_submissions(): {week: {student_id: [...]}}.
     Wie nooit inleverde staat er niet in; wie inleverde maar niet meespeelde
     staat er met 0,0, zodat de docent ziet dat er iemand buiten de boot valt.
+
+    De uitslagen worden één keer opgehaald en daarna hergebruikt voor alle
+    studenten -- anders leest een klas van 44 dezelfde twee rondes 44 keer.
     """
     studenten = {
         student_id
         for inzendingen_per_student in submissions.values()
         for student_id in inzendingen_per_student
     }
-    overzicht = [bonus_per_student(student_id, toernooi_resultaten) for student_id in studenten]
+    gelezen = {
+        sleutel: haal_uitslag(sleutel)
+        for sleutel in (_cache_sleutel(BONUSWEEK, ronde) for ronde in GESCOORDE_RONDES)
+    }
+    overzicht = [bonus_per_student(student_id, gelezen.get) for student_id in studenten]
     return sorted(overzicht, key=lambda r: (-r["bonus"], r["student_id"]))

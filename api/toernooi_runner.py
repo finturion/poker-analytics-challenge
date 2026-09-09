@@ -81,18 +81,24 @@ def _verzamel_bots_over_weken(hoofdweek, vergelijk_met_week=None):
 # is het gemiddelde over deze simulaties, dus dit getal bepaalt hoeveel van de
 # uitslag skill is en hoeveel toeval.
 #
-# In de bonusweek staat er iets op het spel, dus meten we serieuzer: 30 in plaats
-# van 5 simulaties. Dat is 1500 handen per bot in plaats van 250. Gemeten met 44
-# bots kost dat 16 seconden per run in plaats van 3, en het maakt de onderkant van
-# de ranglijst betrouwbaar. De exacte top-5-volgorde wordt er níet reproduceerbaar
-# van -- bots van gelijke sterkte liggen dichter bij elkaar dan de ruis, en dat
-# los je niet op met simuleren. Zie scripts/meet_toernooi_variantie.py.
+# In de bonusweek staat er iets op het spel, dus meten we serieuzer: 20 in plaats
+# van 5 simulaties, oftewel 1000 handen per bot in plaats van 250. Met 5 ging
+# ongeveer de helft van de punten naar de betere helft van het veld -- een
+# muntworp (52%); met 20 is dat 83%. Met 30 werd het 84%, dus daarboven koop je
+# niets meer -- 20 is waar de curve vlak wordt.
+#
+# Het is bewust niet meer dan 20. De exacte volgorde binnen de top wordt er niet
+# reproduceerbaar van: bots van gelijke sterkte zijn gelijk sterk, dus wie van hen
+# wint blijft toeval, en dat los je met geen enkel aantal simulaties op. Wat je met
+# meer simulaties koopt is dat de prijzen bij de goede bots terechtkomen, en dat
+# doen ze bij 20 al. Wat je ervoor betaalt is rekentijd en een groter hand-log dat
+# studenten moeten downloaden. Zie scripts/meet_toernooi_variantie.py.
 #
 # De andere weken houden 5. Daar telt de uitslag niet mee voor punten; hij is
-# invoer voor de visualisatie-opdracht van de week erna, en die heeft geen 1500
-# handen per bot nodig. Het scheelt de studenten een download van 6 MB.
+# invoer voor de visualisatie-opdracht van de week erna, en die heeft geen 1000
+# handen per bot nodig.
 STANDAARD_N_SIMULATIES = 5
-N_SIMULATIES_BONUSWEEK = 30
+N_SIMULATIES_BONUSWEEK = 20
 
 
 def n_simulaties_voor(week):
@@ -139,8 +145,7 @@ def haal_gecacht_resultaat_op(week, vergelijk_met_week=None, ronde=1, formatief=
     er nog geen resultaat is voor deze combinatie, anders het opgeslagen
     resultaat aangevuld met "gedraaid": True.
     """
-    alle_resultaten = db.laad_toernooi_resultaten()
-    resultaat = alle_resultaten.get(_cache_sleutel(week, vergelijk_met_week, ronde, formatief))
+    resultaat = db.laad_toernooi_resultaat(_cache_sleutel(week, vergelijk_met_week, ronde, formatief))
     if resultaat is None:
         return {
             "gedraaid": False,
@@ -152,7 +157,7 @@ def haal_gecacht_resultaat_op(week, vergelijk_met_week=None, ronde=1, formatief=
     return {**resultaat, "gedraaid": True}
 
 
-def _startstacks_uit_vorige_ronde(alle_resultaten, week, vergelijk_met_week, ronde):
+def _startstacks_uit_vorige_ronde(week, vergelijk_met_week, ronde):
     """
     De startstacks voor `ronde`, afgeleid uit de eindstand van de ronde ervoor.
 
@@ -167,7 +172,7 @@ def _startstacks_uit_vorige_ronde(alle_resultaten, week, vergelijk_met_week, ron
     """
     if ronde <= 1:
         return None
-    vorige = alle_resultaten.get(_cache_sleutel(week, vergelijk_met_week, ronde - 1))
+    vorige = db.laad_toernooi_resultaat(_cache_sleutel(week, vergelijk_met_week, ronde - 1))
     if not vorige or not vorige.get("eindstand_per_bot"):
         return None
     return bereken_startstacks(vorige["eindstand_per_bot"])
@@ -227,11 +232,12 @@ def draai_toernooi(
     if n_simulaties is None:
         n_simulaties = n_simulaties_voor(week)
 
-    alle_resultaten = db.laad_toernooi_resultaten()
     cache_key = _cache_sleutel(week, vergelijk_met_week, ronde, formatief)
 
-    if not forceer_opnieuw and cache_key in alle_resultaten:
-        return alle_resultaten[cache_key]
+    if not forceer_opnieuw:
+        bestaand = db.laad_toernooi_resultaat(cache_key)
+        if bestaand is not None:
+            return bestaand
 
     bots, namen_hoofdweek = _verzamel_bots_over_weken(week, vergelijk_met_week)
     if vergelijk_met_week is None:
@@ -260,7 +266,7 @@ def draai_toernooi(
         }
         return resultaat
 
-    startstacks = _startstacks_uit_vorige_ronde(alle_resultaten, week, vergelijk_met_week, ronde)
+    startstacks = _startstacks_uit_vorige_ronde(week, vergelijk_met_week, ronde)
 
     uitkomst = speel_toernooi(
         bots,
@@ -284,6 +290,5 @@ def draai_toernooi(
         "eindstand_per_bot": uitkomst["eindstand_per_bot"],
     }
 
-    alle_resultaten[cache_key] = resultaat
-    db.sla_toernooi_resultaten_op(alle_resultaten)
+    db.sla_toernooi_resultaat_op(cache_key, resultaat)
     return resultaat

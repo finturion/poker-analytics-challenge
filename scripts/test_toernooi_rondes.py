@@ -74,8 +74,8 @@ def stub(hand, stack, ronde, strategie, bluf_kans):
 
 
 nep_cache = {}
-toernooi_runner.db.laad_toernooi_resultaten = lambda: nep_cache
-toernooi_runner.db.sla_toernooi_resultaten_op = lambda d: nep_cache.update(d)
+toernooi_runner.db.laad_toernooi_resultaat = nep_cache.get
+toernooi_runner.db.sla_toernooi_resultaat_op = lambda sleutel, resultaat: nep_cache.__setitem__(sleutel, resultaat)
 toernooi_runner._verzamel_bots_over_weken = lambda week, vergelijk: (
     {
         naam: {"kies_actie": fn, "strategie": "tight", "bluf_kans": 0.1}
@@ -95,7 +95,7 @@ check(
 )
 check(
     "5" in nep_cache and "5_ronde2" in nep_cache,
-    "beide rondes staan naast elkaar in de cache",
+    "beide rondes staan onder hun eigen sleutel opgeslagen",
 )
 check(
     haal_gecacht_resultaat_op(5, ronde=1)["eindstand_per_bot"] == ronde1["eindstand_per_bot"],

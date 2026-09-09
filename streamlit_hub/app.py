@@ -248,6 +248,12 @@ def _toon_toernooi_resultaat(resultaat, gedraaid_nu):
         )
     else:
         st.success(f"Laatst bekende uitslag ({soort} {ronde}): {resultaat['n_bots']} bots.")
+    if resultaat.get("n_simulaties"):
+        st.caption(
+            f"Eindstand = gemiddelde over {resultaat['n_simulaties']} simulaties "
+            f"({resultaat['n_simulaties'] * 50} handen per bot). Het veld wordt elke simulatie "
+            "opnieuw over de tafels verdeeld."
+        )
     if resultaat.get("formatief"):
         st.info("Dit is een oefenronde: hij telt niet mee voor de bonus en raakt de echte uitslag niet.")
 

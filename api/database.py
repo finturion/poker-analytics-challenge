@@ -17,6 +17,7 @@ JSON-bestanden, zodat je niet voor elke test een Postgres-server nodig hebt.
 import hashlib
 import json
 import os
+import re
 import time
 from fastapi import HTTPException, Security
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -179,12 +180,47 @@ def laad_tokens() -> dict:
     return _laad(TOKENS_FILE)
 
 
-def laad_toernooi_resultaten() -> dict:
-    return _laad(TOERNOOI_RESULTATEN_FILE)
+_TOERNOOI_SLEUTEL = re.compile(r"^[A-Za-z0-9_]+$")
 
 
-def sla_toernooi_resultaten_op(data: dict):
-    _sla_op(TOERNOOI_RESULTATEN_FILE, data)
+def _toernooi_bestand(cache_key: str) -> str:
+    """
+    De opslagsleutel van één toernooironde.
+
+    De cache_key wordt een bestandsnaam (of een primary key in Postgres), dus
+    hij mag alleen letters, cijfers en underscores bevatten. In de praktijk
+    komt hij uit toernooi_runner._cache_sleutel() en is hij opgebouwd uit
+    weeknummers en vaste woorden, maar dat wil je niet hoeven vertrouwen op de
+    plek waar er een pad van gemaakt wordt.
+    """
+    if not _TOERNOOI_SLEUTEL.match(cache_key):
+        raise ValueError(f"Ongeldige toernooi-cachesleutel: {cache_key!r}")
+    return f"toernooi_ronde_{cache_key}.json"
+
+
+def laad_toernooi_resultaat(cache_key: str) -> dict | None:
+    """
+    Eén toernooironde, of None als die nog niet gedraaid is.
+
+    Elke ronde staat apart. Dat moet ook: met 20 simulaties is het hand-log van
+    één ronde in de bonusweek bijna 5 MB, en toen alle rondes van alle weken nog
+    samen in één blob zaten werd die hele blob gelezen én herschreven bij elke
+    aanroep -- ook bij een cache-hit, en ook voor de bonusberekening. Drie rondes
+    in week 5 plus de eerdere weken tikte dat op naar tientallen megabytes per
+    request.
+
+    Rondes die nog onder de oude, gebundelde sleutel staan worden hier gewoon
+    gevonden: bestaande uitslagen blijven dus leesbaar, en zodra een ronde
+    opnieuw wordt weggeschreven staat hij apart.
+    """
+    resultaat = _laad(_toernooi_bestand(cache_key))
+    if resultaat:
+        return resultaat
+    return _laad(TOERNOOI_RESULTATEN_FILE).get(cache_key)
+
+
+def sla_toernooi_resultaat_op(cache_key: str, resultaat: dict):
+    _sla_op(_toernooi_bestand(cache_key), resultaat)
 
 
 def anonimiseer_id(student_id: str, week: int) -> str:

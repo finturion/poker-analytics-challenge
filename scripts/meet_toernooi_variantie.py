@@ -20,6 +20,7 @@ Draaien:  python3 scripts/meet_toernooi_variantie.py
 Dit kost een paar minuten -- het speelt honderdduizenden handen poker.
 """
 import collections
+import json
 import os
 import statistics
 import sys
@@ -115,6 +116,13 @@ def rapporteer(n_simulaties, veld):
         for i, a in enumerate(ranglijsten) for b in ranglijsten[i + 1:]
     ]
     print(f"  Dezelfde namen in de top 5 bij twee seeds: gemiddeld {statistics.mean(overlappen):.1f} van 5")
+
+    # Wat de opzet kost aan data: het hand-log gaat mee in de API-respons en
+    # wordt door studenten in een DataFrame gezet.
+    uitslag = speel_toernooi(veld, n_simulaties=n_simulaties, n_handen=50, seed=SEEDS[0])
+    regels = len(uitslag["hand_log"])
+    print(f"  Hand-log: {regels:,} regels, {len(json.dumps(uitslag)) / 1e6:.1f} MB, "
+          f"{regels // len(veld):,} regels per student")
 
 
 if __name__ == "__main__":
