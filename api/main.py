@@ -11,6 +11,7 @@ Doel: nul handmatige nakijkdruk voor de docent.
 - POST /toernooi/{week}/opnieuw -> docent-only: forceer een nieuwe toernooi-run
 - GET  /toernooi/{week}/resultaat -> docent-only: laatst gecachte uitslag, draait NOOIT zelf een toernooi
 - GET  /locaties/{week} -> geolocaties van alle bots (vanaf Week 5), met eindstand indien bekend
+- POST /bot-test/{student_id} -> test de bot van een klasgenoot op je eigen situaties (geen code)
 - GET  /bonus/{student_id} -> student ziet zijn EIGEN bonuspunt met de opbouw per week
 - GET  /bonus            -> docent-only: de bonus van de hele klas
 - POST /datacamp/snapshot -> docent-only: wekelijkse DataCamp-voortgang wegschrijven
@@ -35,7 +36,7 @@ from bonus_rooster import (
     bonus_per_student,
     puntentabel,
 )
-from bot_validator import valideer_bot_code
+from bot_validator import MAX_TESTGEVALLEN_PEER, speel_testgevallen, valideer_bot_code
 from chart_validator import valideer_chart_json
 from locatie_validator import valideer_locatie
 from toernooi_runner import draai_toernooi, haal_gecacht_resultaat_op
@@ -108,6 +109,13 @@ class DataCampSnapshot(BaseModel):
     niet_gekoppeld: list[str] = Field(
         default_factory=list, description="DataCamp-e-mails die niet aan een studentnummer te koppelen zijn"
     )
+
+
+class BotTestVerzoek(BaseModel):
+    """Een setje situaties waarop je de bot van een klasgenoot wil zien reageren."""
+    week: int
+    van_student_id: str
+    testgevallen: list[dict]
 
 
 # ---------------------------------------------------------------------------
@@ -398,6 +406,65 @@ def export(week: int, ok: bool = Depends(db.verifieer_docent_token)):
             }
         )
     return overzicht
+
+
+@app.post("/bot-test/{student_id}")
+def bot_test(
+    student_id: str,
+    verzoek: BotTestVerzoek,
+    ok: bool = Depends(db.verifieer_student_token),
+):
+    """
+    Test de bot van een klasgenoot op situaties die JIJ bedenkt.
+
+    Je stuurt een lijstje testgevallen in (elk minstens een `hand`, en verder
+    wat je wil: `stack`, `ronde`, `pot`, `inzet_om_te_callen`,
+    `tegenstander_acties_deze_hand`) en krijgt terug wat die bot daarop doet.
+
+    Wat je NIET terugkrijgt is zijn code. Dat is een bewuste keuze: er hangt een
+    bonuspunt aan het toernooi, en een endpoint dat andermans bot uitdeelt maakt
+    die competitie kopieerbaar. Je ziet gedrag, en gedrag is precies wat je wil
+    vergelijken -- dezelfde situaties, twee bots, verschillende antwoorden.
+
+    De `strategie` en `bluf_kans` waarmee getest wordt zijn die van zijn eigen
+    inzending, niet die van jou. Parameters die zijn functie niet accepteert
+    worden weggelaten, net als in het echte toernooi.
+
+    Maximaal MAX_TESTGEVALLEN_PEER situaties per aanvraag.
+    """
+    inzendingen = db.laad_submissions().get(str(verzoek.week), {}).get(verzoek.van_student_id)
+    inzending = db.nieuwste_inzending(inzendingen) if inzendingen else None
+
+    if inzending is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Geen inzending gevonden voor {verzoek.van_student_id} in week {verzoek.week}.",
+        )
+    if not inzending.get("geldig"):
+        raise HTTPException(
+            status_code=409,
+            detail=(f"De laatste inzending van {verzoek.van_student_id} is technisch nog niet "
+                    "goedgekeurd, dus er is geen werkende bot om tegen te testen."),
+        )
+
+    uitkomst = speel_testgevallen(
+        inzending["bot_code"],
+        verzoek.week,
+        verzoek.testgevallen,
+        strategie=inzending.get("strategie"),
+        bluf_kans=inzending.get("bluf_kans"),
+    )
+    if uitkomst["foutmelding"]:
+        raise HTTPException(status_code=400, detail=uitkomst["foutmelding"])
+
+    return {
+        "van_student_id": verzoek.van_student_id,
+        "week": verzoek.week,
+        "strategie": inzending.get("strategie"),
+        "bluf_kans": inzending.get("bluf_kans"),
+        "acties": uitkomst["acties"],
+        "gebruikte_parameters": uitkomst["gebruikte_parameters"],
+    }
 
 
 # ---------------------------------------------------------------------------

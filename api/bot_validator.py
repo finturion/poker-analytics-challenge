@@ -186,6 +186,57 @@ def _bouw_testgevallen(config: dict, strategie, bluf_kans, parameternamen: set[s
     return gevallen
 
 
+def _draai_in_apart_proces(code: str, functienaam: str, testgevallen: list[dict]):
+    """
+    Draait de studentcode op deze testgevallen in een apart, geïsoleerd proces.
+
+    Retourneert (acties, foutmelding). Bij een fout is acties None en bevat
+    foutmelding iets dat een student kan lezen.
+
+    Apart proces met `python -I`: geen site-packages van ons, geen omgeving die
+    doorlekt, en een harde timeout. Zo kan een oneindige loop of een crash in
+    studentcode de API niet meesleuren.
+    """
+    testgevallen_json = json.dumps(testgevallen)
+    footer = textwrap.dedent(f"""
+        testgevallen = json.loads('''{testgevallen_json}''')
+        resultaten = []
+        for testgeval in testgevallen:
+            resultaten.append({functienaam}(**testgeval))
+        print("{MARKER}" + json.dumps({{"acties": resultaten}}))
+    """)
+    # Let op: het studentbestand (`code`) heeft zijn eigen, willekeurige inspringing.
+    # Die mag NIET door textwrap.dedent worden aangeraakt -- daarom blijft `code`
+    # ongewijzigd op kolom 0 staan, los van de rest.
+    runner_script = "import json\n\n" + code + "\n\n" + footer
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
+        f.write(runner_script)
+        tijdelijk_pad = f.name
+
+    try:
+        proces = subprocess.run(
+            [sys.executable, "-I", tijdelijk_pad],
+            capture_output=True,
+            text=True,
+            timeout=TIMEOUT_SECONDS,
+        )
+    except subprocess.TimeoutExpired:
+        return None, f"Je bot-code draaide langer dan {TIMEOUT_SECONDS} seconden (oneindige loop?)."
+    finally:
+        os.remove(tijdelijk_pad)
+
+    if proces.returncode != 0 or MARKER not in proces.stdout:
+        foutregel = proces.stderr.strip().splitlines()[-1] if proces.stderr.strip() else "Onbekende fout."
+        return None, f"Je bot-code crasht: {foutregel}"
+
+    try:
+        resultaat_json = proces.stdout.split(MARKER, 1)[1].strip().splitlines()[0]
+        return json.loads(resultaat_json)["acties"], None
+    except (IndexError, json.JSONDecodeError, KeyError):
+        return None, "Kon het resultaat van je functie niet uitlezen."
+
+
 def _is_constante_bot(acties: list) -> bool:
     """
     True als de bot op ALLE testgevallen precies dezelfde actie teruggeeft.
@@ -240,51 +291,9 @@ def valideer_bot_code(code: str, week: int, strategie: str | None = None, bluf_k
     # gezamenlijke inspringing van alle regels en zou de inhoud van `code` dan
     # kunnen verschuiven t.o.v. zijn eigen functie-body -> valse IndentationError).
     # Daarom blijft `code` ongewijzigd op kolom 0 staan, los van de rest.
-    testgevallen_json = json.dumps(testgevallen)
-    footer = textwrap.dedent(f"""
-        testgevallen = json.loads('''{testgevallen_json}''')
-        resultaten = []
-        for testgeval in testgevallen:
-            resultaten.append({functienaam}(**testgeval))
-        print("{MARKER}" + json.dumps({{"acties": resultaten}}))
-    """)
-    runner_script = "import json\n\n" + code + "\n\n" + footer
-
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
-        f.write(runner_script)
-        tijdelijk_pad = f.name
-
-    try:
-        proces = subprocess.run(
-            [sys.executable, "-I", tijdelijk_pad],
-            capture_output=True,
-            text=True,
-            timeout=TIMEOUT_SECONDS,
-        )
-    except subprocess.TimeoutExpired:
-        return {
-            "geldig": False,
-            "foutmelding": f"Je bot-code draaide langer dan {TIMEOUT_SECONDS} seconden (oneindige loop?).",
-            "actie_resultaten": None,
-            "constante_bot": False,
-        }
-    finally:
-        os.remove(tijdelijk_pad)
-
-    if proces.returncode != 0 or MARKER not in proces.stdout:
-        foutregel = proces.stderr.strip().splitlines()[-1] if proces.stderr.strip() else "Onbekende fout."
-        return {"geldig": False, "foutmelding": f"Je bot-code crasht: {foutregel}", "actie_resultaten": None, "constante_bot": False}
-
-    try:
-        resultaat_json = proces.stdout.split(MARKER, 1)[1].strip().splitlines()[0]
-        acties = json.loads(resultaat_json)["acties"]
-    except (IndexError, json.JSONDecodeError, KeyError):
-        return {
-            "geldig": False,
-            "foutmelding": "Kon het resultaat van je functie niet uitlezen.",
-            "actie_resultaten": None,
-            "constante_bot": False,
-        }
+    acties, draaifout = _draai_in_apart_proces(code, functienaam, testgevallen)
+    if draaifout:
+        return {"geldig": False, "foutmelding": draaifout, "actie_resultaten": None, "constante_bot": False}
 
     if config["heeft_sizing"]:
         toegestane_acties = TOEGESTANE_ACTIES_MET_SIZING
@@ -315,3 +324,59 @@ def valideer_bot_code(code: str, week: int, strategie: str | None = None, bluf_k
         "actie_resultaten": acties,
         "constante_bot": _is_constante_bot(acties),
     }
+
+
+# Hoeveel testgevallen je in één keer aan iemand anders zijn bot mag stellen.
+# Bewust laag: dit is bedoeld om te zien HOE een klasgenoot speelt op een paar
+# situaties die jij interessant vindt, niet om zijn hele strategietabel uit te
+# lezen. Elke aanroep start ook een apart proces, dus het kost rekentijd.
+MAX_TESTGEVALLEN_PEER = 20
+
+
+def speel_testgevallen(code: str, week: int, testgevallen: list[dict],
+                       strategie=None, bluf_kans=None) -> dict:
+    """
+    Draait een bot op testgevallen die de aanvrager zelf opgeeft.
+
+    Voor "test tegen een klasgenoot": je stuurt een setje situaties in en krijgt
+    terug wat die bot daarop doet. De code zelf gaat nergens naartoe -- je ziet
+    gedrag, geen broncode. Dat is bewust: er hangt een bonuspunt aan het
+    toernooi, en een endpoint dat andermans bot uitdeelt maakt dat kopieerbaar.
+
+    Retourneert {"acties": [...], "foutmelding": None} of andersom. Ontbrekende
+    parameters worden weggelaten: net als in het echte spel krijgt een bot
+    alleen wat hij zelf in zijn signatuur heeft gezet.
+    """
+    if week not in VERWACHTE_FUNCTIES:
+        return {"acties": None, "foutmelding": f"Onbekende week: {week}"}
+    if not testgevallen:
+        return {"acties": None, "foutmelding": "Geef minstens één testgeval mee."}
+    if len(testgevallen) > MAX_TESTGEVALLEN_PEER:
+        return {"acties": None,
+                "foutmelding": f"Maximaal {MAX_TESTGEVALLEN_PEER} testgevallen per aanvraag."}
+
+    config = VERWACHTE_FUNCTIES[week]
+    functienaam = config["functienaam"]
+
+    verboden_reden = _bevat_verboden_imports(code)
+    if verboden_reden:
+        return {"acties": None, "foutmelding": verboden_reden}
+    if not _bevat_functie(code, functienaam):
+        return {"acties": None, "foutmelding": f"Deze bot heeft geen functie '{functienaam}()'."}
+
+    # Alleen doorgeven wat de bot zelf accepteert, en strategie/bluf_kans van de
+    # inzending gebruiken in plaats van wat de aanvrager verzint -- anders test je
+    # de bot van je klasgenoot met een instelling die hij nooit gekozen heeft.
+    toegestaan = _functie_parameternamen(code, functienaam)
+    vast = {"strategie": strategie, "bluf_kans": bluf_kans}
+    opgeschoond = []
+    for testgeval in testgevallen:
+        if "hand" not in testgeval:
+            return {"acties": None, "foutmelding": "Elk testgeval heeft minstens een 'hand' nodig."}
+        samen = {**testgeval, **{k: v for k, v in vast.items() if v is not None}}
+        opgeschoond.append({k: v for k, v in samen.items() if k in toegestaan})
+
+    acties, fout = _draai_in_apart_proces(code, functienaam, opgeschoond)
+    if fout:
+        return {"acties": None, "foutmelding": fout}
+    return {"acties": acties, "foutmelding": None, "gebruikte_parameters": sorted(toegestaan)}
