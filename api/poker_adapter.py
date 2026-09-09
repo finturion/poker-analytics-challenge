@@ -39,6 +39,13 @@ STANDAARD_N_HANDEN = 50
 STANDAARD_INITIAL_STACK = 1000
 STANDAARD_SMALL_BLIND = 10
 
+# Hoeveel keer een bot per straat mag raisen. Stond op 1, staat nu op 2 zodat er
+# een re-raise mogelijk is: wie groot inzet kan worden teruggepakt, in plaats van
+# dat de tafel alleen kan callen of folden. Dat maakt het spel niet ingewikkelder
+# voor de student -- kies_actie() geeft nog steeds gewoon "raise" terug en de
+# engine bepaalt of dat mag -- maar het maakt agressie wél weerlegbaar.
+MAX_RAISES_PER_STRAAT = 2
+
 # bot_validator.py test elke bot-functie al één keer in een subprocess met
 # timeout, vóórdat een inzending wordt goedgekeurd. Tijdens het toernooi
 # draait dezelfde functie duizenden keren met écht wisselende handen, in
@@ -59,7 +66,8 @@ def _ondersteunt_all_in_regels(kies_actie):
     """
     Vanaf Week 3 schrijven studenten kies_actie(hand, stack, ...) en kunnen ze
     daarmee bewust reageren op hun eigen stack. Alleen bots met die
-    stack-parameter krijgen de Week 3-spelregels: max 1 raise per straat, en de
+    stack-parameter krijgen de Week 3-spelregels: maximaal MAX_RAISES_PER_STRAAT
+    raises per straat, en de
     mogelijkheid om zelf "all_in" terug te geven. Week 1/2-bots (die alleen
     `hand` kennen) spelen met het oude, ongewijzigde gedrag, zodat al gedraaide
     toernooien voor die weken niet stiekem veranderen.
@@ -145,8 +153,8 @@ class StudentBotSpeler(BasePokerPlayer):
             tegenstander_acties_deze_hand=list(self._acties_deze_hand),
         )
         if self._ondersteunt_all_in and gekozen == "raise":
-            if self._raises_deze_straat >= 1:
-                # al één keer geraisd deze straat -- geen re-raise, wel nog callen
+            if self._raises_deze_straat >= MAX_RAISES_PER_STRAAT:
+                # het maximum voor deze straat is bereikt -- niet meer raisen, wel callen
                 gekozen = "call"
             else:
                 self._raises_deze_straat += 1
