@@ -156,6 +156,7 @@ class StudentBotSpeler(BasePokerPlayer):
         self._strategie = strategie
         self._bluf_kans = bluf_kans
         self._huidige_hand_nummer = 0
+        self._hand_deze_hand = None
         self._eerste_actie_deze_hand = None
         self._raises_deze_straat = 0
         self._ondersteunt_all_in = _ondersteunt_all_in_regels(kies_actie)
@@ -267,6 +268,7 @@ class StudentBotSpeler(BasePokerPlayer):
 
     def receive_round_start_message(self, round_count, hole_card, seats):
         self._huidige_hand_nummer = round_count
+        self._hand_deze_hand = _naar_onze_hand(hole_card)
         self._eerste_actie_deze_hand = None
         self._acties_deze_hand = []
         self._uuid_naar_naam = {seat["uuid"]: seat["name"] for seat in seats}
@@ -289,6 +291,13 @@ class StudentBotSpeler(BasePokerPlayer):
             {
                 "bot_naam": self.bot_naam,
                 "hand_nummer": self._huidige_hand_nummer,
+                # De twee kaarten waarmee deze hand is gespeeld. Staat erin zodat
+                # studenten kunnen nagaan wélke handen ze speelden en wat die
+                # opleverden -- zonder dit veld is de winkans-grens die ze in
+                # Week 3 kozen achteraf niet te controleren. Het maakt ook de
+                # drempels van tegenstanders leesbaar uit hun eigen log, en dat
+                # is een legitieme pokervaardigheid: de hand is afgelopen.
+                "hand": self._hand_deze_hand,
                 "actie": self._eerste_actie_deze_hand or "fold",
                 "stack": eigen_stack,
             }
