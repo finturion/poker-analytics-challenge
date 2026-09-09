@@ -114,6 +114,42 @@ check(
 )
 
 # ---------------------------------------------------------------------------
+# 3b. De formatieve donderdagronde: een repetitie die niets verschuift
+# ---------------------------------------------------------------------------
+print("\nFormatieve ronde")
+from toernooi_runner import _cache_sleutel as sleutel
+
+check(sleutel(5, None, 2, formatief=True) == "5_ronde2_formatief", "een formatieve run heeft een eigen sleutel")
+check(
+    sleutel(5, None, 2, formatief=True) != sleutel(5, None, 2),
+    "en bezet dus niet de plek van de ronde die meetelt",
+)
+
+vrijdag_voor = dict(ronde2["eindstand_per_bot"])
+oefen = draai_toernooi(5, n_simulaties=2, n_handen=20, ronde=2, formatief=True)
+
+check(oefen["formatief"] is True, "de uitslag zegt zelf dat hij formatief is")
+check(
+    oefen["startstacks"] == ronde2["startstacks"],
+    "de repetitie draait met exact dezelfde startstacks als de echte ronde 2",
+)
+check(
+    "5_ronde2_formatief" in nep_cache and nep_cache["5_ronde2"]["eindstand_per_bot"] == vrijdag_voor,
+    "hij staat naast ronde 2 in de cache en heeft die niet aangeraakt",
+)
+
+# De echte ronde 2 opnieuw draaien mag niet ineens vanaf de oefenronde starten.
+opnieuw = draai_toernooi(5, n_simulaties=2, n_handen=20, ronde=2, forceer_opnieuw=True)
+check(
+    opnieuw["startstacks"] == ronde2["startstacks"],
+    "en de startstacks van ronde 2 komen nog steeds uit ronde 1, niet uit de oefenronde",
+)
+check(
+    haal_gecacht_resultaat_op(5, ronde=3)["gedraaid"] is False,
+    "een oefenronde wordt nooit de bron voor een volgende ronde",
+)
+
+# ---------------------------------------------------------------------------
 # 4. constante_bot
 # ---------------------------------------------------------------------------
 print("\nValidator: constante_bot")

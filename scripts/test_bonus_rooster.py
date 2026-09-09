@@ -175,6 +175,29 @@ check(
 )
 
 # ---------------------------------------------------------------------------
+print("\nDe formatieve donderdagronde telt niet mee")
+# Een oefenronde staat onder een eigen sleutel. Al zou iemand daarin eerste
+# worden, dan levert dat niets op -- en hij mag de echte uitslag niet vervangen.
+met_oefenronde = {
+    str(BONUSWEEK): ronde1,
+    f"{BONUSWEEK}_ronde2_formatief": {
+        "eindstand_per_bot": {"eva": 9999, "anna": 1000},
+        "namen_deelnemers": ["eva", "anna"],
+        "formatief": True,
+    },
+}
+r_eva = bonus_per_student("eva", met_oefenronde)
+check(r_eva["bonus"] == 0.0, "eerste worden in de oefenronde levert 0,0 op")
+check(
+    r_eva["per_ronde"][1]["punten"] is None,
+    "het vrijdagtoernooi staat nog steeds op 'nog niet gedraaid'",
+)
+check(
+    bonus_per_student("anna", met_oefenronde)["bonus"] == 0.5,
+    "en de echte woensdaguitslag blijft gewoon staan",
+)
+
+# ---------------------------------------------------------------------------
 print("\nEen realistisch veld van 44")
 groot = {
     "eindstand_per_bot": {f"s{i:02d}": 2000 - i * 25 for i in range(44)},

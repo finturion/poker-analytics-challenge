@@ -279,6 +279,7 @@ def toernooi(
     student_id: str,
     vergelijk_met_week: int | None = None,
     ronde: int = 1,
+    formatief: bool = False,
     ok: bool = Depends(db.verifieer_student_token),
 ):
     """
@@ -295,9 +296,14 @@ def toernooi(
     elkaars uitslag overschrijven. Ronde 1 is de woensdag-run; vanaf ronde 2
     speelt iedereen door met de chips uit de vorige ronde + 1000 erbij.
 
+    `formatief=true` draait een repetitie van die ronde: dezelfde startstacks,
+    maar met de bots van dit moment, en weggeschreven onder een eigen sleutel.
+    Bedoeld voor de oefenronde op donderdag in week 5 -- die telt niet mee voor
+    de bonus en verschuift de vrijdaguitslag niet.
+
     hand_log kun je direct in een DataFrame zetten: pd.DataFrame(response.json()["hand_log"])
     """
-    return draai_toernooi(week, vergelijk_met_week=vergelijk_met_week, ronde=ronde)
+    return draai_toernooi(week, vergelijk_met_week=vergelijk_met_week, ronde=ronde, formatief=formatief)
 
 
 @app.post("/toernooi/{week}/opnieuw")
@@ -305,11 +311,16 @@ def toernooi_opnieuw(
     week: int,
     vergelijk_met_week: int | None = None,
     ronde: int = 1,
+    formatief: bool = False,
     ok: bool = Depends(db.verifieer_docent_token),
 ):
     """Docent-only: forceer een nieuwe toernooi-run (bv. na te late inzendingen)."""
     return draai_toernooi(
-        week, vergelijk_met_week=vergelijk_met_week, forceer_opnieuw=True, ronde=ronde
+        week,
+        vergelijk_met_week=vergelijk_met_week,
+        forceer_opnieuw=True,
+        ronde=ronde,
+        formatief=formatief,
     )
 
 
@@ -318,6 +329,7 @@ def toernooi_resultaat_ophalen(
     week: int,
     vergelijk_met_week: int | None = None,
     ronde: int = 1,
+    formatief: bool = False,
     ok: bool = Depends(db.verifieer_docent_token),
 ):
     """
@@ -326,7 +338,9 @@ def toernooi_resultaat_ophalen(
     zien hoe de klas ervoor staat, zonder de (mogelijk voor iedereen net
     goede) bestaande uitslag te overschrijven met een nieuwe run.
     """
-    return haal_gecacht_resultaat_op(week, vergelijk_met_week=vergelijk_met_week, ronde=ronde)
+    return haal_gecacht_resultaat_op(
+        week, vergelijk_met_week=vergelijk_met_week, ronde=ronde, formatief=formatief
+    )
 
 
 @app.get("/locaties/{week}")

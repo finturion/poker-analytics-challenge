@@ -240,13 +240,16 @@ def peer_review_tab():
 def _toon_toernooi_resultaat(resultaat, gedraaid_nu):
     """Rendert eindstand_per_bot als tabel. gedraaid_nu onderscheidt de twee knoppen in het succesbericht."""
     ronde = resultaat.get("ronde", 1)
+    soort = "oefenronde bij ronde" if resultaat.get("formatief") else "ronde"
     if gedraaid_nu:
         st.success(
-            f"Toernooi ronde {ronde} gedraaid: {resultaat['n_bots']} bots "
+            f"Toernooi {soort} {ronde} gedraaid: {resultaat['n_bots']} bots "
             f"({resultaat['aangevuld_met_oefenbots']} oefenbot(s) aangevuld)."
         )
     else:
-        st.success(f"Laatst bekende uitslag (ronde {ronde}): {resultaat['n_bots']} bots.")
+        st.success(f"Laatst bekende uitslag ({soort} {ronde}): {resultaat['n_bots']} bots.")
+    if resultaat.get("formatief"):
+        st.info("Dit is een oefenronde: hij telt niet mee voor de bonus en raakt de echte uitslag niet.")
 
     startstacks = resultaat.get("startstacks") or {}
     if startstacks:
@@ -357,7 +360,16 @@ def docent_tab():
             "uit de vorige ronde + 1000 erbij, en blijft de uitslag van ronde 1 gewoon bewaard."
         ),
     )
-    params = {"ronde": int(ronde)}
+    formatief = st.checkbox(
+        "Oefenronde (telt niet mee)",
+        key="toernooi_formatief",
+        help=(
+            "Draait een repetitie van deze ronde: dezelfde startstacks, maar met de bots van nu. "
+            "Voor de donderdagronde in week 5 — studenten zien wat hun aanpassing zou doen, "
+            "zonder dat het de uitslag raakt die voor de bonus meetelt."
+        ),
+    )
+    params = {"ronde": int(ronde), "formatief": formatief}
     if vergelijk_met:
         params["vergelijk_met_week"] = int(vergelijk_met)
 

@@ -76,7 +76,7 @@ def _verzamel_bots_over_weken(hoofdweek, vergelijk_met_week=None):
     return bots, deelnemers_hoofdweek
 
 
-def _cache_sleutel(week, vergelijk_met_week=None, ronde=1):
+def _cache_sleutel(week, vergelijk_met_week=None, ronde=1, formatief=False):
     """
     De sleutel waaronder een toernooi-uitkomst wordt bewaard.
 
@@ -87,12 +87,18 @@ def _cache_sleutel(week, vergelijk_met_week=None, ronde=1):
 
     Ronde 1 houdt bewust de oude sleutel ("5" of "5_vs_1"), zodat alles wat
     vóór deze wijziging is gedraaid gewoon vindbaar blijft.
+
+    Een formatieve run krijgt een eigen sleutel naast de echte ronde. Hij is een
+    repetitie van die ronde: hij draait met dezelfde startstacks, maar met de
+    bots van dát moment. Zo kan de donderdagronde de vrijdaguitslag voorspellen
+    zonder hem te bezetten of te beïnvloeden.
     """
     basis = str(week) if vergelijk_met_week is None else f"{week}_vs_{vergelijk_met_week}"
-    return basis if ronde == 1 else f"{basis}_ronde{ronde}"
+    sleutel = basis if ronde == 1 else f"{basis}_ronde{ronde}"
+    return f"{sleutel}_formatief" if formatief else sleutel
 
 
-def haal_gecacht_resultaat_op(week, vergelijk_met_week=None, ronde=1):
+def haal_gecacht_resultaat_op(week, vergelijk_met_week=None, ronde=1, formatief=False):
     """
     Haalt het laatst gecachte toernooi-resultaat op zonder OOIT een nieuwe
     run te starten -- ook niet als er nog niks gecacht is. Voor de docent-knop
@@ -104,13 +110,14 @@ def haal_gecacht_resultaat_op(week, vergelijk_met_week=None, ronde=1):
     resultaat aangevuld met "gedraaid": True.
     """
     alle_resultaten = db.laad_toernooi_resultaten()
-    resultaat = alle_resultaten.get(_cache_sleutel(week, vergelijk_met_week, ronde))
+    resultaat = alle_resultaten.get(_cache_sleutel(week, vergelijk_met_week, ronde, formatief))
     if resultaat is None:
         return {
             "gedraaid": False,
             "week": week,
             "vergelijk_met_week": vergelijk_met_week,
             "ronde": ronde,
+            "formatief": formatief,
         }
     return {**resultaat, "gedraaid": True}
 
@@ -122,6 +129,11 @@ def _startstacks_uit_vorige_ronde(alle_resultaten, week, vergelijk_met_week, ron
     Retourneert None voor ronde 1 en ook als de vorige ronde niet (meer) in de
     cache staat -- dan begint iedereen gewoon weer op de standaardstack, wat
     het oude gedrag is.
+
+    Er wordt altijd naar de échte vorige ronde gekeken, nooit naar een
+    formatieve run. Daardoor krijgt de formatieve repetitie van een ronde
+    precies dezelfde startstacks als die ronde zelf, en kan een oefenronde de
+    uitslag die meetelt niet verschuiven.
     """
     if ronde <= 1:
         return None
@@ -138,6 +150,7 @@ def draai_toernooi(
     n_handen=50,
     forceer_opnieuw=False,
     ronde=1,
+    formatief=False,
 ):
     """
     Draait (of hergebruikt uit cache) het toernooi voor `week`, optioneel
@@ -146,6 +159,19 @@ def draai_toernooi(
     `ronde` maakt meerdere toernooien binnen dezelfde week mogelijk zonder dat
     ze elkaar overschrijven: ronde 1 is de woensdag-run, ronde 2 de run later
     in de week. Elke ronde krijgt een eigen cachesleutel én een eigen seed.
+
+    `formatief` draait een repetitie van `ronde`: dezelfde startstacks en
+    dezelfde seed, maar met de bots van dit moment, weggeschreven onder een
+    eigen sleutel. Bedoeld voor de donderdagronde in week 5 -- studenten zien
+    wat hun aanpassing zou doen, zonder dat het de uitslag raakt die meetelt.
+
+    Dat de seed hetzelfde blijft is een keuze, niet een vergeetachtigheid: het
+    maakt de oefenronde een gecontroleerd experiment. Dezelfde kaarten, dezelfde
+    startposities, alleen een andere bot -- dus het verschil dat een student
+    ziet is zíjn verandering en niet de shuffle. Precies wat "verander, meet,
+    corrigeer" in Werkcollege 8 nodig heeft. Met een andere seed zou een student
+    niet kunnen weten of zijn aanpassing hielp of dat hij gewoon betere kaarten
+    kreeg.
 
     Vanaf ronde 2 spelen de bots door met wat ze verdiend hebben: hun stack is
     de eindstand van de vorige ronde + 1000 voor iedereen. Wie op woensdag niet
@@ -161,13 +187,14 @@ def draai_toernooi(
             "namen_deelnemers": [...],       # bot-namen van `week` zelf
             "aangevuld_met_oefenbots": int,
             "ronde": int,
+            "formatief": bool,               # True = oefenronde, telt niet mee
             "startstacks": {...} | None,     # None in ronde 1
             "hand_log": [...],
             "eindstand_per_bot": {...},
         }
     """
     alle_resultaten = db.laad_toernooi_resultaten()
-    cache_key = _cache_sleutel(week, vergelijk_met_week, ronde)
+    cache_key = _cache_sleutel(week, vergelijk_met_week, ronde, formatief)
 
     if not forceer_opnieuw and cache_key in alle_resultaten:
         return alle_resultaten[cache_key]
@@ -188,6 +215,7 @@ def draai_toernooi(
             "week": week,
             "vergelijk_met_week": vergelijk_met_week,
             "ronde": ronde,
+            "formatief": formatief,
             "n_bots": len(bots),
             "namen_deelnemers": namen_hoofdweek,
             "aangevuld_met_oefenbots": aangevuld,
@@ -211,6 +239,7 @@ def draai_toernooi(
         "week": week,
         "vergelijk_met_week": vergelijk_met_week,
         "ronde": ronde,
+        "formatief": formatief,
         "n_bots": len(bots),
         "namen_deelnemers": namen_hoofdweek,
         "aangevuld_met_oefenbots": aangevuld,
