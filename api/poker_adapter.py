@@ -46,6 +46,14 @@ STANDAARD_SMALL_BLIND = 10
 # engine bepaalt of dat mag -- maar het maakt agressie wél weerlegbaar.
 MAX_RAISES_PER_STRAAT = 2
 
+# Waarop "grote_raise" inzet. Een gewone raise is het wettelijke minimum -- mediaan
+# 40 chips, dus twee big blinds -- en all-in is de hele stack, mediaan 1540. Daar
+# zat niets tussen, en dus geen enkele keuze in inzetgrootte. 200 chips is tien big
+# blinds: groot genoeg om iemand van een middelmatige hand af te duwen, klein genoeg
+# om niet je hele toernooi te riskeren. Gemeten maakt de exacte hoogte boven de 200
+# nauwelijks nog verschil.
+GROTE_RAISE_CHIPS = 200
+
 # bot_validator.py test elke bot-functie al één keer in een subprocess met
 # timeout, vóórdat een inzending wordt goedgekeurd. Tijdens het toernooi
 # draait dezelfde functie duizenden keren met écht wisselende handen, in
@@ -62,6 +70,26 @@ def _naar_onze_hand(hole_card):
     return [_RANG_VERTALING.get(kaart[1], kaart[1]) for kaart in hole_card]
 
 
+def _heeft_parameter(kies_actie, naam):
+    """Of de student deze parameter zelf in zijn signatuur heeft gezet."""
+    try:
+        return naam in inspect.signature(kies_actie).parameters
+    except (TypeError, ValueError):
+        return False
+
+
+def _ondersteunt_grote_raise(kies_actie):
+    """
+    "grote_raise" mag pas vanaf Week 5, en de gate is "strategie" in de signatuur.
+
+    Dezelfde logica als bij all-in: een bot krijgt een spelregel er alleen bij als
+    hij het gereedschap heeft om die zinvol te gebruiken. Inzetgrootte kiezen is
+    pas een keuze als je ook een strategie en een bluf-kans hebt -- anders is
+    "groot inzetten" niets meer dan een tweede woord voor raise.
+    """
+    return _heeft_parameter(kies_actie, "strategie")
+
+
 def _ondersteunt_all_in_regels(kies_actie):
     """
     Vanaf Week 3 schrijven studenten kies_actie(hand, stack, ...) en kunnen ze
@@ -75,11 +103,7 @@ def _ondersteunt_all_in_regels(kies_actie):
     De gate kijkt bewust naar `stack` en niet naar `strategie`: strategie komt
     pas vanaf Week 5, terwijl all-in en de raise-cap al vanaf Week 3 gelden.
     """
-    try:
-        parameters = inspect.signature(kies_actie).parameters
-    except (TypeError, ValueError):
-        return False
-    return "stack" in parameters
+    return _heeft_parameter(kies_actie, "stack")
 
 
 def roep_student_bot_aan(
@@ -135,6 +159,7 @@ class StudentBotSpeler(BasePokerPlayer):
         self._eerste_actie_deze_hand = None
         self._raises_deze_straat = 0
         self._ondersteunt_all_in = _ondersteunt_all_in_regels(kies_actie)
+        self._ondersteunt_grote_raise = _ondersteunt_grote_raise(kies_actie)
         self._acties_deze_hand = []
         self._uuid_naar_naam = {}
         self.hand_log = []
@@ -152,7 +177,9 @@ class StudentBotSpeler(BasePokerPlayer):
             ronde=ronde, pot=pot, inzet_om_te_callen=inzet_om_te_callen,
             tegenstander_acties_deze_hand=list(self._acties_deze_hand),
         )
-        if self._ondersteunt_all_in and gekozen == "raise":
+        # Een grote raise telt voor de cap net zo hard als een gewone: anders zou je
+        # met "grote_raise" onbeperkt kunnen blijven verhogen.
+        if self._ondersteunt_all_in and gekozen in ("raise", "grote_raise"):
             if self._raises_deze_straat >= MAX_RAISES_PER_STRAAT:
                 # het maximum voor deze straat is bereikt -- niet meer raisen, wel callen
                 gekozen = "call"
@@ -160,7 +187,9 @@ class StudentBotSpeler(BasePokerPlayer):
                 self._raises_deze_straat += 1
         if self._eerste_actie_deze_hand is None:
             self._eerste_actie_deze_hand = gekozen
-        return self._naar_geldige_actie(gekozen, valid_actions, self._ondersteunt_all_in)
+        return self._naar_geldige_actie(
+            gekozen, valid_actions, self._ondersteunt_all_in, self._ondersteunt_grote_raise
+        )
 
     def _vind_eigen_stack(self, round_state):
         for seat in round_state["seats"]:
@@ -174,7 +203,8 @@ class StudentBotSpeler(BasePokerPlayer):
         return not (isinstance(bedrag, dict) and bedrag["min"] == -1)
 
     @classmethod
-    def _naar_geldige_actie(cls, gekozen, valid_actions, all_in_ondersteund=False):
+    def _naar_geldige_actie(cls, gekozen, valid_actions, all_in_ondersteund=False,
+                            grote_raise_ondersteund=False):
         """
         Valt terug op call, dan fold, als de gekozen actie nu niet mag.
 
@@ -192,8 +222,21 @@ class StudentBotSpeler(BasePokerPlayer):
         automatisch als all-in afhandelt als de stack te klein is om volledig
         te callen). "all_in" zet de hele stack in: een raise naar het
         maximale bedrag als dat nog kan, anders een call.
+
+        "grote_raise" (vanaf Week 5) is een raise van GROTE_RAISE_CHIPS in plaats
+        van het wettelijke minimum. Kan dat bedrag niet -- omdat het onder het
+        minimum ligt of boven wat de stack toelaat -- dan wordt het naar het
+        dichtstbijzijnde toegestane bedrag getrokken. Zo doet een grote raise altijd
+        íets, ook met een korte stack, en wordt hij nooit stil een fold.
         """
         toegestaan = {a["action"]: a for a in valid_actions}
+
+        if grote_raise_ondersteund and gekozen == "grote_raise":
+            raise_info = toegestaan.get("raise")
+            if raise_info and cls._is_geldige_raise(raise_info):
+                minimum, maximum = raise_info["amount"]["min"], raise_info["amount"]["max"]
+                return "raise", max(minimum, min(GROTE_RAISE_CHIPS, maximum))
+            gekozen = "call"
 
         if all_in_ondersteund and gekozen == "all_in":
             raise_info = toegestaan.get("raise")

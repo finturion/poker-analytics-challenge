@@ -23,6 +23,11 @@ TOEGESTANE_ACTIES = {"call", "raise", "fold", "check"}
 # _ondersteunt_all_in_regels in poker_adapter.py, dat aan de speel-kant op
 # exact hetzelfde signaal ("stack" in de signatuur) gate't.
 TOEGESTANE_ACTIES_MET_STACK = TOEGESTANE_ACTIES | {"all_in"}
+# "grote_raise" mag pas vanaf Week 5, waar de bot ook een strategie en een
+# bluf_kans heeft. Inzetgrootte kiezen is pas een keuze als je iets hebt om die
+# keuze op te baseren; zonder dat is het een tweede woord voor raise. Zie
+# _ondersteunt_grote_raise in poker_adapter.py, dat op hetzelfde signaal gate't.
+TOEGESTANE_ACTIES_MET_SIZING = TOEGESTANE_ACTIES_MET_STACK | {"grote_raise"}
 TOEGESTANE_STRATEGIEEN = {"tight", "loose", "balanced", "aggressive"}
 BLUF_KANS_MIN, BLUF_KANS_MAX = 0.0, 1.0
 
@@ -43,9 +48,12 @@ _TEST_STACKS = [1000, 50]
 # reageren). Vanaf Week 5, mét bluf_kans en tegenstander-info erbij, gaat een
 # strategie zich pas echt anders gedragen per moment.
 VERWACHTE_FUNCTIES = {
-    1: {"functienaam": "kies_actie", "heeft_stack": False, "heeft_strategie": False, "heeft_bluf_kans": False},
-    3: {"functienaam": "kies_actie", "heeft_stack": True, "heeft_strategie": False, "heeft_bluf_kans": False},
-    5: {"functienaam": "kies_actie", "heeft_stack": True, "heeft_strategie": True, "heeft_bluf_kans": True},
+    1: {"functienaam": "kies_actie", "heeft_stack": False, "heeft_strategie": False,
+        "heeft_bluf_kans": False, "heeft_sizing": False},
+    3: {"functienaam": "kies_actie", "heeft_stack": True, "heeft_strategie": False,
+        "heeft_bluf_kans": False, "heeft_sizing": False},
+    5: {"functienaam": "kies_actie", "heeft_stack": True, "heeft_strategie": True,
+        "heeft_bluf_kans": True, "heeft_sizing": True},
 }
 
 
@@ -278,7 +286,12 @@ def valideer_bot_code(code: str, week: int, strategie: str | None = None, bluf_k
             "constante_bot": False,
         }
 
-    toegestane_acties = TOEGESTANE_ACTIES_MET_STACK if config["heeft_stack"] else TOEGESTANE_ACTIES
+    if config["heeft_sizing"]:
+        toegestane_acties = TOEGESTANE_ACTIES_MET_SIZING
+    elif config["heeft_stack"]:
+        toegestane_acties = TOEGESTANE_ACTIES_MET_STACK
+    else:
+        toegestane_acties = TOEGESTANE_ACTIES
     for testgeval, actie in zip(testgevallen, acties):
         if not isinstance(actie, str) or actie.lower() not in toegestane_acties:
             context = [f"hand {testgeval['hand']}"]
