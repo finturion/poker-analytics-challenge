@@ -28,13 +28,12 @@ from pydantic import BaseModel, Field
 import database as db
 import datacamp_rooster as rooster
 from bonus_rooster import (
-    BOT_WEKEN,
+    BONUSWEEK,
+    GESCOORDE_RONDES,
     MAX_BONUS,
-    PRESTATIE_PLEKKEN,
     bonus_hele_klas,
     bonus_per_student,
-    omschrijf_deadline,
-    prestatietabel,
+    puntentabel,
 )
 from bot_validator import valideer_bot_code
 from chart_validator import valideer_chart_json
@@ -391,35 +390,15 @@ def export(week: int, ok: bool = Depends(db.verifieer_docent_token)):
 # Bonuspunten pokerlijn
 # ---------------------------------------------------------------------------
 def _spelregels() -> dict:
-    """
-    Het schema zelf, zodat de student niet hoeft te raden hoe zijn punt tot
-    stand komt: de weging per week, de deadlines en de uitbetaling per plek.
-    """
+    """Het schema zelf, zodat niemand hoeft te raden hoe de punten tot stand komen."""
     return {
         "maximaal": MAX_BONUS,
-        "weken": [
-            {
-                "week": item["week"],
-                "bot": item["bot"],
-                "maximaal": round(MAX_BONUS * item["gewicht"], 3),
-                "deadline_woensdag": omschrijf_deadline(item["deadline_woensdag"]),
-                "deadline_definitief": omschrijf_deadline(item["deadline_definitief"]),
-                "toelichting": item["toelichting"],
-            }
-            for item in BOT_WEKEN
+        "week": BONUSWEEK,
+        "toernooien": [
+            {"ronde": ronde, "toernooi": omschrijving}
+            for ronde, omschrijving in sorted(GESCOORDE_RONDES.items())
         ],
-        "prestatie_per_plek": [
-            {"plek": plek, "deel": deel} for plek, deel in prestatietabel()
-        ],
-    }
-
-
-def _inzendingen_per_week(student_id: str) -> dict:
-    """{weeknummer: [inzending, ...]} voor één student, over alle weken heen."""
-    return {
-        week_key: inzendingen_per_student[student_id]
-        for week_key, inzendingen_per_student in db.laad_submissions().items()
-        if student_id in inzendingen_per_student
+        "punten_per_plek": puntentabel(),
     }
 
 
@@ -428,16 +407,15 @@ def bonus(student_id: str, ok: bool = Depends(db.verifieer_student_token)):
     """
     Je bonuspunt voor de pokerlijn, met de opbouw erbij.
 
-    Per bot-week zie je je sprintscore (op tijd een echte bot ingeleverd en
-    daarna verbeterd) en je prestatiescore (je plek in de eindstand van de
-    laatste ronde). Week 1 telt niet mee, week 3 voor 20% en week 5 voor 80%.
-    Alleen de bovenkant van de eindstand levert prestatiepunten op, exponentieel
-    aflopend; "spelregels" in het antwoord laat de hele tabel zien.
+    In week 5 draaien twee toernooien: één met je woensdagbot en één met je
+    definitieve bot. Je plek levert in elk toernooi punten op -- eerste 0,5,
+    tweede 0,4, derde 0,3, vierde 0,2, vijfde 0,1, daarna niets. Samen dus
+    maximaal 1,0. "spelregels" in het antwoord bevat de hele tabel.
 
-    Zolang het toernooi van een week nog niet gedraaid is, staat de
-    prestatiescore op null -- dat is "nog niet bekend", geen nul.
+    Een toernooi dat nog niet gedraaid is geeft punten: null -- dat is "nog
+    niet bekend", geen nul.
     """
-    resultaat = bonus_per_student(student_id, _inzendingen_per_week(student_id), db.laad_toernooi_resultaten())
+    resultaat = bonus_per_student(student_id, db.laad_toernooi_resultaten())
     return {**resultaat, "spelregels": _spelregels()}
 
 

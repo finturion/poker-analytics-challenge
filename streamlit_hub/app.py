@@ -271,7 +271,10 @@ def _toon_toernooi_resultaat(resultaat, gedraaid_nu):
 def _docent_bonus(docent_token):
     """De bonusstand van de hele klas, met de opbouw per bot-week uitklapbaar."""
     st.markdown("**Bonuspunten pokerlijn**")
-    if not st.button("Bonusstand ophalen", help="Week 1 telt niet mee, week 3 voor 20%, week 5 voor 80%."):
+    if not st.button(
+        "Bonusstand ophalen",
+        help="Twee toernooien in week 5, elk max 0,5: eerste 0,5, tweede 0,4, derde 0,3, vierde 0,2, vijfde 0,1.",
+    ):
         return
 
     response = api_get("/bonus", docent_token)
@@ -290,8 +293,15 @@ def _docent_bonus(docent_token):
             [
                 {
                     "student_id": r["student_id"],
-                    "bonus": r["bonus_afgerond"],
-                    **{f"week {w['week']}": w["punten"] for w in r["per_week"]},
+                    "bonus": r["bonus"],
+                    **{
+                        w["toernooi"]: ("—" if w["punten"] is None else w["punten"])
+                        for w in r["per_ronde"]
+                    },
+                    **{
+                        f"plek ({w['toernooi']})": ("—" if w["plek"] is None else w["plek"])
+                        for w in r["per_ronde"]
+                    },
                 }
                 for r in studenten
             ]
@@ -299,18 +309,14 @@ def _docent_bonus(docent_token):
         width="stretch",
     )
 
-    with st.expander("Spelregels: weging, deadlines en uitbetaling per plek"):
-        st.dataframe(pd.DataFrame(data["weken"]), width="stretch")
+    with st.expander("Spelregels"):
         st.caption(
-            "De prestatiehelft is een competitie: alleen deze plekken leveren punten op, "
-            "exponentieel aflopend. Daarbuiten is het nul."
+            f"In week {data['week']} draaien twee toernooien: "
+            + " en ".join(t["toernooi"] for t in data["toernooien"])
+            + f". Je plek levert in elk toernooi punten op, samen maximaal {data['maximaal']:.1f}. "
+            "Buiten de tabel is het nul."
         )
-        st.dataframe(pd.DataFrame(data["prestatie_per_plek"]), width="stretch")
-
-    with st.expander("Opbouw per student"):
-        for r in studenten:
-            st.markdown(f"**{r['student_id']}** — {r['bonus_afgerond']:.1f} van de {data['maximaal']:.1f}")
-            st.dataframe(pd.DataFrame(r["per_week"]), width="stretch")
+        st.dataframe(pd.DataFrame(data["punten_per_plek"]), width="stretch")
 
 
 def docent_tab():

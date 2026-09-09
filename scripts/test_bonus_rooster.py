@@ -1,6 +1,9 @@
 """
 Test het bonuspuntenschema van de pokerlijn.
 
+De regel: twee toernooien in week 5, en je plek levert in elk toernooi punten op
+(1e 0,5 / 2e 0,4 / 3e 0,3 / 4e 0,2 / 5e 0,1, daarna niets). Samen max 1,0.
+
 Draaien:  python3 scripts/test_bonus_rooster.py
 """
 import os
@@ -11,14 +14,18 @@ sys.path.insert(0, os.path.join(os.path.dirname(HIER), "api"))
 
 import bonus_rooster as bonus
 from bonus_rooster import (
-    BOT_WEKEN,
+    BONUSWEEK,
+    GESCOORDE_RONDES,
     MAX_BONUS,
-    PRESTATIE_PLEKKEN,
+    PUNTEN_PER_PLEK,
+    STANDAARD_STARTSTACK,
     bonus_hele_klas,
     bonus_per_student,
-    prestatiescore,
-    prestatietabel,
-    score_voor_plek,
+    klassement,
+    punten_voor_plek,
+    puntentabel,
+    puntenverdeling,
+    winst_per_bot,
 )
 
 geslaagd = 0
@@ -31,211 +38,159 @@ def check(voorwaarde, omschrijving):
     print(f"  ok  {omschrijving}")
 
 
-def inzending(moment, code, geldig=True, constant=False):
-    return {
-        "bot_code": code,
-        "geldig": geldig,
-        "bot_check": {"geldig": geldig, "constante_bot": constant},
-        "ingeleverd_op": moment,
-    }
-
-
-WEEK = {item["week"]: item for item in BOT_WEKEN}
-
 # ---------------------------------------------------------------------------
 print("Het schema zelf")
-check(abs(sum(i["gewicht"] for i in BOT_WEKEN) - 1.0) < 1e-9, "de weekgewichten tellen op tot 1,0")
-check(WEEK[1]["gewicht"] == 0.0, "week 1 telt niet mee")
-check(abs(WEEK[3]["gewicht"] * MAX_BONUS - 0.2) < 1e-9, "week 3 is 0,2 punt waard")
-check(abs(WEEK[5]["gewicht"] * MAX_BONUS - 0.8) < 1e-9, "week 5 is 0,8 punt waard")
+check(PUNTEN_PER_PLEK == [0.5, 0.4, 0.3, 0.2, 0.1], "de ladder is 0,5 / 0,4 / 0,3 / 0,2 / 0,1")
+check(len(GESCOORDE_RONDES) == 2, "er zijn twee toernooien die punten opleveren")
 check(
-    abs(bonus.AANDEEL_SPRINT + bonus.AANDEEL_PRESTATIE - 1.0) < 1e-9,
-    "sprint en prestatie tellen op tot 1,0",
+    abs(len(GESCOORDE_RONDES) * PUNTEN_PER_PLEK[0] - MAX_BONUS) < 1e-9,
+    "twee keer de eerste plek is precies het maximum van 1,0",
 )
+check(punten_voor_plek(1) == 0.5, "plek 1 levert 0,5 op")
+check(punten_voor_plek(2) == 0.4, "plek 2 levert 0,4 op")
+check(punten_voor_plek(3) == 0.3, "plek 3 levert 0,3 op")
+check(punten_voor_plek(len(PUNTEN_PER_PLEK) + 1) == 0.0, "de eerste plek buiten de tabel levert niets op")
+check(punten_voor_plek(44) == 0.0, "en onderaan het veld ook niet")
+check(len(puntentabel()) == len(PUNTEN_PER_PLEK), "de tabel voor studenten dekt de hele ladder")
+
+# De startstack staat los in bonus_rooster zodat dat bestand geen pypokerengine
+# hoeft te importeren; hier controleren we dat de twee niet uit elkaar lopen.
+from poker_adapter import STANDAARD_INITIAL_STACK
+
 check(
-    abs(MAX_BONUS * WEEK[5]["gewicht"] * bonus.AANDEEL_PRESTATIE - 0.32) < 1e-9,
-    "de ruisgevoelige helft is nooit meer dan 0,32 punt",
+    STANDAARD_STARTSTACK == STANDAARD_INITIAL_STACK,
+    "de startstack in bonus_rooster is gelijk aan die in poker_adapter",
 )
 
 # ---------------------------------------------------------------------------
-print("\nPrestatiescore: exponentieel aflopende top")
-tabel = prestatietabel()
-check(len(tabel) == PRESTATIE_PLEKKEN, f"de tabel dekt precies {PRESTATIE_PLEKKEN} plekken")
-check(score_voor_plek(1) == 1.0, "plek 1 krijgt het volle deel")
-check(
-    all(score_voor_plek(p) > score_voor_plek(p + 1) for p in range(1, PRESTATIE_PLEKKEN)),
-    "elke plek levert minder op dan de plek erboven",
-)
-check(
-    score_voor_plek(PRESTATIE_PLEKKEN + 1) == 0.0,
-    f"buiten de top {PRESTATIE_PLEKKEN} is het nul",
-)
-check(
-    abs(score_voor_plek(3) - score_voor_plek(2) * (score_voor_plek(2) / score_voor_plek(1))) < 1e-9,
-    "de afname is exponentieel: elke stap is dezelfde factor",
-)
-check(
-    abs(score_voor_plek(2) - 0.7) < 1e-9 and abs(score_voor_plek(3) - 0.49) < 1e-9,
-    "de ladder is 1,00 - 0,70 - 0,49: het zwaartepunt ligt op het podium",
-)
-check(
-    score_voor_plek(10) == 0.0,
-    "vanaf plek 10 levert de competitie niets meer op",
-)
-
-# 44 studenten, zoals de echte klas
-eindstand = {f"s{i:02d}": 3000 - i * 10 for i in range(44)}
-check(prestatiescore(eindstand, "s00")[0] == 1.0, "de winnaar van 44 krijgt 1,0")
-check(
-    prestatiescore(eindstand, f"s{PRESTATIE_PLEKKEN - 1:02d}")[0] == score_voor_plek(PRESTATIE_PLEKKEN),
-    "de laatste plek binnen de top krijgt nog iets",
-)
-check(
-    prestatiescore(eindstand, f"s{PRESTATIE_PLEKKEN:02d}")[0] == 0.0,
-    "de eerste plek buiten de top krijgt niets",
-)
-check(
-    f"buiten de top {PRESTATIE_PLEKKEN}" in prestatiescore(eindstand, "s30")[1],
-    "en dat staat er ook bij, zodat niemand hoeft te raden",
-)
-check(prestatiescore(eindstand, "z")[0] == 0.0, "wie niet meespeelde krijgt 0,0")
-check(prestatiescore({}, "a")[0] is None, "zonder toernooi is de score onbekend, niet 0")
-check(
-    prestatiescore({"a": 2000, "oefenbot_tight": 9999}, "a", deelnemers=["a"])[0] == 1.0,
-    "oefenbots tellen niet mee in het klassement",
-)
-
-# ---------------------------------------------------------------------------
-print("\nVier profielen door het hele schema")
-
-# Vier studenten: de trouwe zwoeger, de woensdag-stub, de laatbloeier en de
-# student die alleen op vrijdag opduikt.
-def week_inzendingen(week, wo_code, vr_code, wo_constant=False):
-    """Bouwt de inzendingen van één student in één week: woensdag vroeg, tweede deadline net op tijd."""
-    item = WEEK[week]
-    wo_moment = item["deadline_woensdag"].replace("09:00", "08:30")
-    vr_moment = item["deadline_definitief"].replace("18:00", "17:00")
-    inzendingen = []
-    if wo_code is not None:
-        inzendingen.append(inzending(wo_moment, wo_code, constant=wo_constant))
-    if vr_code is not None:
-        inzendingen.append(inzending(vr_moment, vr_code))
-    return inzendingen
-
-
-submissions = {
-    "3": {
-        "zwoeger": week_inzendingen(3, "wo3", "vr3"),
-        "stub": week_inzendingen(3, "fold", None, wo_constant=True),
-        "laatbloeier": week_inzendingen(3, None, None),
-        "vrijdagmens": week_inzendingen(3, None, "vr3"),
-    },
-    "5": {
-        "zwoeger": week_inzendingen(5, "wo5", "vr5"),
-        "stub": week_inzendingen(5, "fold", "fold", wo_constant=True),
-        "laatbloeier": week_inzendingen(5, "wo5", "vr5"),
-        "vrijdagmens": week_inzendingen(5, None, "vr5"),
-    },
+print("\nRanken op winst, niet op eindstand")
+# Ronde 1: iedereen begint op 1000, dus winst en eindstand geven dezelfde orde.
+ronde1 = {
+    "eindstand_per_bot": {"anna": 1400, "bram": 1100, "cem": 900, "dana": 600},
+    "namen_deelnemers": ["anna", "bram", "cem", "dana"],
 }
-# Een realistisch veld: 40 naamloze klasgenoten eromheen, zodat de top 10 ook
-# echt een top 10 is. Met een handjevol bots zit iedereen in de prijzen en meet
-# de test niets.
-def veld(posities):
-    """posities: {naam: chips}. Vult aan tot 44 bots met een spreiding eromheen."""
-    eindstand = dict(posities)
-    for i in range(44 - len(posities)):
-        eindstand[f"klasgenoot_{i:02d}"] = 2000 - i * 25
-    return {"eindstand_per_bot": eindstand, "namen_deelnemers": list(eindstand)}
+check(
+    winst_per_bot(ronde1) == {"anna": 400, "bram": 100, "cem": -100, "dana": -400},
+    "zonder startstacks wordt er vanaf de standaardstack gerekend",
+)
+check(klassement(ronde1) == ["anna", "bram", "cem", "dana"], "het klassement van ronde 1 staat op winst")
 
+# Ronde 2: dana speelt het beste toernooi, maar staat door de carry-over nog
+# niet bovenaan in absolute chips. Op winst hoort ze eerste te zijn.
+ronde2 = {
+    "eindstand_per_bot": {"anna": 2500, "bram": 2200, "cem": 1800, "dana": 2100},
+    "startstacks": {"anna": 2400, "bram": 2100, "cem": 1900, "dana": 1600},
+    "namen_deelnemers": ["anna", "bram", "cem", "dana"],
+}
+check(
+    winst_per_bot(ronde2) == {"anna": 100, "bram": 100, "cem": -100, "dana": 500},
+    "met startstacks wordt de winst van dit toernooi berekend",
+)
+check(klassement(ronde2)[0] == "dana", "wie het meest wint in ronde 2 staat daar eerste")
+check(
+    sorted(ronde2["eindstand_per_bot"], key=lambda n: -ronde2["eindstand_per_bot"][n])[0] == "anna",
+    "op absolute eindstand zou anna eerste zijn — dat is precies de dubbeltelling die we vermijden",
+)
 
+oefenbot = {
+    "eindstand_per_bot": {"anna": 1400, "oefenbot_tight": 9999},
+    "namen_deelnemers": ["anna"],
+}
+check(klassement(oefenbot) == ["anna"], "oefenbots tellen niet mee in het klassement")
+
+# ---------------------------------------------------------------------------
+print("\nVier studenten door beide toernooien")
 toernooien = {
-    # zwoeger wint; laatbloeier net in de top; vrijdagmens halverwege; stub onderaan
-    "3": veld({"zwoeger": 3000, "laatbloeier": 1850, "vrijdagmens": 1400, "stub": 900}),
-    "5": veld({"zwoeger": 2900, "laatbloeier": 1900, "vrijdagmens": 1350, "stub": 850}),
-    "5_ronde2": veld({"zwoeger": 3100, "laatbloeier": 1875, "vrijdagmens": 1300, "stub": 800}),
+    str(BONUSWEEK): ronde1,
+    f"{BONUSWEEK}_ronde2": ronde2,
 }
-
+submissions = {str(BONUSWEEK): {naam: [{"geldig": True}] for naam in ["anna", "bram", "cem", "dana", "eva"]}}
 resultaten = {r["student_id"]: r for r in bonus_hele_klas(submissions, toernooien)}
-for student_id, r in sorted(resultaten.items(), key=lambda kv: -kv[1]["bonus"]):
-    week5 = [w for w in r["per_week"] if w["week"] == 5][0]
-    print(f"    {student_id:12} bonus {r['bonus']:.3f} -> {r['bonus_afgerond']:.1f}"
-          f"   (week5: sprint {week5['sprintscore']:.2f}, prestatie {week5['prestatiescore']:.2f}"
-          f" — {week5['uitleg'][-1]})")
 
+for r in bonus_hele_klas(submissions, toernooien):
+    regels = "  |  ".join(f"{p['toernooi']}: {p['uitleg']} → {p['punten']}" for p in r["per_ronde"])
+    print(f"    {r['student_id']:6} {r['bonus']:.1f}   {regels}")
+
+check(resultaten["anna"]["bonus"] == 0.5 + 0.35, "anna: eerste (0,5), daarna gedeeld tweede (0,35)")
+check(resultaten["dana"]["bonus"] == 0.2 + 0.5, "dana: vierde in ronde 1 (0,2) maar eerste in ronde 2 (0,5)")
 check(
-    resultaten["zwoeger"]["bonus"] > resultaten["laatbloeier"]["bonus"] > resultaten["stub"]["bonus"],
-    "wie de sprints doorloopt staat boven wie dat niet doet",
+    resultaten["anna"]["per_ronde"][1]["punten"] == resultaten["bram"]["per_ronde"][1]["punten"],
+    "anna en bram wonnen exact evenveel en krijgen dus exact hetzelfde",
 )
 check(
-    resultaten["zwoeger"]["bonus"] <= MAX_BONUS + 1e-9,
+    "gedeeld met 1" in resultaten["anna"]["per_ronde"][1]["uitleg"],
+    "en dat staat er ook bij",
+)
+check(
+    resultaten["eva"]["bonus"] == 0.0,
+    "eva leverde in maar speelde niet mee: 0,0, en ze staat wel in het overzicht",
+)
+check(
+    all(p["punten"] == 0.0 for p in resultaten["eva"]["per_ronde"]),
+    "en bij eva staat per toernooi 0,0 en niet null",
+)
+check(
+    "niet meegespeeld" in resultaten["eva"]["per_ronde"][0]["uitleg"],
+    "met de reden erbij, zodat de docent ziet waarom",
+)
+check(
+    all(r["bonus"] <= MAX_BONUS + 1e-9 for r in resultaten.values()),
     "niemand komt boven de 1,0 uit",
 )
-week3_stub = [w for w in resultaten["stub"]["per_week"] if w["week"] == 3][0]
-check(
-    week3_stub["sprintscore"] == 0.25,
-    "een woensdag-stub zonder vervolg haalt een kwart van de sprint",
-)
-week5_stub = [w for w in resultaten["stub"]["per_week"] if w["week"] == 5][0]
-check(
-    "geen verbeterde versie" in " ".join(week5_stub["uitleg"]),
-    "dezelfde code opnieuw insturen levert geen punten voor de tweede deadline op",
-)
-check(
-    week5_stub["prestatiescore"] == 0.0,
-    "en onderaan het veld van 44 levert de competitie ook niets op",
-)
-week1 = [w for w in resultaten["zwoeger"]["per_week"] if w["week"] == 1][0]
-check(week1["punten"] == 0.0, "week 1 levert geen punten op, ook niet voor de zwoeger")
 
 # ---------------------------------------------------------------------------
-print("\nAlleen de laatste ronde telt")
-check(
-    bonus._laatste_ronde(toernooien, 5)["eindstand_per_bot"]["zwoeger"]
-    == toernooien["5_ronde2"]["eindstand_per_bot"]["zwoeger"],
-    "week 5 pakt ronde 2, niet ronde 1",
-)
-check(
-    bonus._laatste_ronde(toernooien, 3)["eindstand_per_bot"]["zwoeger"]
-    == toernooien["3"]["eindstand_per_bot"]["zwoeger"],
-    "week 3 pakt ronde 1, want ronde 2 bestaat daar niet",
-)
-check(bonus._laatste_ronde(toernooien, 4) is None, "een week zonder toernooi geeft None")
-
-# ---------------------------------------------------------------------------
-print("\nDeadlines")
-te_laat = {
-    "5": [
-        inzending(WEEK[5]["deadline_woensdag"].replace("09:00", "09:30"), "wo5"),
-        inzending(WEEK[5]["deadline_definitief"].replace("17:00", "23:00"), "vr5"),
-    ]
+print("\nGelijke standen worden gedeeld")
+gelijk = {
+    "eindstand_per_bot": {"a": 1500, "b": 1500, "c": 1500, "d": 900},
+    "namen_deelnemers": ["a", "b", "c", "d"],
 }
-r = bonus_per_student("treuzelaar", te_laat, {})
-week5 = [w for w in r["per_week"] if w["week"] == 5][0]
+verdeling = puntenverdeling(gelijk)
 check(
-    "geen goedgekeurde bot vóór woensdag 09:00" in week5["uitleg"],
-    "een half uur te laat op woensdag kost de woensdaghelft",
+    verdeling["a"]["punten"] == verdeling["b"]["punten"] == verdeling["c"]["punten"],
+    "drie bots met dezelfde winst krijgen alle drie hetzelfde",
 )
 check(
-    week5["sprintscore"] == 0.5,
-    "maar telt wel als 'vóór de tweede deadline' -- die helft blijft staan",
+    abs(verdeling["a"]["punten"] - (0.5 + 0.4 + 0.3) / 3) < 1e-9,
+    "namelijk het gemiddelde van plek 1, 2 en 3: 0,4",
 )
+check(verdeling["d"]["plek"] == 4, "de volgende bot staat vierde, niet tweede")
 check(
-    "geen goedgekeurde bot vóór de vrijdagdeadline" not in week5["uitleg"],
-    "de inzending van na de deadline is te laat, die van 09:30 redt die helft",
-)
-
-alleen_woensdag = {"5": [inzending(WEEK[5]["deadline_woensdag"].replace("09:00", "08:00"), "wo5")]}
-r = bonus_per_student("eenmalig", alleen_woensdag, {})
-week5 = [w for w in r["per_week"] if w["week"] == 5][0]
-check(
-    week5["sprintscore"] == 0.5,
-    "op tijd inleveren maar nooit verbeteren levert precies de helft op",
+    abs(sum(v["punten"] for v in verdeling.values()) - (0.5 + 0.4 + 0.3 + 0.2)) < 1e-9,
+    "delen verandert niets aan het totaal dat wordt uitgekeerd",
 )
 
-op_tijd = {"5": [inzending(WEEK[5]["deadline_woensdag"], "wo5")]}
-r = bonus_per_student("precies", op_tijd, {})
-week5 = [w for w in r["per_week"] if w["week"] == 5][0]
-check(week5["sprintscore"] == 0.5, "precies op de deadline telt nog mee")
-check(week5["prestatiescore"] is None, "zonder gedraaid toernooi blijft de prestatie onbekend")
+# ---------------------------------------------------------------------------
+print("\nEen toernooi dat nog niet gedraaid is")
+alleen_ronde1 = {str(BONUSWEEK): ronde1}
+r = bonus_per_student("anna", alleen_ronde1)
+check(r["per_ronde"][0]["punten"] == 0.5, "het gedraaide toernooi levert gewoon punten op")
+check(r["per_ronde"][1]["punten"] is None, "het toernooi dat nog moet komen geeft null, niet 0")
+check(r["bonus"] == 0.5, "en telt dus nog niet mee in het totaal")
+
+r = bonus_per_student("anna", {})
+check(r["bonus"] == 0.0, "zonder enig toernooi is de bonus 0,0")
+check(
+    all(p["punten"] is None for p in r["per_ronde"]),
+    "met beide toernooien op null in plaats van op nul",
+)
+
+# ---------------------------------------------------------------------------
+print("\nEen realistisch veld van 44")
+groot = {
+    "eindstand_per_bot": {f"s{i:02d}": 2000 - i * 25 for i in range(44)},
+    "namen_deelnemers": [f"s{i:02d}" for i in range(44)],
+}
+uitslagen = {str(BONUSWEEK): groot}
+verdeeld = [bonus_per_student(f"s{i:02d}", uitslagen)["per_ronde"][0]["punten"] for i in range(44)]
+check(verdeeld[:5] == [0.5, 0.4, 0.3, 0.2, 0.1], "de top 5 van 44 krijgt de hele ladder")
+check(set(verdeeld[5:]) == {0.0}, "de andere 39 krijgen niets voor dit toernooi")
+check(
+    abs(sum(verdeeld) - sum(PUNTEN_PER_PLEK)) < 1e-9,
+    f"er wordt per toernooi precies {sum(PUNTEN_PER_PLEK)} punt uitgekeerd, ongeacht de klasgrootte",
+)
+check(
+    f"buiten de top {len(PUNTEN_PER_PLEK)}" in bonus_per_student("s20", uitslagen)["per_ronde"][0]["uitleg"],
+    "en wie erbuiten valt leest dat er ook",
+)
 
 print(f"\n{geslaagd} checks geslaagd.")
