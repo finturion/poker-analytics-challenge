@@ -16,14 +16,14 @@ sys.path.insert(0, os.path.join(os.path.dirname(HIER), "api"))
 import toernooi_runner
 from bot_validator import valideer_bot_code
 from poker_adapter import STANDAARD_INITIAL_STACK, bereken_startstacks
-from toernooi_runner import _cache_sleutel, draai_toernooi, haal_gecacht_resultaat_op
+from toernooi_runner import cache_sleutel, draai_toernooi, haal_gecacht_resultaat_op
 
 geslaagd = 0
 
 
-def check(voorwaarde, omschrijving):
+def check(voorwaarde, omschrijving, detail=""):
     global geslaagd
-    assert voorwaarde, f"GEZAKT: {omschrijving}"
+    assert voorwaarde, f"GEZAKT: {omschrijving} {detail}".rstrip()
     geslaagd += 1
     print(f"  ok  {omschrijving}")
 
@@ -32,12 +32,12 @@ def check(voorwaarde, omschrijving):
 # 1. Cachesleutels
 # ---------------------------------------------------------------------------
 print("Cachesleutels")
-check(_cache_sleutel(5) == "5", "ronde 1 houdt de oude sleutel '5'")
-check(_cache_sleutel(5, 1) == "5_vs_1", "ronde 1 met vergelijking houdt '5_vs_1'")
-check(_cache_sleutel(5, None, 2) == "5_ronde2", "ronde 2 krijgt een eigen sleutel")
-check(_cache_sleutel(5, 1, 2) == "5_vs_1_ronde2", "ronde 2 met vergelijking ook")
+check(cache_sleutel(5) == "5", "ronde 1 houdt de oude sleutel '5'")
+check(cache_sleutel(5, 1) == "5_vs_1", "ronde 1 met vergelijking houdt '5_vs_1'")
+check(cache_sleutel(5, None, 2) == "5_ronde2", "ronde 2 krijgt een eigen sleutel")
+check(cache_sleutel(5, 1, 2) == "5_vs_1_ronde2", "ronde 2 met vergelijking ook")
 check(
-    _cache_sleutel(5, None, 1) != _cache_sleutel(5, None, 2),
+    cache_sleutel(5, None, 1) != cache_sleutel(5, None, 2),
     "ronde 1 en 2 botsen niet",
 )
 
@@ -117,7 +117,7 @@ check(
 # 3b. De formatieve donderdagronde: een repetitie die niets verschuift
 # ---------------------------------------------------------------------------
 print("\nFormatieve ronde")
-from toernooi_runner import _cache_sleutel as sleutel
+from toernooi_runner import cache_sleutel as sleutel
 
 check(sleutel(5, None, 2, formatief=True) == "5_ronde2_formatief", "een formatieve run heeft een eigen sleutel")
 check(
@@ -172,6 +172,35 @@ r_fout = valideer_bot_code("import os\n" + stub_code, 5, strategie="tight", bluf
 check(
     "constante_bot" in r_fout,
     "ook een afgekeurde bot heeft het veld (vaste vorm van het resultaat)",
+)
+
+# --- de twee kopieën van de sleutel mogen niet uit de pas lopen ---
+# bonus_rooster kan toernooi_runner niet importeren (die importeert bonus_rooster
+# al), dus bouwt hij de sleutel zelf. Twee plekken die "5_ronde2" moeten spellen
+# is een driftrisico; deze check maakt er een fout van in plaats van een stille
+# afwijking waarbij de bonus in een lege uitslag kijkt.
+import bonus_rooster
+
+for week in (1, 3, 5):
+    for ronde in (1, 2, 3):
+        check(
+            bonus_rooster._cache_sleutel(week, ronde) == sleutel(week, ronde=ronde),
+            f"bonus_rooster en toernooi_runner spellen week {week} ronde {ronde} gelijk",
+            f"{bonus_rooster._cache_sleutel(week, ronde)} != {sleutel(week, ronde=ronde)}",
+        )
+
+# --- /locaties moet dezelfde ronde kunnen aanwijzen als /toernooi ---
+# Zonder ronde-parameter gaf /locaties altijd de eindstand van de woensdagronde,
+# ook in Week 6 waar de kaart de eindstand van de hele reeks moet laten zien.
+import inspect
+import main
+
+params = inspect.signature(main.locaties).parameters
+check("ronde" in params, "/locaties kent een ronde-parameter")
+check(params["ronde"].default == 1, "en die staat standaard op 1, zodat WC8 ongewijzigd blijft")
+check(
+    inspect.signature(main.toernooi).parameters["ronde"].default == 1,
+    "/toernooi staat op dezelfde standaard",
 )
 
 print(f"\n{geslaagd} checks geslaagd.")

@@ -42,7 +42,7 @@ from referentiebots import beschrijvingen as referentie_beschrijvingen
 from referentiebots import OPENBAAR_VANAF_WEEK, broncode as referentie_broncode
 from chart_validator import valideer_chart_json
 from locatie_validator import valideer_locatie
-from toernooi_runner import draai_toernooi, haal_gecacht_resultaat_op
+from toernooi_runner import cache_sleutel, draai_toernooi, haal_gecacht_resultaat_op
 
 WEEK_VANAF_LOCATIE_VERPLICHT = 5
 
@@ -355,15 +355,28 @@ def toernooi_resultaat_ophalen(
 
 
 @app.get("/locaties/{week}")
-def locaties(week: int, student_id: str, ok: bool = Depends(db.verifieer_student_token)):
+def locaties(
+    week: int,
+    student_id: str,
+    ronde: int = 1,
+    ok: bool = Depends(db.verifieer_student_token),
+):
     """
     Geolocatie van elke technisch goedgekeurde bot, met de eindstand erbij
     zodra het toernooi van deze week gedraaid is (anders eindstand: null —
     je krijgt dan wel alle posities, maar nog geen winst/verlies-kleur).
+
+    `ronde` hoort erbij om dezelfde reden als bij /toernooi: week 5 draait twee
+    toernooien die meetellen, en die staan onder eigen sleutels. Zonder deze
+    parameter kwam hier altijd de eindstand van de woensdagronde uit, ook in
+    Week 6 waar de kaart juist de eindstand van de hele reeks moet laten zien.
+    Ronde 1 blijft de standaard, zodat Werkcollege 8 (de woensdagkaart)
+    ongewijzigd blijft werken.
     """
     week_key = str(week)
     submissions = db.laad_submissions().get(week_key, {})
-    eindstand_per_bot = (db.laad_toernooi_resultaat(week_key) or {}).get("eindstand_per_bot", {})
+    resultaat_sleutel = cache_sleutel(week, ronde=ronde)
+    eindstand_per_bot = (db.laad_toernooi_resultaat(resultaat_sleutel) or {}).get("eindstand_per_bot", {})
 
     resultaat = []
     for bot_student_id, inzendingen in submissions.items():
@@ -373,6 +386,7 @@ def locaties(week: int, student_id: str, ok: bool = Depends(db.verifieer_student
         resultaat.append(
             {
                 "student_id": bot_student_id,
+                "ronde": ronde,
                 "lat": submission["locatie"]["lat"],
                 "lon": submission["locatie"]["lon"],
                 "plaatsnaam": submission["locatie"]["plaatsnaam"],

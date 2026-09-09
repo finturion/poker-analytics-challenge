@@ -113,7 +113,7 @@ def n_simulaties_voor(week):
     return N_SIMULATIES_BONUSWEEK if week == BONUSWEEK else STANDAARD_N_SIMULATIES
 
 
-def _cache_sleutel(week, vergelijk_met_week=None, ronde=1, formatief=False):
+def cache_sleutel(week, vergelijk_met_week=None, ronde=1, formatief=False):
     """
     De sleutel waaronder een toernooi-uitkomst wordt bewaard.
 
@@ -146,7 +146,7 @@ def haal_gecacht_resultaat_op(week, vergelijk_met_week=None, ronde=1, formatief=
     er nog geen resultaat is voor deze combinatie, anders het opgeslagen
     resultaat aangevuld met "gedraaid": True.
     """
-    resultaat = db.laad_toernooi_resultaat(_cache_sleutel(week, vergelijk_met_week, ronde, formatief))
+    resultaat = db.laad_toernooi_resultaat(cache_sleutel(week, vergelijk_met_week, ronde, formatief))
     if resultaat is None:
         return {
             "gedraaid": False,
@@ -173,7 +173,7 @@ def _startstacks_uit_vorige_ronde(week, vergelijk_met_week, ronde):
     """
     if ronde <= 1:
         return None
-    vorige = db.laad_toernooi_resultaat(_cache_sleutel(week, vergelijk_met_week, ronde - 1))
+    vorige = db.laad_toernooi_resultaat(cache_sleutel(week, vergelijk_met_week, ronde - 1))
     if not vorige or not vorige.get("eindstand_per_bot"):
         return None
     return bereken_startstacks(vorige["eindstand_per_bot"])
@@ -234,7 +234,7 @@ def draai_toernooi(
     if n_simulaties is None:
         n_simulaties = n_simulaties_voor(week)
 
-    cache_key = _cache_sleutel(week, vergelijk_met_week, ronde, formatief)
+    cache_key = cache_sleutel(week, vergelijk_met_week, ronde, formatief)
 
     if not forceer_opnieuw:
         bestaand = db.laad_toernooi_resultaat(cache_key)

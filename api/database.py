@@ -189,7 +189,7 @@ def _toernooi_bestand(cache_key: str) -> str:
 
     De cache_key wordt een bestandsnaam (of een primary key in Postgres), dus
     hij mag alleen letters, cijfers en underscores bevatten. In de praktijk
-    komt hij uit toernooi_runner._cache_sleutel() en is hij opgebouwd uit
+    komt hij uit toernooi_runner.cache_sleutel() en is hij opgebouwd uit
     weeknummers en vaste woorden, maar dat wil je niet hoeven vertrouwen op de
     plek waar er een pad van gemaakt wordt.
     """
