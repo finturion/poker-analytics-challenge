@@ -1,0 +1,1455 @@
+<!--
+  Curriculum-audit Poker Analytics Challenge — bron van het gepubliceerde artifact.
+
+  Gepubliceerd op: https://claude.ai/code/artifact/a588b916-ff46-4311-a61d-55705e9f4ee6
+
+  Dit bestand is de inhoud ZONDER de <!doctype>/<html>/<head>/<body>-skeleton: die
+  wordt bij publiceren toegevoegd. Haal je het artifact terug op om het te wijzigen,
+  dan zit die skeleton er wél in en moet hij eruit voordat je opnieuw publiceert --
+  anders krijg je hem dubbel.
+
+  Bijwerken: dit bestand aanpassen en opnieuw publiceren naar bovenstaande URL, zodat
+  de link die studenten en collega's hebben blijft werken.
+-->
+<title>Poker Analytics Curriculum Audit</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root {
+    color-scheme: light;
+    --bg-page:      #EFEEE6;
+    --bg-surface:   #FBFBF7;
+    --bg-raised:    #FFFFFF;
+    --ink-primary:  #1C1B17;
+    --ink-secondary:#55534A;
+    --ink-muted:    #8B8878;
+    --border:       rgba(28,27,23,0.12);
+    --border-strong:rgba(28,27,23,0.22);
+    --felt:         #1F5C42;
+    --felt-deep:    #123A29;
+    --felt-tint:    rgba(31,92,66,0.10);
+    --gold:         #96701F;
+    --gold-tint:    rgba(185,134,47,0.16);
+    --red:          #A3363A;
+    --good:         #0ca30c;
+    --warn:         #c98500;
+    --crit:         #d03b3b;
+    --cat-actief:    #C99A3D;
+    --cat-uitvoeren: #2F8F68;
+    --cat-uitleg:    #6B5FC4;
+    --shadow: 0 1px 2px rgba(18,58,41,0.06), 0 4px 16px rgba(18,58,41,0.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg-page:      #0E1A15;
+      --bg-surface:   #16261F;
+      --bg-raised:    #1B2E25;
+      --ink-primary:  #F2F1E9;
+      --ink-secondary:#C7C4B4;
+      --ink-muted:    #8B9186;
+      --border:       rgba(255,255,255,0.12);
+      --border-strong:rgba(255,255,255,0.22);
+      --felt:         #4FBE8C;
+      --felt-deep:    #6FD6A4;
+      --felt-tint:    rgba(79,190,140,0.14);
+      --gold:         #E0B65C;
+      --gold-tint:    rgba(217,169,77,0.18);
+      --red:          #E0666B;
+      --good:         #16c216;
+      --warn:         #fab219;
+      --crit:         #e66767;
+      --cat-actief:    #B8862E;
+      --cat-uitvoeren: #2F8F68;
+      --cat-uitleg:    #8478D9;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35);
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg-page:      #0E1A15;
+    --bg-surface:   #16261F;
+    --bg-raised:    #1B2E25;
+    --ink-primary:  #F2F1E9;
+    --ink-secondary:#C7C4B4;
+    --ink-muted:    #8B9186;
+    --border:       rgba(255,255,255,0.12);
+    --border-strong:rgba(255,255,255,0.22);
+    --felt:         #4FBE8C;
+    --felt-deep:    #6FD6A4;
+    --felt-tint:    rgba(79,190,140,0.14);
+    --gold:         #E0B65C;
+    --gold-tint:    rgba(217,169,77,0.18);
+    --red:          #E0666B;
+    --good:         #16c216;
+    --warn:         #fab219;
+    --crit:         #e66767;
+    --cat-actief:    #B8862E;
+    --cat-uitvoeren: #2F8F68;
+    --cat-uitleg:    #8478D9;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35);
+  }
+
+  * { box-sizing: border-box; }
+  body { background: var(--bg-page); color: var(--ink-primary); font-family: "Work Sans", system-ui, sans-serif; }
+  h1, h2, h3, h4 { font-family: "Fraunces", Georgia, serif; text-wrap: balance; color: var(--ink-primary); margin: 0; }
+  p { margin: 0; }
+  a { color: var(--felt); }
+  .mono { font-family: "IBM Plex Mono", ui-monospace, monospace; }
+
+  .layout { display: flex; max-width: 1240px; margin: 0 auto; }
+
+  /* ---------- Sidebar TOC ---------- */
+  .toc {
+    width: 232px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    padding: 28px 18px 28px 24px;
+    border-right: 1px solid var(--border);
+  }
+  .toc-brand {
+    font-family: "Fraunces", serif;
+    font-weight: 600;
+    font-size: 1.05rem;
+    line-height: 1.3;
+    margin-bottom: 4px;
+  }
+  .toc-sub { font-size: 0.72rem; color: var(--ink-muted); margin-bottom: 22px; letter-spacing: .02em; }
+  .toc nav { display: flex; flex-direction: column; gap: 2px; }
+  .toc-group-label {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--ink-muted);
+    margin: 16px 0 6px;
+  }
+  .toc a {
+    display: block;
+    font-size: 0.83rem;
+    color: var(--ink-secondary);
+    text-decoration: none;
+    padding: 5px 8px;
+    border-radius: 6px;
+    line-height: 1.35;
+  }
+  .toc a:hover { background: var(--felt-tint); color: var(--ink-primary); }
+  .toc a.wc-link { display: flex; justify-content: space-between; gap: 8px; }
+  .toc a.wc-link .t { font-family: "IBM Plex Mono", monospace; font-size: 0.68rem; color: var(--ink-muted); }
+
+  main { flex: 1; min-width: 0; padding: 0 0 80px; }
+
+  /* ---------- Hero ---------- */
+  .hero {
+    background: linear-gradient(160deg, var(--felt-deep), var(--felt) 130%);
+    color: #F5F2E6;
+    padding: 52px 48px 40px;
+    border-radius: 0 0 22px 22px;
+  }
+  .hero .eyebrow {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.72rem;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    opacity: 0.75;
+    margin-bottom: 14px;
+  }
+  .hero h1 { font-size: clamp(1.7rem, 3vw, 2.4rem); color: #FBF8ED; font-weight: 600; max-width: 22ch; }
+  .hero p.lede { margin-top: 14px; max-width: 62ch; font-size: 1rem; line-height: 1.6; color: rgba(251,248,237,0.88); }
+  .hero-stats { display: flex; gap: 28px; margin-top: 30px; flex-wrap: wrap; }
+  .stat-tile { min-width: 120px; }
+  .stat-tile .n { font-family: "Fraunces", serif; font-weight: 600; font-size: 1.9rem; color: #FFF7DE; font-variant-numeric: tabular-nums; }
+  .stat-tile .l { font-size: 0.74rem; color: rgba(251,248,237,0.72); margin-top: 2px; }
+
+  section { padding: 40px 48px 8px; max-width: 900px; }
+  section.wide { max-width: none; }
+  .section-head { margin-bottom: 18px; }
+  .section-head .kicker {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.7rem;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--felt);
+    margin-bottom: 6px;
+  }
+  .section-head h2 { font-size: 1.5rem; font-weight: 600; }
+  .section-head p { margin-top: 8px; color: var(--ink-secondary); line-height: 1.6; max-width: 68ch; }
+
+  /* ---------- Method legend ---------- */
+  .legend {
+    display: flex;
+    gap: 22px;
+    flex-wrap: wrap;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-top: 4px;
+  }
+  .legend-item { display: flex; align-items: center; gap: 9px; font-size: 0.86rem; }
+  .legend-swatch { width: 13px; height: 13px; border-radius: 3px; flex-shrink: 0; }
+  .legend-item b { font-weight: 600; }
+  .legend-item span.d { color: var(--ink-muted); font-size: 0.8rem; }
+
+  /* ---------- Werkcollege cards ---------- */
+  .wc-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    margin-bottom: 20px;
+    overflow: hidden;
+    scroll-margin-top: 20px;
+  }
+  .wc-head { padding: 20px 24px 16px; }
+  .wc-head .row1 { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .wc-head .weeklabel { font-family: "IBM Plex Mono", monospace; font-size: 0.72rem; color: var(--gold); letter-spacing: .04em; text-transform: uppercase; }
+  .wc-head h3 { font-size: 1.2rem; font-weight: 600; margin-top: 3px; }
+  .wc-head .total-time { font-family: "IBM Plex Mono", monospace; font-size: 0.78rem; color: var(--ink-muted); white-space: nowrap; }
+  .wc-head .theme { color: var(--ink-secondary); font-size: 0.88rem; margin-top: 6px; max-width: 68ch; line-height: 1.5; }
+
+  .mixbar-wrap { margin-top: 14px; }
+  .mixbar { display: flex; height: 10px; border-radius: 5px; overflow: hidden; border: 1px solid var(--border); }
+  .mixbar span { height: 100%; }
+  .mixbar .actief    { background: var(--cat-actief); }
+  .mixbar .uitvoeren { background: var(--cat-uitvoeren); }
+  .mixbar .uitleg    { background: var(--cat-uitleg); }
+  .mixbar-legend { display: flex; gap: 14px; margin-top: 7px; font-family: "IBM Plex Mono", monospace; font-size: 0.68rem; color: var(--ink-muted); }
+  .mixbar-legend b { color: var(--ink-primary); font-weight: 600; }
+  .mixbar-legend .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 4px; }
+
+  details.wc-detail { border-top: 1px solid var(--border); }
+  details.wc-detail > summary {
+    cursor: pointer;
+    list-style: none;
+    padding: 12px 24px;
+    font-size: 0.82rem;
+    font-family: "IBM Plex Mono", monospace;
+    color: var(--felt);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    user-select: none;
+  }
+  details.wc-detail > summary::-webkit-details-marker { display: none; }
+  details.wc-detail > summary::before { content: "▸"; display: inline-block; transition: transform .15s ease; font-size: 0.7rem; }
+  details.wc-detail[open] > summary::before { transform: rotate(90deg); }
+  .wc-body { padding: 4px 24px 20px; }
+
+  .deel-row { display: grid; grid-template-columns: 1fr auto auto; gap: 4px 14px; padding: 11px 0; border-top: 1px solid var(--border); align-items: start; }
+  .deel-row:first-child { border-top: none; }
+  .deel-row .titel { font-size: 0.88rem; line-height: 1.45; }
+  .deel-row .titel .naam { font-weight: 600; }
+  .deel-row .tijd { font-family: "IBM Plex Mono", monospace; font-size: 0.74rem; color: var(--ink-muted); white-space: nowrap; align-self: center; }
+  .deel-row .tags { display: flex; gap: 5px; flex-wrap: wrap; justify-self: end; align-self: center; }
+  .deel-row .concepts { grid-column: 1 / -1; margin-top: 2px; display: flex; gap: 5px; flex-wrap: wrap; }
+
+  .tag {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.66rem;
+    letter-spacing: .02em;
+    padding: 2px 7px;
+    border-radius: 999px;
+    white-space: nowrap;
+    border: 1px solid transparent;
+  }
+  .tag.m-actief    { background: var(--gold-tint); color: var(--gold); }
+  .tag.m-uitvoeren { background: var(--felt-tint); color: var(--felt); }
+  .tag.m-uitleg    { background: rgba(107,95,196,0.14); color: #6B5FC4; }
+  :root:not([data-theme="light"]) .tag.m-uitleg { color: #9C90E8; }
+  :root[data-theme="dark"] .tag.m-uitleg { color: #9C90E8; }
+  .tag.concept { background: transparent; border-color: var(--border-strong); color: var(--ink-secondary); }
+
+  /* ---------- Coverage matrix ---------- */
+  .matrix-scroll { overflow-x: auto; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-surface); }
+  table.matrix { border-collapse: collapse; width: 100%; min-width: 920px; }
+  table.matrix th, table.matrix td { padding: 9px 10px; text-align: center; border-bottom: 1px solid var(--border); }
+  table.matrix thead th {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.66rem;
+    color: var(--ink-muted);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+    vertical-align: bottom;
+    padding-bottom: 10px;
+  }
+  table.matrix th.concept-col, table.matrix td.concept-col {
+    text-align: left;
+    font-size: 0.82rem;
+    color: var(--ink-primary);
+    padding-left: 16px;
+    min-width: 240px;
+    position: sticky;
+    left: 0;
+    background: var(--bg-surface);
+  }
+  table.matrix tbody tr:hover td { background: var(--felt-tint); }
+  table.matrix tbody tr:hover td.concept-col { background: var(--felt-tint); }
+  .status-dot { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; font-size: 0.72rem; }
+  .status-dot.covered { background: color-mix(in srgb, var(--good) 20%, transparent); color: var(--good); }
+  .status-dot.partial { background: color-mix(in srgb, var(--warn) 22%, transparent); color: var(--warn); }
+  .status-dot.gap     { background: color-mix(in srgb, var(--crit) 18%, transparent); color: var(--crit); }
+  .matrix-legend { display: flex; gap: 18px; margin-top: 12px; font-size: 0.78rem; color: var(--ink-secondary); flex-wrap: wrap; }
+  .matrix-legend .item { display: flex; align-items: center; gap: 7px; }
+
+  /* ---------- Gap cards ---------- */
+  .gap-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; margin-top: 6px; }
+  .gap-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--crit);
+    border-radius: 10px;
+    padding: 16px 18px;
+  }
+  .gap-card h4 { font-size: 0.98rem; font-weight: 600; margin-bottom: 6px; }
+  .gap-card p { font-size: 0.85rem; color: var(--ink-secondary); line-height: 1.55; }
+  .gap-card .fix { margin-top: 10px; font-size: 0.82rem; padding-top: 10px; border-top: 1px dashed var(--border); }
+  .gap-card .fix b { color: var(--felt); font-weight: 600; }
+
+  /* ---------- Callouts ---------- */
+  .callout {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 22px;
+    margin-bottom: 14px;
+    display: flex;
+    gap: 14px;
+  }
+  .callout .icon { font-size: 1.3rem; line-height: 1; margin-top: 2px; }
+  .callout h4 { font-size: 0.98rem; font-weight: 600; margin-bottom: 5px; }
+  .callout p { font-size: 0.86rem; color: var(--ink-secondary); line-height: 1.6; }
+  .callout.open { border-left: 3px solid var(--gold); }
+  .callout.missing { border-left: 3px solid var(--red); }
+
+  footer.report-footer { padding: 30px 48px 60px; color: var(--ink-muted); font-size: 0.78rem; max-width: 900px; }
+
+  ::selection { background: var(--felt); color: #fff; }
+
+  @media (max-width: 880px) {
+    .toc { display: none; }
+    .hero { padding: 36px 22px 30px; border-radius: 0; }
+    section, footer.report-footer { padding-left: 22px; padding-right: 22px; }
+    .deel-row { grid-template-columns: 1fr; }
+    .deel-row .tags { justify-self: start; }
+  }
+</style>
+
+<div class="layout">
+  <nav class="toc">
+    <div class="toc-brand">Curriculum Audit</div>
+    <div class="toc-sub">Poker Analytics Challenge · 2026</div>
+    <nav>
+      <a href="#legende">Methode-legenda</a>
+      <a href="#werkcolleges">Werkcolleges</a>
+      <div class="toc-group-label">Blok 1–3</div>
+      <a class="wc-link" href="#wc1"><span>WC1 — De eerste deal</span></a>
+      <a class="wc-link" href="#wc2"><span>WC2 — Terugblik &amp; API</span></a>
+      <a class="wc-link" href="#wc3"><span>WC3 — Visual Maandag I</span></a>
+      <div class="toc-group-label">Blok 4–6</div>
+      <a class="wc-link" href="#wc4"><span>WC4 — Spelregels &amp; winkans</span></a>
+      <a class="wc-link" href="#wc5"><span>WC5 — Resultaten &amp; join</span></a>
+      <a class="wc-link" href="#wc6"><span>WC6 — Visual Maandag II</span></a>
+      <div class="toc-group-label">Blok 7–9</div>
+      <a class="wc-link" href="#wc7"><span>WC7 — Geo &amp; bluffen</span></a>
+      <a class="wc-link" href="#wc8"><span>WC8 — Resultaten &amp; aftrap</span></a>
+      <a class="wc-link" href="#wc9"><span>WC9 — Visual Maandag III</span></a>
+      <div class="toc-group-label">Analyse</div>
+      <a href="#botversies">Bot v1, v2 en v3</a>
+      <a href="#bonus">Het bonuspunt</a>
+      <a href="#toetsing">Toetsing &amp; oefenstof</a>
+      <a href="#matrix">Dekking pokerregels</a>
+      <a href="#cases">Wat toetsen de cases?</a>
+    </nav>
+  </nav>
+
+  <main>
+    <header class="hero">
+      <div class="eyebrow">Curriculum-audit · 9 werkcolleges · bijgewerkt 9 sep 2026</div>
+      <h1>Wat leren studenten, hoe leren ze het, en welk deel van poker hebben we eigenlijk gedekt?</h1>
+      <p class="lede">Een volledige doorlichting van Week 1 t/m 6 van de Poker Analytics Challenge: per werkcollege wat er behandeld wordt, of dat actief, uitvoerend of uitleggend gebeurt, en welke pokerregels er impliciet of expliciet in zitten — inclusief waar dat nog rammelt. Deze versie is bijgewerkt na de opvolging: de join, de window-functies, Streamlit en de schriftelijke toetsing zitten er nu in — en het bonuspunt is voor het eerst helemaal uitgewerkt, inclusief de meting die laat zien hoeveel van een toernooi-uitslag skill is en hoeveel toeval.</p>
+      <div class="hero-stats">
+        <div class="stat-tile"><div class="n">9</div><div class="l">werkcolleges geaudit</div></div>
+        <div class="stat-tile"><div class="n">~20,6</div><div class="l">uur in de notebooks</div></div>
+        <div class="stat-tile"><div class="n">2 × 4–8 u</div><div class="l">eigen botwerk (week 3 en 5)</div></div>
+        <div class="stat-tile"><div class="n">63 / 24 / 13</div><div class="l">% actief / uitvoeren / uitleg</div></div>
+        <div class="stat-tile"><div class="n">18</div><div class="l">pokerconcepten getrackt</div></div>
+        <div class="stat-tile"><div class="n">2 × 0,5</div><div class="l">bonuspunt, in week 5</div></div>
+        <div class="stat-tile"><div class="n">57 / 193</div><div class="l">code-cellen waarin je zelf schrijft</div></div>
+      </div>
+    </header>
+
+    <section id="legende">
+      <div class="section-head">
+        <div class="kicker">Leeswijzer</div>
+        <h2>Drie manieren van leren</h2>
+        <p>Elk onderdeel is ingedeeld op hoe de student ermee bezig is — niet op onderwerp. Dit is de as waarop je hieronder alles kan lezen.</p>
+      </div>
+      <div class="legend">
+        <div class="legend-item"><span class="legend-swatch" style="background:var(--cat-actief)"></span><b>Actief</b><span class="d">— student schrijft of vult zelf code in (open, half, of volledig)</span></div>
+        <div class="legend-item"><span class="legend-swatch" style="background:var(--cat-uitvoeren)"></span><b>Uitvoeren</b><span class="d">— code staat al klaar, student runt 'm alleen</span></div>
+        <div class="legend-item"><span class="legend-swatch" style="background:var(--cat-uitleg)"></span><b>Uitleg</b><span class="d">— theorie/discussie, geen code</span></div>
+      </div>
+    </section>
+
+    <section id="werkcolleges" class="wide" style="max-width:900px">
+      <div class="section-head">
+        <div class="kicker">Blok 1–3 · Weken 1–2</div>
+        <h2>De basis: kaarten, functies, en de eerste grafiek</h2>
+        <p>Bot v1 wordt geboren: een hard-coded regel, dan willekeur. Nog geen echt toernooi — dat begint in Werkcollege 2.</p>
+      </div>
+
+      <!-- WC1 -->
+      <article class="wc-card" id="wc1">
+        <div class="wc-head">
+          <div class="row1">
+            <div><div class="weeklabel">Week 1 · Werkcollege 1</div><h3>De eerste deal</h3></div>
+            <div class="total-time">~90 min + 100 min hw</div>
+          </div>
+          <p class="theme">Python-basis (variabelen, lists, if/elif, for-loops) direct toegepast op kaarten en een eerste regel-gebaseerde bot. Eerste keer inleveren via de API.</p>
+          <div class="mixbar-wrap">
+            <div class="mixbar"><span class="actief" style="width:74%"></span><span class="uitvoeren" style="width:10%"></span><span class="uitleg" style="width:16%"></span></div>
+            <div class="mixbar-legend"><span><i class="dot" style="background:var(--cat-actief)"></i><b>74%</b> actief</span><span><i class="dot" style="background:var(--cat-uitvoeren)"></i><b>10%</b> uitvoeren</span><span><i class="dot" style="background:var(--cat-uitleg)"></i><b>16%</b> uitleg</span></div>
+          </div>
+        </div>
+        <details class="wc-detail"><summary>Deel-voor-deel breakdown</summary>
+          <div class="wc-body">
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Deel 1 — Python basis</span> · variabelen/types, lists, indexing/slicing, if/elif (pocket pair), for-loops (enumerate, tellen), for+if combinatie</div>
+              <div class="tijd">40 min</div>
+              <div class="tags"><span class="tag m-actief">actief</span></div>
+              <div class="concepts"><span class="tag concept">kaartwaarden als data</span></div>
+            </div>
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Deel 2 — Pokerbot upgrade</span> · klassikale uitleg (10.000 handen simuleren), dan zelf: <span class="mono">trek_hand()</span>, Bot v0.1 regel-gebaseerd (if/elif/else), Bot v0.1-random</div>
+              <div class="tijd">15 + 50 min</div>
+              <div class="tags"><span class="tag m-uitleg">uitleg</span><span class="tag m-actief">actief</span></div>
+              <div class="concepts"><span class="tag concept">hand trekken zonder terugleggen</span><span class="tag concept">hoge-kaart/pocket-pair heuristiek</span></div>
+            </div>
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Deel 3 — Eerste visualisatie</span> · countplot van kaartwaarde-verdeling, standaardinstellingen (nog niet mooi maken)</div>
+              <div class="tijd">25 min</div>
+              <div class="tags"><span class="tag m-actief">actief</span></div>
+              <div class="concepts"><span class="tag concept">kaartwaarde-frequentie</span></div>
+            </div>
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Deel 4 — Inleveren via de API</span> · vast recept (bestand maken, imports, identiteit, inlezen, versturen), foutmeldingen leren lezen</div>
+              <div class="tijd">15 min</div>
+              <div class="tags"><span class="tag m-uitvoeren">uitvoeren</span></div>
+              <div class="concepts"></div>
+            </div>
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Reflectievragen</span> · hand==string vs. hand==list, moeilijkste concept, seed-gedrag</div>
+              <div class="tijd">~10 min</div>
+              <div class="tags"><span class="tag m-uitleg">uitleg</span></div>
+              <div class="concepts"></div>
+            </div>
+          </div>
+        </details>
+      </article>
+
+      <!-- WC2 -->
+      <article class="wc-card" id="wc2">
+        <div class="wc-head">
+          <div class="row1">
+            <div><div class="weeklabel">Week 1 · Werkcollege 2</div><h3>Terugblik, API &amp; je bot verbeteren</h3></div>
+            <div class="total-time">~85 min</div>
+          </div>
+          <p class="theme">Actieve recap van Werkcollege 1 (gescrambled, debug-oefening), dan API-mechaniek en de eerste echte pandas-duik in toernooidata — inclusief een groupby-belofte voor Week 3.</p>
+          <div class="mixbar-wrap">
+            <div class="mixbar"><span class="actief" style="width:74%"></span><span class="uitvoeren" style="width:12%"></span><span class="uitleg" style="width:14%"></span></div>
+            <div class="mixbar-legend"><span><i class="dot" style="background:var(--cat-actief)"></i><b>74%</b> actief</span><span><i class="dot" style="background:var(--cat-uitvoeren)"></i><b>12%</b> uitvoeren</span><span><i class="dot" style="background:var(--cat-uitleg)"></i><b>14%</b> uitleg</span></div>
+          </div>
+        </div>
+        <details class="wc-detail"><summary>Deel-voor-deel breakdown</summary>
+          <div class="wc-body">
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Deel 0 — Terugblik</span> · predict-then-run, 8-staps bot-pipeline door elkaar husselen (letters teruglezen), debug een kapotte <span class="mono">kies_actie</span></div>
+              <div class="tijd">25 min</div>
+              <div class="tags"><span class="tag m-actief">actief</span></div>
+              <div class="concepts"><span class="tag concept">inlever-workflow als geheel</span></div>
+            </div>
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Deel 1 — Live testen</span> · bot uitwisselen met klasgenoot, zelfde testhanden vergelijken</div>
+              <div class="tijd">15 min</div>
+              <div class="tags"><span class="tag m-actief">actief</span></div>
+              <div class="concepts"></div>
+            </div>
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Deel 2 — Hoe werkt een API</span> · theorie, Stap 1–3 gegeven, Stap 4–5 zelf GET-requests schrijven</div>
+              <div class="tijd">15 min</div>
+              <div class="tags"><span class="tag m-uitleg">uitleg</span><span class="tag m-uitvoeren">uitvoeren</span><span class="tag m-actief">actief</span></div>
+              <div class="concepts"></div>
+            </div>
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Deel 3 — Toernooi-overzicht met pandas</span> · DataFrame bouwen, .head()/.info(), Series-bewerkingen getrapt (mean gegeven → max/min/sum zelf), value_counts/unique, <span class="mono">groupby</span> voor eindstand_per_bot, 3 grafieken getrapt</div>
+              <div class="tijd">30 min</div>
+              <div class="tags"><span class="tag m-uitvoeren">uitvoeren</span><span class="tag m-actief">actief</span></div>
+              <div class="concepts"><span class="tag concept">toernooi-datastructuur</span><span class="tag concept">eindstand per bot</span></div>
+            </div>
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Deel 4 — Peer review</span> · klasgenoten-grafieken beoordelen op focal point / kleur / actietitel</div>
+              <div class="tijd">~10 min</div>
+              <div class="tags"><span class="tag m-actief">actief</span></div>
+              <div class="concepts"></div>
+            </div>
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Reflectievragen</span></div>
+              <div class="tijd">~10 min</div>
+              <div class="tags"><span class="tag m-uitleg">uitleg</span></div>
+              <div class="concepts"></div>
+            </div>
+          </div>
+        </details>
+      </article>
+
+      <!-- WC3 -->
+      <article class="wc-card" id="wc3">
+        <div class="wc-head">
+          <div class="row1">
+            <div><div class="weeklabel">Week 2 · Werkcollege 3</div><h3>Visual Maandag I — pandas, ruis &amp; spotlight</h3></div>
+            <div class="total-time">~104 min</div>
+          </div>
+          <p class="theme">Niet langer puur dataviz. Er zit nu een <b>Ronde 0</b> voor: eerst de vier Python-schrijfwijzen die studenten al gebruikten maar nooit uitgelegd kregen, dan de pandas-basis die ze bij de Titanic-case nodig hebben. Daarna het oorspronkelijke dataviz-programma: chart junk wegsnijden, dynamisch uitlichten, sorteren, annoteren. Bovenaan staat nu ook expliciet welke Visual Hierarchy-concepten hier aan bod komen.</p>
+          <div class="mixbar-wrap">
+            <div class="mixbar"><span class="actief" style="width:80%"></span><span class="uitvoeren" style="width:12%"></span><span class="uitleg" style="width:8%"></span></div>
+            <div class="mixbar-legend"><span><i class="dot" style="background:var(--cat-actief)"></i><b>80%</b> actief</span><span><i class="dot" style="background:var(--cat-uitvoeren)"></i><b>12%</b> uitvoeren</span><span><i class="dot" style="background:var(--cat-uitleg)"></i><b>8%</b> uitleg</span></div>
+          </div>
+        </div>
+        <details class="wc-detail"><summary>Deel-voor-deel breakdown</summary>
+          <div class="wc-body">
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Ronde 0 · Deel A — Vier schrijfwijzen die je al gebruikt</span> · f-string (naast plakken met <span class="mono">str()</span>), ternary (naast de lange if/else), list comprehension (naast de for-loop, en met ternary erin), <span class="mono">sorted()</span> incl. <span class="mono">reverse</span> en een <span class="mono">enumerate</span>-vermelding. Elk met een gegeven voorbeeld plus eigen TODO</div>
+              <div class="tijd">5 min</div>
+              <div class="tags"><span class="tag m-uitvoeren">uitvoeren</span><span class="tag m-actief">actief</span></div>
+              <div class="concepts"><span class="tag concept">gat gedicht: nergens uitgelegd</span></div>
+            </div>
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Ronde 0 · Deel B — Pandas opfrissen</span> · <span class="mono">read_csv</span> met de <span class="mono">sep</span>-valkuil (fout naast goed), <span class="mono">groupby</span>, <span class="mono">crosstab</span> met <span class="mono">normalize</span>, en kolommen afleiden met <span class="mono">np.where</span> (ook genest) en <span class="mono">np.select</span> — met de volgorde-val als reflectievraag</div>
+              <div class="tijd">15 min</div>
+              <div class="tags"><span class="tag m-uitvoeren">uitvoeren</span><span class="tag m-actief">actief</span></div>
+              <div class="concepts"><span class="tag concept">voorbereiding Titanic-case</span></div>
+            </div>
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Ronde 1 (kaartwaarden, opfrissen)</span> · chart junk identificeren, ruis verwijderen (checklist, zelf schrijven), spotlight coloring in 2 stappen (speelgoedvoorbeeld → echte data), sorteren, annotatie + actietitel</div>
+              <div class="tijd">44 min</div>
+              <div class="tags"><span class="tag m-actief">actief</span></div>
+              <div class="concepts"><span class="tag concept">Gestalt-principes</span></div>
+            </div>
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Ronde 2 (echt toernooi, zelfstandig)</span> · data ophalen, rommelig+strippen zelf, dynamische spotlight (eigen bot of koploper), top-5 filteren, actietitel + annotatie zelfstandig, peer-vergelijking</div>
+              <div class="tijd">53 min</div>
+              <div class="tags"><span class="tag m-uitvoeren">uitvoeren</span><span class="tag m-actief">actief</span></div>
+              <div class="concepts"><span class="tag concept">eindstand per bot</span><span class="tag concept">top-N filteren</span></div>
+            </div>
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Reflectievragen</span></div>
+              <div class="tijd">~10 min</div>
+              <div class="tags"><span class="tag m-uitleg">uitleg</span></div>
+              <div class="concepts"></div>
+            </div>
+          </div>
+        </details>
+      </article>
+    </section>
+
+    <section id="wc-blok2" class="wide" style="max-width:900px">
+      <div class="section-head">
+        <div class="kicker">Blok 4–6 · Week 3</div>
+        <h2>Bot v2: stack, ronde, en eindelijk de échte spelregels</h2>
+        <p>Dit blok is het zwaartepunt van dit audit — hier komen blinds, straten, community cards, showdown, raise-mechaniek, pot odds, handsterkte, winkans en per-straat besluitvorming voor het eerst (en enige) binnen. De strategie-labels (tight/loose/…) zijn er bewust uit gehaald en verhuisd naar Week 5. Het blok is ook het zwaarst herverkaveld: WC4 ging van 68 naar 103 minuten contacttijd plus 4–8 uur eigen botwerk, WC5 kwam via 152 weer op 100 uit, en WC6 groeide van 95 naar 169. Week 3–4 draagt nu ook Case 2 (Streamlit + join) en de schriftelijke toets.</p>
+      </div>
+
+      <!-- WC4 -->
+      <article class="wc-card" id="wc4">
+        <div class="wc-head">
+          <div class="row1">
+            <div><div class="weeklabel">Week 3 · Werkcollege 4</div><h3>Van de spelregels naar een bot die rekent</h3></div>
+            <div class="total-time">~108 min + 4–8 u</div>
+          </div>
+          <p class="theme">Het zwaartepunt van de hele pokerlijn, na een tweede herindeling: handsterkte, winkans en de pot-odds-beslisregel zijn hierheen verhuisd uit WC5, zodat de hele arc — spelregels → wat wint er → hoe váák win je → wat doe je daarmee — in één werkcollege staat, en vóór de woensdag-deadline in plaats van erna. Deel 2 blijft de enige plek die de echte Texas Hold'em-regels uitlegt, met een live PyPokerEngine-demo. Het échte werk zit in Deel 8: 4 tot 8 uur eigen botwerk. Elf TODO&#39;s in de code.</p>
+          <div class="mixbar-wrap">
+            <div class="mixbar"><span class="actief" style="width:62%"></span><span class="uitvoeren" style="width:26%"></span><span class="uitleg" style="width:12%"></span></div>
+            <div class="mixbar-legend"><span><i class="dot" style="background:var(--cat-actief)"></i><b>62%</b> actief</span><span><i class="dot" style="background:var(--cat-uitvoeren)"></i><b>26%</b> uitvoeren</span><span><i class="dot" style="background:var(--cat-uitleg)"></i><b>12%</b> uitleg</span></div>
+          </div>
+        </div>
+        <details class="wc-detail"><summary>Deel-voor-deel breakdown</summary>
+          <div class="wc-body">
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Deel 1 — Python basis</span> · functies + default-argumenten (3-traps, nu met stack-drempels i.p.v. strategie), dictionaries (3-traps, drempel per ronde), pandas filter → groupby (3-traps), Plotly (3-traps)</div>
+              <div class="tijd">22 min</div>
+              <div class="tags"><span class="tag m-uitvoeren">uitvoeren</span><span class="tag m-actief">actief</span></div>
+              <div class="concepts"><span class="tag concept">pot odds</span><span class="tag concept">stack-drempels</span><span class="tag concept">bot-profiel als dict</span></div>
+            </div>
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Deel 2 — Hoe poker écht werkt</span> · spelregels (hole cards, blinds, 4 straten, community cards, showdown), live demo met echte hole cards + handsterkte, welke acties, raise-wiskunde, max-1-raise-per-straat + all_in, ronde/pot/inzet_om_te_callen, hoe strategie binnenkomt</div>
+              <div class="tijd">9 min</div>
+              <div class="tags"><span class="tag m-uitleg">uitleg</span><span class="tag m-uitvoeren">uitvoeren</span><span class="tag m-actief">actief</span></div>
+              <div class="concepts"><span class="tag concept">blinds</span><span class="tag concept">4 straten</span><span class="tag concept">community cards</span><span class="tag concept">showdown/handsterkte</span><span class="tag concept">raise-mechaniek</span><span class="tag concept">all-in</span><span class="tag concept">per-straat besluit</span></div>
+            </div>
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Deel 3 — Bot v2 skeleton</span> · Stap 1 <span class="mono">kies_actie(hand, stack)</span> met concreet stack-drempel-voorbeeld, Stap 2 v1→v4 opbouw per straat (speelgoedvoorbeeld), Stap 3 zelf ronde toevoegen</div>
+              <div class="tijd">10 min</div>
+              <div class="tags"><span class="tag m-actief">actief</span><span class="tag m-uitvoeren">uitvoeren</span></div>
+              <div class="concepts"><span class="tag concept">stack-drempels</span><span class="tag concept">per-straat besluit</span></div>
+            </div>
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Deel 4 — Handsterkte: wat wint er eigenlijk?</span> · <b>verhuisd uit WC5.</b> Tabel met de negen handsoorten, dan een puzzel waarin een hoog paar van een flush verliest; studenten voorspellen eerst zelf en checken met <span class="mono">vergelijk_handen()</span>, en verzinnen tot slot een eigen bord. Sluit direct aan op de showdown-demo van Deel 2</div>
+              <div class="tijd">12 min</div>
+              <div class="tags"><span class="tag m-uitleg">uitleg</span><span class="tag m-actief">actief</span></div>
+              <div class="concepts"><span class="tag concept">handsoorten-rangorde</span><span class="tag concept">showdown/handsterkte</span></div>
+            </div>
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Deel 5 — Winkans: wat je ECHT hebt</span> · <b>verhuisd uit WC5.</b> <span class="mono">schat_winkans()</span> (Monte Carlo op PyPokerEngine's eigen hand-evaluatie, incl. kleur), starthanden ranken, en de ruis zichtbaar maken: bij 1000 simulaties klapt de volgorde van KK en QQ om, bij 5000 niet</div>
+              <div class="tijd">28 min</div>
+              <div class="tags"><span class="tag m-uitvoeren">uitvoeren</span><span class="tag m-actief">actief</span></div>
+              <div class="concepts"><span class="tag concept">hand-equity / winkans</span><span class="tag concept">simulatieruis</span></div>
+            </div>
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Deel 6 — Pot odds × winkans: een beslisregel</span> · <b>verhuisd uit WC5, en aangepast.</b> De twee getallen tegen elkaar zetten en er één concrete regel van maken; hergebruikt <span class="mono">bereken_pot_odds</span> uit Deel 1 in plaats van 'm opnieuw te definiëren. Nieuw is de stap ertussen: een cel die de winkansen één keer opzoekt en als kant-en-klare <span class="mono">WINKANS</span>-dictionary print om in de bot te plakken — want <span class="mono">schat_winkans</span> zelf bestaat op de server niet</div>
+              <div class="tijd">12 min</div>
+              <div class="tags"><span class="tag m-actief">actief</span></div>
+              <div class="concepts"><span class="tag concept">pot odds vs. winkans</span></div>
+            </div>
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Deel 7 — Van notebook naar script</span> · de opstap naar Streamlit. Een script waarin een losse <span class="mono">eindstand</span>-regel niets doet en <span class="mono">print()</span> wel, gedraaid vanuit de terminal. Daarna <span class="mono">pip install streamlit</span> en een <span class="mono">dashboard.py</span> van acht regels met een TODO</div>
+              <div class="tijd">10 min</div>
+              <div class="tags"><span class="tag m-uitvoeren">uitvoeren</span><span class="tag m-actief">actief</span></div>
+              <div class="concepts"><span class="tag concept">opstap naar week 4</span><span class="tag concept">notebook vs. script</span></div>
+            </div>
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Deel 8 — Bot v2 afmaken en verbeteren (huiswerk)</span> · <b>het hoofdwerk van de week.</b> Open opdracht met een urenverdeling, vijf richtingen om te verkennen (drempels per straat, je winkans-grens, afwijken van de pot-odds-regel, stack-bewustzijn met bewuste all-in, waar je je ene raise inzet) en een meetprotocol: bouw een testset van 10–15 situaties, en foldt je bot in meer dan 80% daarvan, dan speel je geen handen</div>
+              <div class="tijd"><b>4–8 uur</b></div>
+              <div class="tags"><span class="tag m-actief">actief</span></div>
+              <div class="concepts"><span class="tag concept">eigen ontwerpkeuzes</span><span class="tag concept">meten i.p.v. gokken</span></div>
+            </div>
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Deel 9–11 (huiswerk)</span> · lokaal testen tegen v1, Plotly-grafiek van alle bots, inleveren via de API</div>
+              <div class="tijd">35 min</div>
+              <div class="tags"><span class="tag m-uitvoeren">uitvoeren</span><span class="tag m-actief">actief</span></div>
+              <div class="concepts"></div>
+            </div>
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Reflectievragen</span></div>
+              <div class="tijd">~3 min</div>
+              <div class="tags"><span class="tag m-uitleg">uitleg</span></div>
+              <div class="concepts"></div>
+            </div>
+          </div>
+        </details>
+      </article>
+
+      <!-- WC5 -->
+      <article class="wc-card" id="wc5">
+        <div class="wc-head">
+          <div class="row1">
+            <div><div class="weeklabel">Week 3 · Werkcollege 5</div><h3>Resultaten, peer review &amp; de join voor Case 2</h3></div>
+            <div class="total-time">~90 min + 10 min hw</div>
+          </div>
+          <p class="theme">Stond kort op 152 minuten; na de verhuizing van handsterkte, winkans en de beslisregel naar WC4 is dit weer een werkcollege van normale lengte. Wat overblijft is precies wat de klas nódig heeft: je eigen resultaat zien, dat van klasgenoten beoordelen, de case-aftrap, en de join-techniek die Case 2 vereist. De reflectievragen stonden hier midden in het notebook en staan nu aan het eind. Zes TODO&#39;s in de code.</p>
+          <div class="mixbar-wrap">
+            <div class="mixbar"><span class="actief" style="width:46%"></span><span class="uitvoeren" style="width:34%"></span><span class="uitleg" style="width:20%"></span></div>
+            <div class="mixbar-legend"><span><i class="dot" style="background:var(--cat-actief)"></i><b>46%</b> actief</span><span><i class="dot" style="background:var(--cat-uitvoeren)"></i><b>34%</b> uitvoeren</span><span><i class="dot" style="background:var(--cat-uitleg)"></i><b>20%</b> uitleg</span></div>
+          </div>
+        </div>
+        <details class="wc-detail"><summary>Deel-voor-deel breakdown</summary>
+          <div class="wc-body">
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Deel 1 — Live testen</span> · <span class="mono">mijn_bot_week3.py</span> uitwisselen met een klasgenoot, plus 2 zelfbedachte testgevallen</div>
+              <div class="tijd">15 min</div>
+              <div class="tags"><span class="tag m-uitvoeren">uitvoeren</span><span class="tag m-actief">actief</span></div>
+              <div class="concepts"></div>
+            </div>
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Deel 2 — Resultaten: v2 vs v1</span> · toernooi vers gedraaid met <span class="mono">vergelijk_met_week=1</span>; pivot, kolomnamen en verschilkolom zelf bouwen. De GET-cel blijft hier staan, want Deel 5 leunt op dezelfde <span class="mono">resultaat</span></div>
+              <div class="tijd">20 min</div>
+              <div class="tags"><span class="tag m-uitvoeren">uitvoeren</span><span class="tag m-actief">actief</span></div>
+              <div class="concepts"><span class="tag concept">multi-week vergelijking</span></div>
+            </div>
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Deel 3 — Peer review via de API</span> · matplotlib en Plotly door elkaar tonen, 3-criteria review met verplichte toelichting</div>
+              <div class="tijd">20 min</div>
+              <div class="tags"><span class="tag m-uitvoeren">uitvoeren</span><span class="tag m-actief">actief</span></div>
+              <div class="concepts"></div>
+            </div>
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Deel 4 — Aftrap Groepscase 2</span> · uitleg door docent: zelfgekozen onderwerp, met een Streamlit-pagina en minimaal één join als vaste eisen</div>
+              <div class="tijd">15 min</div>
+              <div class="tags"><span class="tag m-uitleg">uitleg</span></div>
+              <div class="concepts"><span class="tag concept">Case 2-eisen</span></div>
+            </div>
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Deel 5 — Klaarstomen voor Case 2: tabellen samenvoegen</span> · <span class="mono">pd.merge</span> in drie trappen: eerst twee speeltabellen waar een inner join van vier bots twee overhoudt (zonder foutmelding), dan <span class="mono">how</span>/<span class="mono">left_on</span>/<span class="mono">right_on</span> en <span class="mono">indicator=True</span> als controle, dan de eigen <span class="mono">hand_log</span> koppelen aan <span class="mono">eindstand_per_bot</span> — raist de winnaar nou meer of minder dan de rest?</div>
+              <div class="tijd">20 min</div>
+              <div class="tags"><span class="tag m-uitvoeren">uitvoeren</span><span class="tag m-actief">actief</span></div>
+              <div class="concepts"><span class="tag concept">join / merge</span><span class="tag concept">rijen tellen vóór en ná</span></div>
+            </div>
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Reflectievragen</span></div>
+              <div class="tijd">~10 min</div>
+              <div class="tags"><span class="tag m-uitleg">uitleg</span></div>
+              <div class="concepts"></div>
+            </div>
+          </div>
+        </details>
+      </article>
+
+      <!-- WC6 -->
+      <article class="wc-card" id="wc6">
+        <div class="wc-head">
+          <div class="row1">
+            <div><div class="weeklabel">Week 4 · Werkcollege 6</div><h3>Visual Maandag II — spaghetti, window-functies &amp; Streamlit</h3></div>
+            <div class="total-time">~169 min</div>
+          </div>
+          <p class="theme">Van zeven naar elf delen, en niet langer alleen dataviz. Er zijn drie blokken bij gekomen: de window-functies (<span class="mono">diff</span>, <span class="mono">cumsum</span>, <span class="mono">shift</span>) op de handdata, een multi-week scatter met de winkans-ranglijst, en tot slot de stap van grafiek naar Streamlit-app. Met 26 TODO&#39;s is dit het meest zelf-doen-werkcollege van de reeks.</p>
+          <div class="mixbar-wrap">
+            <div class="mixbar"><span class="actief" style="width:66%"></span><span class="uitvoeren" style="width:24%"></span><span class="uitleg" style="width:10%"></span></div>
+            <div class="mixbar-legend"><span><i class="dot" style="background:var(--cat-actief)"></i><b>66%</b> actief</span><span><i class="dot" style="background:var(--cat-uitvoeren)"></i><b>24%</b> uitvoeren</span><span><i class="dot" style="background:var(--cat-uitleg)"></i><b>10%</b> uitleg</span></div>
+          </div>
+        </div>
+        <details class="wc-detail"><summary>Deel-voor-deel breakdown</summary>
+          <div class="wc-body">
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Deel 1 — Spaghetti identificeren</span> · onleesbare line chart bouwen en benoemen waarom</div>
+              <div class="tijd">10 min</div>
+              <div class="tags"><span class="tag m-uitvoeren">uitvoeren</span><span class="tag m-actief">actief</span></div>
+              <div class="concepts"></div>
+            </div>
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Deel 2 — Eerste reductie: filteren</span> · één tafel + simulatie isoleren, nu als TODO in plaats van gegeven</div>
+              <div class="tijd">12 min</div>
+              <div class="tags"><span class="tag m-actief">actief</span></div>
+              <div class="concepts"></div>
+            </div>
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Deel 3 — Eigen bot uitlichten</span> · lijndikte en opacity als pre-attentieve kanalen, met een tabel die de vier kanalen naast elkaar zet</div>
+              <div class="tijd">22 min</div>
+              <div class="tags"><span class="tag m-uitvoeren">uitvoeren</span><span class="tag m-actief">actief</span></div>
+              <div class="concepts"></div>
+            </div>
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Deel 4 — Enkele tegenstanders vergelijken</span> · koploper/achterblijver gegeven, kleurenmapping en dikte/opacity zelf</div>
+              <div class="tijd">12 min</div>
+              <div class="tags"><span class="tag m-actief">actief</span></div>
+              <div class="concepts"></div>
+            </div>
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Deel 5 — Actietitel + annotatie op het kantelpunt</span> · het kantelpunt zelf vinden; de stille <span class="mono">NaN</span> uit index-alignment is hier een expliciete les met een tel-TODO</div>
+              <div class="tijd">18 min</div>
+              <div class="tags"><span class="tag m-actief">actief</span></div>
+              <div class="concepts"><span class="tag concept">index-alignment / NaN</span></div>
+            </div>
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Deel 6 — Kleurcontrast-check</span> · grijswaarden-test op de eigen grafiek</div>
+              <div class="tijd">12 min</div>
+              <div class="tags"><span class="tag m-actief">actief</span></div>
+              <div class="concepts"></div>
+            </div>
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Deel 7 — Verschil, verloop en de hand ervoor</span> · <b>nieuw.</b> <span class="mono">diff</span> / <span class="mono">cumsum</span> / <span class="mono">shift</span> op de <span class="mono">hand_log</span>. Opent met de val: een gewone <span class="mono">diff()</span> rekent bij de eerste hand van de volgende bot door over de grens en geeft daar een onzingetal — <span class="mono">groupby(...).diff()</span> niet. Daarna een zelfcontrole die sluit (cumulatieve winst + startstack = stack) en <span class="mono">shift</span> om te zien wat een bot wint ná een raise versus ná een fold</div>
+              <div class="tijd">18 min</div>
+              <div class="tags"><span class="tag m-uitvoeren">uitvoeren</span><span class="tag m-actief">actief</span></div>
+              <div class="concepts"><span class="tag concept">window-functies</span><span class="tag concept">winst per hand</span></div>
+            </div>
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Deel 8 — Multi-week: je eigen vooruitgang</span> · scatter van week 1 tegen week 3 met een diagonaal als hulplijn, kleuren via <span class="mono">np.where</span> of comprehension</div>
+              <div class="tijd">15 min</div>
+              <div class="tags"><span class="tag m-actief">actief</span></div>
+              <div class="concepts"><span class="tag concept">multi-week vergelijking</span></div>
+            </div>
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Deel 9 — De winkans-ranglijst in beeld</span> · de equity-tabel uit WC5 als horizontale bar chart, gekleurd op de eigen call/fold-drempel, met een actietitel die die drempel benoemt</div>
+              <div class="tijd">15 min</div>
+              <div class="tags"><span class="tag m-actief">actief</span></div>
+              <div class="concepts"><span class="tag concept">hand-equity / winkans</span></div>
+            </div>
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Deel 10 — Peer-vergelijking</span> · de 3-seconden-test op de eigen grafiek</div>
+              <div class="tijd">10 min</div>
+              <div class="tags"><span class="tag m-actief">actief</span></div>
+              <div class="concepts"></div>
+            </div>
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Deel 11 — Van grafiek naar Streamlit-app</span> · <b>nieuw.</b> Bouwt door op WC4: data eerst wegschrijven naar CSV (een script kent je notebook-variabelen niet en heeft je token niet), dan <span class="mono">st.multiselect</span> erbij en het rerun-model zichtbaar gemaakt via een regel die het aantal geselecteerde rijen meldt. Dit is het skelet van de Case 2-pagina</div>
+              <div class="tijd">15 min</div>
+              <div class="tags"><span class="tag m-uitvoeren">uitvoeren</span><span class="tag m-actief">actief</span></div>
+              <div class="concepts"><span class="tag concept">Streamlit zelf bouwen</span><span class="tag concept">rerun-model</span></div>
+            </div>
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Reflectievragen</span> · incl. vooruitblik: Bot v3 krijgt bluf-parameter + geolocatie</div>
+              <div class="tijd">~10 min</div>
+              <div class="tags"><span class="tag m-uitleg">uitleg</span></div>
+              <div class="concepts"></div>
+            </div>
+          </div>
+        </details>
+      </article>
+    </section>
+
+    <section id="wc-blok3" class="wide" style="max-width:900px">
+      <div class="section-head">
+        <div class="kicker">Blok 7–9 · Weken 5–6</div>
+        <h2>Bot v3: bluffen, tegenstander-inzicht, geolocatie, en informatie-architectuur</h2>
+        <p>Het zwaarste blok qua eigen werk — en de enige plek waar strategie, bluffen én tegenstander-gedrag worden geïntroduceerd. WC7 is 103 minuten werkcollege plus 75 minuten gewoon huiswerk, WC8 is 135 minuten; daar bovenop komt de 4 tot 8 uur eigen botwerk. Week 5 (WC7+WC8) is ook de plek waar de pokerbot-lijn afrondt, en waar het <a href="#bonus">hele bonuspunt</a> te verdienen valt: twee toernooien die meetellen, met een oefenronde ertussen. Nu met de expliciete vraag welke strategie werkt tegen een veld van 43 andere programma&#39;s.</p>
+      </div>
+
+      <!-- WC7 -->
+      <article class="wc-card" id="wc7">
+        <div class="wc-head">
+          <div class="row1">
+            <div><div class="weeklabel">Week 5 · Werkcollege 7</div><h3>Geopandas, Folium &amp; Bot v3</h3></div>
+            <div class="total-time">~103 min + 4–8 u</div>
+          </div>
+          <p class="theme">Twee losse leerlijnen in één werkcollege: geodata/Folium (geen pokerinhoud) en Bot v3, die er in één klap drie dingen bij krijgt: <span class="mono">strategie</span> (verhuisd uit Week 3), <span class="mono">bluf_kans</span> en <span class="mono">tegenstander_acties_deze_hand</span>. Pas met die combinatie gedraagt een tight-bot zich merkbaar anders dan een loose-bot. Net als in Week 3 is het huiswerk hier het hoofdwerk: 4 tot 8 uur. Het notebook legt nu ook uit wat de twee toernooien opleveren, met de puntentabel erbij.</p>
+          <div class="mixbar-wrap">
+            <div class="mixbar"><span class="actief" style="width:52%"></span><span class="uitvoeren" style="width:34%"></span><span class="uitleg" style="width:14%"></span></div>
+            <div class="mixbar-legend"><span><i class="dot" style="background:var(--cat-actief)"></i><b>52%</b> actief</span><span><i class="dot" style="background:var(--cat-uitvoeren)"></i><b>34%</b> uitvoeren</span><span><i class="dot" style="background:var(--cat-uitleg)"></i><b>14%</b> uitleg</span></div>
+          </div>
+        </div>
+        <details class="wc-detail"><summary>Deel-voor-deel breakdown</summary>
+          <div class="wc-body">
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Deel 1 — Geopandas &amp; Folium</span> · GeoDataFrame, interactieve kaart met markers (fictieve steden, geen pokerbots)</div>
+              <div class="tijd">40 min</div>
+              <div class="tags"><span class="tag m-uitvoeren">uitvoeren</span><span class="tag m-actief">actief</span></div>
+              <div class="concepts"></div>
+            </div>
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Deel 2 — Strategie, bluffen en tegenstanders</span> · strategie-archetypes voor het eerst uitgelegd (incl. waarom nu pas), daarna gechunkt met actieve checks: bluf-kans als frequentie testen, een raise spotten in een tegenstander-actielijst</div>
+              <div class="tijd">28 min</div>
+              <div class="tags"><span class="tag m-uitleg">uitleg</span><span class="tag m-actief">actief</span></div>
+              <div class="concepts"><span class="tag concept">strategie-archetypes</span><span class="tag concept">bluffen (bluf_kans)</span><span class="tag concept">tegenstander-gedrag deze hand</span></div>
+            </div>
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Deel 3 — Bot v3 skeleton</span> · Stap 1 basis-bluf (vaste kans), Stap 2 gegeven voorbeeld (bluf alleen als niemand al geraised heeft), Stap 3 zelf <span class="mono">tegenstander_acties_deze_hand</span> toevoegen</div>
+              <div class="tijd">35 min</div>
+              <div class="tags"><span class="tag m-actief">actief</span><span class="tag m-uitvoeren">uitvoeren</span></div>
+              <div class="concepts"><span class="tag concept">bluffen als kansmodel</span><span class="tag concept">tegenstander-gedrag deze hand</span></div>
+            </div>
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Deel 4 — Bot v3 afmaken en verbeteren (huiswerk)</span> · <b>het hoofdwerk van de week.</b> Urenverdeling, een testharnas met vaste seed, en een blok <em>denk na over waar je tegen speelt</em>: een bot is voorspelbaar, leest jou niet en speelt meestal te tight — en precies daarom is je eigen <span class="mono">bluf_kans</span> waardevol. Met de suggestie het te méten: bereken per bot zijn fold-percentage uit het hand_log</div>
+              <div class="tijd"><b>4–8 uur</b></div>
+              <div class="tags"><span class="tag m-uitvoeren">uitvoeren</span><span class="tag m-actief">actief</span></div>
+              <div class="concepts"><span class="tag concept">spelen tegen bots i.p.v. mensen</span><span class="tag concept">randomiseren als verdediging</span></div>
+            </div>
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Deel 5 — Locatie kiezen</span></div>
+              <div class="tijd">10 min</div>
+              <div class="tags"><span class="tag m-actief">actief</span></div>
+              <div class="concepts"></div>
+            </div>
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Deel 6 — Folium-kaart van klas-locaties</span> · kleur op eindstand, grijs bij nog-niet-gedraaid</div>
+              <div class="tijd">25 min</div>
+              <div class="tags"><span class="tag m-uitvoeren">uitvoeren</span></div>
+              <div class="concepts"><span class="tag concept">nog-niet-gedraaid state</span></div>
+            </div>
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Deel 7 — Lokaal testen vs. Week 3</span></div>
+              <div class="tijd">15 min</div>
+              <div class="tags"><span class="tag m-uitvoeren">uitvoeren</span></div>
+              <div class="concepts"></div>
+            </div>
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Deel 8 — Inleveren via API</span></div>
+              <div class="tijd">15 min</div>
+              <div class="tags"><span class="tag m-uitvoeren">uitvoeren</span></div>
+              <div class="concepts"></div>
+            </div>
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Reflectievragen</span></div>
+              <div class="tijd">~10 min</div>
+              <div class="tags"><span class="tag m-uitleg">uitleg</span></div>
+              <div class="concepts"></div>
+            </div>
+          </div>
+        </details>
+      </article>
+
+      <!-- WC8 -->
+      <article class="wc-card" id="wc8">
+        <div class="wc-head">
+          <div class="row1">
+            <div><div class="weeklabel">Week 5 · Werkcollege 8</div><h3>Resultaten, verfijnen &amp; de aftrap van de laatste case</h3></div>
+            <div class="total-time">~135 min</div>
+          </div>
+          <p class="theme">De deep dive waarmee de pokerbot-lijn afrondt: bewijs-gestuurd <span class="mono">bluf_kans</span> verfijnen, en een boxplot die laat zien hoeveel van het verschil tussen bots toeval is. Het driedaagse ritme staat bovenaan het notebook: woensdagochtend het eerste toernooi dat meetelt, donderdagochtend een oefenronde die dat niet doet, en na de slotdeadline van vrijdag 18:00 het tweede toernooi dat wél meetelt.</p>
+          <p class="theme" style="margin-top:8px"><b>Als laatste herbouwd (sep 2026).</b> Het probleem zat niet in de hoeveelheid zelf-doen, maar in wáár de steun ontbrak: verfijnen-op-bewijs en de variantieberekening waren de twee zwaarste stappen en hadden allebei één instructieregel zonder voorbeeld. Verfijnen is nu een eigen Deel van 25 minuten in drie trappen, de variantieberekening krijgt eerst hetzelfde patroon op speelgoeddata, en de kaart vraagt nu om eigen kleurgrenzen in plaats van één cel draaien.</p>
+          <div class="mixbar-wrap">
+            <div class="mixbar"><span class="actief" style="width:55%"></span><span class="uitvoeren" style="width:30%"></span><span class="uitleg" style="width:15%"></span></div>
+            <div class="mixbar-legend"><span><i class="dot" style="background:var(--cat-actief)"></i><b>55%</b> actief</span><span><i class="dot" style="background:var(--cat-uitvoeren)"></i><b>30%</b> uitvoeren</span><span><i class="dot" style="background:var(--cat-uitleg)"></i><b>15%</b> uitleg</span></div>
+          </div>
+        </div>
+        <details class="wc-detail"><summary>Deel-voor-deel breakdown</summary>
+          <div class="wc-body">
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Deel 1 — Live testen</span> · klasgenoot-bot nu verplicht, plus eigen tegenstander-scenario's</div>
+              <div class="tijd">15 min</div>
+              <div class="tags"><span class="tag m-uitvoeren">uitvoeren</span><span class="tag m-actief">actief</span></div>
+              <div class="concepts"></div>
+            </div>
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Deel 2 — Resultaten v1→v3</span> · pivot/kolomnamen/verschil nu zelf bouwen; optionele bonus (vergelijk_met_week=3)</div>
+              <div class="tijd">15 min</div>
+              <div class="tags"><span class="tag m-uitvoeren">uitvoeren</span><span class="tag m-actief">actief</span></div>
+              <div class="concepts"><span class="tag concept">multi-week vergelijking</span></div>
+            </div>
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Deel 3 — Verfijnen op basis van bewijs</span> · eigen <span class="mono">hand_log</span> groeperen op actie, <span class="mono">bluf_kans</span> heroverwegen op basis van wat écht loonde</div>
+              <div class="tijd">25 min</div>
+              <div class="tags"><span class="tag m-uitleg">uitleg</span><span class="tag m-actief">actief</span></div>
+              <div class="concepts"><span class="tag concept">data-gestuurde verfijning</span></div>
+            </div>
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Deel 4 — Peer review</span> · matplotlib + plotly + folium door elkaar</div>
+              <div class="tijd">25 min</div>
+              <div class="tags"><span class="tag m-uitvoeren">uitvoeren</span><span class="tag m-actief">actief</span></div>
+              <div class="concepts"></div>
+            </div>
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Deel 5 — Kaart met eindresultaten</span> · niet langer één cel draaien: studenten kiezen hun eigen kleurgrenzen en verdedigen die keuze</div>
+              <div class="tijd">15 min</div>
+              <div class="tags"><span class="tag m-uitvoeren">uitvoeren</span></div>
+              <div class="concepts"></div>
+            </div>
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Deel 6 — Variantie vs. skill</span> · gegeven boxplot-voorbeeld, dan zelf per (bot, simulatie) de eindstand berekenen en vergelijken — hoeveel is toeval? Dit deel is geen theorie meer: het bonuspunt hangt aan precies dit gemiddelde</div>
+              <div class="tijd">25 min</div>
+              <div class="tags"><span class="tag m-uitleg">uitleg</span><span class="tag m-uitvoeren">uitvoeren</span><span class="tag m-actief">actief</span></div>
+              <div class="concepts"><span class="tag concept">variantie vs. skill</span></div>
+            </div>
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Deel 7 — Aftrap groepscase</span> · pure lezing, geen code</div>
+              <div class="tijd">15 min</div>
+              <div class="tags"><span class="tag m-uitleg">uitleg</span></div>
+              <div class="concepts"></div>
+            </div>
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Reflectievragen</span></div>
+              <div class="tijd">~10 min</div>
+              <div class="tags"><span class="tag m-uitleg">uitleg</span></div>
+              <div class="concepts"></div>
+            </div>
+          </div>
+        </details>
+      </article>
+
+      <!-- WC9 -->
+      <article class="wc-card" id="wc9">
+        <div class="wc-head">
+          <div class="row1">
+            <div><div class="weeklabel">Week 6 · Werkcollege 9</div><h3>Visual Maandag III — progressive disclosure</h3></div>
+            <div class="total-time">~119 min</div>
+          </div>
+          <p class="theme">Informatie-architectuur op de Week 5-kaart: van alles-tegelijk naar gelaagde onthulling. Herbouwd na de audit — waar studenten eerst vooral cellen runden, bouwen ze nu zelf <span class="mono">bepaal_omvang()</span> en de popup-inhoud, met 15 TODO&#39;s en de 3-seconden-test als sluitstuk.</p>
+          <div class="mixbar-wrap">
+            <div class="mixbar"><span class="actief" style="width:62%"></span><span class="uitvoeren" style="width:26%"></span><span class="uitleg" style="width:12%"></span></div>
+            <div class="mixbar-legend"><span><i class="dot" style="background:var(--cat-actief)"></i><b>62%</b> actief</span><span><i class="dot" style="background:var(--cat-uitvoeren)"></i><b>26%</b> uitvoeren</span><span><i class="dot" style="background:var(--cat-uitleg)"></i><b>12%</b> uitleg</span></div>
+          </div>
+        </div>
+        <details class="wc-detail"><summary>Deel-voor-deel breakdown</summary>
+          <div class="wc-body">
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Deel 1 — Wat is progressive disclosure?</span> · twee vragen per element (nodig voor het eerste beeld, of pas bij interesse?), het antipatroon van alles in een permanente tooltip, en de 3-seconden-test uitgelegd</div>
+              <div class="tijd">15 min</div>
+              <div class="tags"><span class="tag m-uitleg">uitleg</span><span class="tag m-actief">actief</span></div>
+              <div class="concepts"></div>
+            </div>
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Deel 2 — Data verzamelen</span> · call/raise/fold-percentage per bot via groupby en value_counts, nu met TODO's in plaats van kant-en-klaar</div>
+              <div class="tijd">15 min</div>
+              <div class="tags"><span class="tag m-actief">actief</span></div>
+              <div class="concepts"><span class="tag concept">actie-verdeling %</span></div>
+            </div>
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Deel 3 — Level 1: de simpele kaart</span> · studenten bouwen zelf <span class="mono">bepaal_omvang()</span> die de winst omzet naar een markerstraal, met vier gedocumenteerde testgevallen om tegen te controleren</div>
+              <div class="tijd">20 min</div>
+              <div class="tags"><span class="tag m-actief">actief</span></div>
+              <div class="concepts"><span class="tag concept">win/verlies-magnitude</span></div>
+            </div>
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Deel 4 — Level 2: de detail-popup</span> · matplotlib-sparkline in een Folium-popup, plus zelf bepalen wát er in die popup hoort</div>
+              <div class="tijd">25 min</div>
+              <div class="tags"><span class="tag m-uitvoeren">uitvoeren</span><span class="tag m-actief">actief</span></div>
+              <div class="concepts"></div>
+            </div>
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Deel 5 — Layout-discipline: wat laat je weg?</span> · een concreet lijstje kandidaten langs de twee vragen leggen en beargumenteerd schrappen</div>
+              <div class="tijd">12 min</div>
+              <div class="tags"><span class="tag m-actief">actief</span></div>
+              <div class="concepts"></div>
+            </div>
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Deel 6 — Bonus: zoom-afhankelijke clustering</span> · MarkerCluster als derde laag</div>
+              <div class="tijd">10 min</div>
+              <div class="tags"><span class="tag m-uitvoeren">uitvoeren</span></div>
+              <div class="concepts"></div>
+            </div>
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Deel 7 — Peer-vergelijking: de 3-seconden-test</span> · de test echt uitvoeren op een klasgenoot en de uitkomst vastleggen</div>
+              <div class="tijd">12 min</div>
+              <div class="tags"><span class="tag m-actief">actief</span></div>
+              <div class="concepts"></div>
+            </div>
+            <div class="deel-row">
+              <div class="titel"><span class="naam">Reflectievragen</span></div>
+              <div class="tijd">~10 min</div>
+              <div class="tags"><span class="tag m-uitleg">uitleg</span></div>
+              <div class="concepts"></div>
+            </div>
+          </div>
+        </details>
+      </article>
+    </section>
+
+    <section id="botversies" class="wide" style="max-width:none">
+      <div class="section-head" style="max-width:900px">
+        <div class="kicker">Referentie</div>
+        <h2>Bot v1, v2 en v3: wat moet erin, en wat mág erin</h2>
+        <p>Wat de validator eist ligt per week vast; daarnaast biedt de engine een aantal <b>opt-in</b> parameters aan. Die krijgt je bot alleen als hij ze zelf in zijn signatuur zet — laat je ze weg, dan blijft je oude code werken. Dat is bewust zo gebouwd: elke week groeit de bot, zonder dat de vorige versie stukgaat.</p>
+      </div>
+      <div class="matrix-scroll">
+        <table class="matrix" style="min-width:960px">
+          <thead>
+            <tr>
+              <th class="concept-col">&nbsp;</th>
+              <th style="min-width:210px">Bot v1 — Week 1</th>
+              <th style="min-width:250px">Bot v2 — Week 3</th>
+              <th style="min-width:250px">Bot v3 — Week 5</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="concept-col">Verplichte signatuur</td>
+              <td><span class="mono" style="font-size:0.76rem">kies_actie(hand)</span></td>
+              <td><span class="mono" style="font-size:0.76rem">kies_actie(hand, stack)</span></td>
+              <td><span class="mono" style="font-size:0.76rem">kies_actie(hand, stack,<br>strategie, bluf_kans)</span></td>
+            </tr>
+            <tr>
+              <td class="concept-col">Wat de bot weet</td>
+              <td>alleen zijn twee kaarten</td>
+              <td>+ zijn eigen chipstack</td>
+              <td>+ zijn stijl en bluf-frequentie</td>
+            </tr>
+            <tr>
+              <td class="concept-col">Opt-in: <span class="mono">ronde</span></td>
+              <td>—</td>
+              <td><span class="status-dot covered">●</span> preflop/flop/turn/river</td>
+              <td><span class="status-dot covered">●</span></td>
+            </tr>
+            <tr>
+              <td class="concept-col">Opt-in: <span class="mono">pot</span> + <span class="mono">inzet_om_te_callen</span></td>
+              <td>—</td>
+              <td><span class="status-dot covered">●</span> nodig voor pot odds</td>
+              <td><span class="status-dot covered">●</span></td>
+            </tr>
+            <tr>
+              <td class="concept-col">Opt-in: <span class="mono">tegenstander_acties_deze_hand</span></td>
+              <td>—</td>
+              <td><span class="status-dot partial">◐</span> technisch beschikbaar</td>
+              <td><span class="status-dot covered">●</span> hier pas onderwezen</td>
+            </tr>
+            <tr>
+              <td class="concept-col">Toegestane returns</td>
+              <td><span class="mono" style="font-size:0.76rem">"fold" "call" "raise" "check"</span></td>
+              <td>idem, plus <span class="mono">"all_in"</span></td>
+              <td>idem, plus <span class="mono">"all_in"</span></td>
+            </tr>
+            <tr>
+              <td class="concept-col">Raise-cap</td>
+              <td>geen (loopt in de engine dood)</td>
+              <td>max 1 raise per straat</td>
+              <td>max 1 raise per straat</td>
+            </tr>
+            <tr>
+              <td class="concept-col">Waar het wordt geleerd</td>
+              <td>WC1 Deel 2</td>
+              <td>WC4 Deel 3–6 en Deel 8</td>
+              <td>WC7 Deel 2 t/m 4</td>
+            </tr>
+            <tr>
+              <td class="concept-col">Werktijd aan de bot</td>
+              <td>35 min in de les + 50 min huiswerk</td>
+              <td>35 min in de les (Deel 3 + 6) + <b>4–8 uur</b> huiswerk</td>
+              <td>35 min in de les + <b>4–8 uur</b> huiswerk</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="matrix-legend">
+        <span class="item"><span class="status-dot covered">●</span> aangeboden en onderwezen</span>
+        <span class="item"><span class="status-dot partial">◐</span> aangeboden, maar niet onderwezen in die week</span>
+        <span class="item">— niet beschikbaar</span>
+      </div>
+
+      <div class="gap-grid" style="margin-top:20px">
+        <div class="gap-card" style="border-left-color:var(--felt)">
+          <h4>Waarom all-in pas vanaf v2 mag</h4>
+          <p>Een bot die zijn stack niet kent, kan niet afwegen of "alles inzetten" een keuze of een noodgreep is. De validator laat <span class="mono">"all_in"</span> daarom pas toe zodra <span class="mono">stack</span> in de signatuur staat — en de engine gate't aan de speel-kant op exact hetzelfde signaal.</p>
+        </div>
+        <div class="gap-card" style="border-left-color:var(--felt)">
+          <h4>Waarom strategie pas in v3 zit</h4>
+          <p>In Week 3 was <span class="mono">strategie</span> wel verplicht maar deed het bijna niets: een bot die alleen hand en stack kent, kan "tight" niet zichtbaar anders uitvoeren dan "loose". Pas mét <span class="mono">bluf_kans</span> en tegenstander-info erbij gaat het label zich echt uiten. Daarom is het verhuisd naar Week 5.</p>
+        </div>
+        <div class="gap-card" style="border-left-color:var(--felt)">
+          <h4>Wat er gebeurt bij een fout</h4>
+          <p>Crasht de studentcode tijdens een hand, dan foldt die bot die ene hand en draait het toernooi door — één kapotte bot mag de rest niet verstoren. Geeft de bot een actie die nu niet mag (een tweede raise in dezelfde straat), dan valt de engine terug op call, en alleen als dat niet kan op fold.</p>
+          <p style="margin-top:8px"><b>Let op deze valkuil:</b> de engine bouwt zijn argumenten op uit de <em>parameternamen</em> van <span class="mono">kies_actie</span>. Wie zijn parameters anders noemt dan <span class="mono">hand</span>, <span class="mono">stack</span>, <span class="mono">strategie</span> of <span class="mono">bluf_kans</span>, krijgt een aanroep zonder argumenten, een <span class="mono">TypeError</span>, en dus stil elke hand een fold. De validator geeft daar wél een expliciete foutmelding over, dus een student komt er niet mee door — maar zelf debuggen op een eigen kopie van de engine kan zo misleiden.</p>
+        </div>
+        <div class="gap-card" style="border-left-color:var(--felt)">
+          <h4>Wat de validator nog controleert</h4>
+          <p>Naast de signatuur: geen imports van <span class="mono">os</span>, <span class="mono">sys</span>, <span class="mono">socket</span>, <span class="mono">subprocess</span>, <span class="mono">requests</span> en verwanten; een <span class="mono">strategie</span> uit de vier toegestane waarden; een <span class="mono">bluf_kans</span> tussen 0,0 en 1,0; en de bot moet zonder crash draaien op een setje testhanden (<span class="mono">A K</span>, <span class="mono">7 2</span>, <span class="mono">Q Q</span>) bij zowel een ruime als een korte stack.</p>
+          <p style="margin-top:8px"><b>Nieuw:</b> geeft de bot op álle testgevallen dezelfde actie terug, dan wordt hij gevlagd als <span class="mono">constante_bot</span> — niet afgekeurd. Zie <a href="#bonus">Het bonuspunt</a>.</p>
+        </div>
+      </div>
+      <div class="callout open" style="margin-top:16px">
+        <div class="icon">&#128221;</div>
+        <div>
+          <h4>Docentmateriaal: uitgewerkte voorbeeldbots</h4>
+          <p>In <span class="mono">notebooks/_docent_voorbeeldbots.ipynb</span> staat per versie een tabel met de programmeerconcepten die erin horen (en waar ze geleerd zijn), plus één uitgewerkte bot voor v2 en v3, een nakijkchecklist, en het bewijs dat beide door de echte validator en een echt toernooi komen. Niet uitdelen aan studenten.</p>
+          <p style="margin-top:8px"><b>Eén valkuil kwam pas boven bij het schrijven daarvan:</b> <span class="mono">schat_winkans</span> uit <span class="mono">_hulpfuncties_week3.py</span> is op de server niet beschikbaar. Een bot die die functie importeert, wordt afgekeurd met <span class="mono">ModuleNotFoundError</span>. Werkcollege 4 Deel 6 vroeg dat letterlijk; die instructie is aangepast naar het opzoeken van de winkansen in het notebook en ze als dictionary in de bot zetten.</p>
+        </div>
+      </div>
+    </section>
+
+
+    <section id="bonus" class="wide" style="max-width:none">
+      <div class="section-head" style="max-width:900px">
+        <div class="kicker">Nieuw sinds de vorige versie</div>
+        <h2>Het bonuspunt: hoe je 1,0 verdient, en of dat iets meet</h2>
+        <p>De vakbeschrijving beloofde al maximaal +1,0 bonuspunt &quot;op basis van de toernooiprestaties&quot;, maar nergens stond wat dat precies betekende. Nu wel, en de hele regel past in twee zinnen: in week 5 draaien er twee toernooien die meetellen, en je plek levert in elk toernooi punten op.</p>
+        <p style="margin-top:10px">Een eerdere opzet woog drie weken tegen elkaar af en splitste elke week in een sprint- en een prestatiedeel. Dat was niet uit te leggen zonder tabel en is geschrapt. Er is nu geen weging, geen deelscore en geen deadlinecontrole in de puntentelling.</p>
+      </div>
+
+      <div class="matrix-scroll" style="max-width:900px; margin-bottom:22px">
+        <table class="matrix" style="min-width:560px">
+          <thead>
+            <tr><th class="concept-col" style="min-width:180px">Plek in de eindstand</th><th>1e</th><th>2e</th><th>3e</th><th>4e</th><th>5e</th><th>6e en lager</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="concept-col">Punten per toernooi</td><td><b>0,5</b></td><td>0,4</td><td>0,3</td><td>0,2</td><td>0,1</td><td>0</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="section-head" style="max-width:900px">
+        <h3 style="font-size:1.15rem">Het ritme van week 5</h3>
+      </div>
+      <div class="matrix-scroll" style="max-width:900px; margin-bottom:22px">
+        <table class="matrix" style="min-width:640px">
+          <thead>
+            <tr><th class="concept-col" style="min-width:190px">Wanneer</th><th style="text-align:left">Wat</th><th style="width:130px">Telt mee</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="concept-col">woensdag 09:00</td><td style="text-align:left">deadline Bot v3</td><td>&mdash;</td></tr>
+            <tr><td class="concept-col">woensdagochtend</td><td style="text-align:left"><b>toernooi 1</b> &mdash; ook de data waarmee WC8 die middag werkt</td><td><span class="status-dot covered">●</span> 0,5</td></tr>
+            <tr><td class="concept-col">woensdagmiddag</td><td style="text-align:left">WC8: je ziet je uitslag en past je bot aan</td><td>&mdash;</td></tr>
+            <tr><td class="concept-col">donderdagochtend</td><td style="text-align:left"><b>oefenronde</b> &mdash; dezelfde startstacks en dezelfde kaarten als het vrijdagtoernooi, met de bots van dat moment</td><td><span class="status-dot gap">○</span> nee</td></tr>
+            <tr><td class="concept-col">vrijdag 18:00</td><td style="text-align:left">slotdeadline: je definitieve bot</td><td>&mdash;</td></tr>
+            <tr><td class="concept-col">na vrijdag 18:00</td><td style="text-align:left"><b>toernooi 2</b> &mdash; doorspelen met de chips uit toernooi 1, plus 1000 voor iedereen</td><td><span class="status-dot covered">●</span> 0,5</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="gap-grid" style="max-width:900px">
+        <div class="gap-card" style="border-left-color:var(--felt)">
+          <h4>De deadline handhaaft zichzelf</h4>
+          <p>Er staat in de puntentelling niets over te laat inleveren, en dat hoeft ook niet: een toernooi speelt met de bots die er op dát moment zijn. Wie zijn woensdagbot pas woensdagmiddag inlevert, doet niet mee aan het woensdagtoernooi en haalt daar dus geen punten. Dat is de handhaving — één regel minder om uit te leggen én om te onderhouden.</p>
+        </div>
+        <div class="gap-card" style="border-left-color:var(--felt)">
+          <h4>Ranken op winst per ronde, niet op eindstand</h4>
+          <p>In toernooi 2 speelt iedereen door met de chips uit toernooi 1. Je eindstand daar bevat dus al wat je woensdag verdiende. Zou je op absolute eindstand ranken, dan telde je woensdagresultaat twee keer mee en was de tweede 0,5 een echo van de eerste.</p>
+          <div class="fix"><b>Dus:</b> je plek hangt af van wat je in <em>dát</em> toernooi wint — eindstand minus startstack. In toernooi 1 begint iedereen op 1000, dus daar is dat hetzelfde getal.</div>
+        </div>
+        <div class="gap-card" style="border-left-color:var(--felt)">
+          <h4>Gelijke standen worden gedeeld</h4>
+          <p>Bots met exact dezelfde winst delen de plekken die ze samen innemen en krijgen allemaal het gemiddelde: twee die samen tweede en derde zijn, krijgen elk 0,35. Zonder die regel bepaalt de volgorde in een dictionary wie de hogere plek krijgt, en daar hangt nu een bonuspunt aan. Het totaal dat wordt uitgekeerd blijft gelijk: 1,5 punt per toernooi, ongeacht de klasgrootte.</p>
+        </div>
+        <div class="gap-card" style="border-left-color:var(--felt)">
+          <h4>De oefenronde is een repetitie, geen derde ronde</h4>
+          <p>Hij staat onder een eigen sleutel, draait met exact dezelfde startstacks <em>en dezelfde seed</em> als het vrijdagtoernooi, en wordt nooit de bron voor de startstacks van een volgende ronde. Hij kan de uitslag die meetelt dus niet verschuiven.</p>
+          <div class="fix"><b>Waarom dezelfde seed:</b> dezelfde kaarten en startposities, alleen een andere bot. Het verschil dat een student donderdag ziet is dan zíjn verandering en niet de shuffle. Met een andere seed weet je niet of je aanpassing hielp of dat je betere kaarten kreeg — en dan werkt &quot;verander, meet, corrigeer&quot; uit WC8 niet.</div>
+        </div>
+      </div>
+
+      <div class="section-head" style="max-width:900px; margin-top:34px">
+        <div class="kicker">Meting</div>
+        <h3 style="font-size:1.15rem">Meet die ladder eigenlijk iets?</h3>
+        <p>Als het bonuspunt aan je plek hangt, moet die plek iets betekenen. Om dat te testen is er een veld van 44 bots gezet waarvan de raise-drempel de énige knop is — een lagere drempel is dus objectief een slechtere bot — en is hetzelfde veld met vijf verschillende seeds gedraaid.</p>
+      </div>
+      <div class="matrix-scroll" style="max-width:900px">
+        <table class="matrix" style="min-width:720px">
+          <thead>
+            <tr><th class="concept-col" style="min-width:150px">Simulaties</th><th>Handen per bot</th><th>Punten naar de betere helft</th><th>Tijd per run</th><th>Hand-log</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="concept-col">5 <em style="color:var(--ink-muted);font-size:0.76rem">(was)</em></td><td>250</td><td><span class="status-dot gap">○</span> 52% &mdash; een muntworp</td><td>3 s</td><td>1,1 MB</td></tr>
+            <tr><td class="concept-col"><b>20</b> <em style="color:var(--felt);font-size:0.76rem">(nu, in week 5)</em></td><td>1.000</td><td><span class="status-dot covered">●</span> <b>83%</b></td><td>10 s</td><td>4,8 MB</td></tr>
+            <tr><td class="concept-col">30</td><td>1.500</td><td><span class="status-dot covered">●</span> 84%</td><td>16 s</td><td>6,5 MB</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="matrix-legend" style="max-width:900px">
+        <span class="item">De andere weken houden 5 simulaties — daar telt de uitslag niet mee voor punten.</span>
+      </div>
+
+      <div class="gap-grid" style="max-width:900px; margin-top:18px">
+        <div class="gap-card" style="border-left-color:var(--good)">
+          <h4>✓ Bij 20 simulaties belóónt de ladder skill</h4>
+          <p>De punten per bot lopen netjes af met de kwaliteit: drempel 14 haalt 0,60 per bot, drempel 13 haalt 0,50, en vanaf drempel 12 zakt het naar 0,00&ndash;0,17. Vier van de vijf seeds gaven een top 5 die vrijwel volledig uit tight bots bestond.</p>
+          <div class="fix"><b>Bijvangst:</b> de optimale bot is níet de tightste. Drempel 15 haalt maar 0,28 — te tight betekent dat je je blinds wegfoldt. Er is dus een echt optimum om te vinden, en dat is precies wat WC8 studenten laat zoeken.</div>
+        </div>
+        <div class="gap-card" style="border-left-color:var(--gold)">
+          <h4>◐ Dezelfde vijf namen komen niet terug</h4>
+          <p>Bij twee onafhankelijke seeds overlapt de top 5 gemiddeld op 1,3 van de 5 namen — en dat verandert niet met meer simuleren. Boven de 20 simulaties koop je niets meer.</p>
+          <div class="fix"><b>En dat hoort:</b> vier bots van gelijke sterkte zíjn gelijk sterk, dus wie van hen wint is toeval. Dat is geen meetfout die je wegsimuleert. Wat telt is dat de prijzen bij de goede bots terechtkomen, en dat doen ze. Eén van de vijf seeds gaf alsnog een rommelige top 5.</div>
+        </div>
+        <div class="gap-card" style="border-left-color:var(--gold)">
+          <h4>◐ Het signaal is er, maar het is smal</h4>
+          <p>Met 6.000 handen per bot is de ordening precies goed: zeer tight 1459 chips, tight 1297, midden 1181, los 1095, zeer los 868, altijd-call 812, altijd-fold 287. Het model werkt dus.</p>
+          <div class="fix"><b>Maar:</b> het verschil tussen naburige strategieën is ~120 chips en de ruis binnen één bot over drie seeds loopt op tot 781. Naburige bots zijn daarom niet te scheiden, hoe vaak je ook draait.</div>
+        </div>
+        <div class="gap-card" style="border-left-color:var(--good)">
+          <h4>✓ Het straft betrouwbaar wie niets inlevert</h4>
+          <p>De onderkant is wél stabiel. Een bot die altijd foldt eindigt consequent onderaan (spreiding van 2 plekken over vijf seeds, tegen 8 tot 11 voor de rest). Wie geen echte bot inlevert haalt dus geen punten, en dat is misschien de belangrijkste taak van de ladder.</p>
+        </div>
+      </div>
+
+      <div class="section-head" style="max-width:900px; margin-top:34px">
+        <div class="kicker">Onder de motorkap</div>
+        <h3 style="font-size:1.15rem">Hoe simpel is de engine eigenlijk?</h3>
+        <p>Bij die meting kwam boven hoeveel er van echt poker is weggelaten. Dat is geen probleem zolang je het weet — maar het verklaart wél waarom het verschil tussen een goede en een slechte bot zo smal is. Gemeten over 7.173 acties in een echt toernooi:</p>
+      </div>
+      <div class="matrix-scroll" style="max-width:900px">
+        <table class="matrix" style="min-width:700px">
+          <thead>
+            <tr><th class="concept-col" style="min-width:210px">Mechaniek</th><th style="text-align:left">Hoe het werkt</th><th style="width:120px">Gemeten</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="concept-col">Raise-bedrag</td>
+              <td style="text-align:left">De student geeft alleen het wóórd <span class="mono">"raise"</span> terug, nooit een bedrag. De adapter pakt dan altijd het <b>minimum</b>. Geen pot-sized bet, geen 3x, geen sizing.</td>
+              <td>2.875 raises, alle op het minimum</td>
+            </tr>
+            <tr>
+              <td class="concept-col">All-in</td>
+              <td style="text-align:left">Alleen voor bots met een <span class="mono">stack</span>-parameter (v2+). Wordt een raise naar het maximum; kan dat niet, dan een call — en die handelt de engine zelf als all-in af bij een te korte stack.</td>
+              <td>37 keer (0,5% van alle acties)</td>
+            </tr>
+            <tr>
+              <td class="concept-col">Raise-cap</td>
+              <td style="text-align:left">Max één raise per straat per bot (v2+). Een tweede raise wordt stil een call. Geen re-raise-oorlogen.</td>
+              <td><b>31,4%</b> van alle gevraagde raises</td>
+            </tr>
+            <tr>
+              <td class="concept-col">Actieverdeling</td>
+              <td style="text-align:left">Wat de bots in de praktijk doen.</td>
+              <td>51% call · 40% raise · 8% fold</td>
+            </tr>
+            <tr>
+              <td class="concept-col">Toernooi-opzet</td>
+              <td style="text-align:left">Tafels van maximaal 6, elke simulatie opnieuw willekeurig verdeeld. Stack 1000, small blind 10 — dus 50 big blinds. De eindstand is het <b>gemiddelde</b> over de simulaties.</td>
+              <td>20 sims × 50 handen</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="matrix-legend" style="max-width:900px">
+        <span class="item">Wat de bot wél weet: <span class="mono">hand</span>, <span class="mono">stack</span>, <span class="mono">ronde</span>, <span class="mono">pot</span>, <span class="mono">inzet_om_te_callen</span>, <span class="mono">tegenstander_acties_deze_hand</span>, <span class="mono">strategie</span>, <span class="mono">bluf_kans</span>. Pot odds zijn dus te berekenen — maar niet uit te drukken in een bedrag.</span>
+      </div>
+
+      <div class="callout open" style="max-width:900px; margin-top:20px">
+        <div class="icon">&#127920;</div>
+        <div>
+          <h4>Bet sizing: de sterkste kandidaat voor volgend semester</h4>
+          <p>Het hele spel heeft nu precies twee bedragen: min-raise en all-in. Bet sizing is in echt poker een groot deel van de skill, en het toevoegen ervan — de bot laat <span class="mono">("raise", bedrag)</span> teruggeven — zou het model zowel realistischer als beter onderscheidend maken. Het verhoogt ook de moeilijkheidsgraad, dus eerder iets voor het verdiepingsspoor dan voor iedereen. Bewust geparkeerd tot deze opzet een semester gedraaid heeft.</p>
+        </div>
+      </div>
+
+      <div class="callout open" style="max-width:900px">
+        <div class="icon">&#128190;</div>
+        <div>
+          <h4>Twee dingen die de opzet in de infrastructuur nodig had</h4>
+          <p><b>De cache per ronde.</b> Alle rondes van alle weken stonden samen in één JSONB-blob, die volledig werd gelezen én herschreven bij elke aanroep — ook bij een cache-hit, en ook voor de bonusberekening van elke student. Met bijna 5 MB hand-log per ronde liep dat op naar tientallen megabytes per request. Elke ronde staat nu apart; rondes onder de oude sleutel blijven leesbaar, dus er was geen migratie nodig.</p>
+          <p style="margin-top:8px"><b>De vlag <span class="mono">constante_bot</span>.</b> <span class="mono">return "fold"</span> draait zonder fouten en is dus technisch geldig, maar het is geen pokerbot: hij kijkt niet naar kaarten, stack of ronde. Afkeuren is te streng — een bot mág heel tight zijn — maar onzichtbaar laten is te soepel nu de woensdaguitslag doortelt. De vlag staat op elk validatieresultaat, komt terug in de inlever-respons als hint aan de student, en in de docent-export als kolom.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="toetsing" class="wide" style="max-width:900px">
+      <div class="section-head">
+        <div class="kicker">Nieuw sinds de audit</div>
+        <h2>Toetsing: wat wordt er wanneer getoetst, en waarmee oefenen ze?</h2>
+        <p>Bij de eerste audit bestond dit onderdeel nog niet. Inmiddels ligt de hele lijn er: oefenstof per week, een schriftelijke toets in week 4 en een herkansing in week 6. Beide toetsen zijn voorwaardelijk (V/ONV) voor de eindpresentatie.</p>
+      </div>
+
+      <div class="matrix-scroll" style="margin-bottom:20px">
+        <table class="matrix" style="min-width:700px">
+          <thead>
+            <tr>
+              <th class="concept-col">Moment</th>
+              <th>Wanneer</th><th>Scope</th><th>Meerkeuze</th><th>Foutmeldingen</th><th>Code schrijven</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td class="concept-col">Oefenstof per week</td><td>doorlopend</td><td>week 1 t/m 6</td><td>41</td><td>24</td><td>15</td></tr>
+            <tr><td class="concept-col">Schriftelijke toets</td><td>week 4</td><td>week 1 t/m 4</td><td>20</td><td>5</td><td>10</td></tr>
+            <tr><td class="concept-col">Herkansing</td><td>week 6</td><td>+ geodata, Folium, Streamlit</td><td>20</td><td>5</td><td>10</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="gap-grid">
+        <div class="gap-card" style="border-left-color:var(--good)">
+          <h4>✓ Oefenstof loopt per week, niet per werkcollege</h4>
+          <p>Per week een tabel "aan het eind van deze week kun je&hellip;" met de verwijzing naar werkcollege en deel, plus drie soorten oefenstof. Bestaat als Word-document én als webpagina, uit dezelfde bron gegenereerd, zodat ze niet uit elkaar kunnen lopen.</p>
+          <div class="fix"><b>Ontwerpkeuze:</b> op de webpagina zitten de antwoorden achter een klik. Een antwoord dat je herkent is niet hetzelfde als een antwoord dat je kunt bedenken.</div>
+        </div>
+        <div class="gap-card" style="border-left-color:var(--good)">
+          <h4>✓ Foutmeldingen als eigen vraagtype</h4>
+          <p>Acht per week, letterlijk uit de interpreter gehaald — inclusief de moderne hints (<span class="mono">Maybe you meant '==' instead of '='?</span>). Drie van de acht zijn géén crash maar stil verkeerd gedrag: <span class="mono">read_csv</span> zonder <span class="mono">sep</span>, <span class="mono">.mean</span> zonder haakjes, <span class="mono">print(stacks.sort())</span>.</p>
+          <div class="fix"><b>Waarom dit type:</b> dat is precies het soort fout waar studenten in de werkcolleges op vastlopen, en dat een gewone kennisvraag nooit raakt.</div>
+        </div>
+        <div class="gap-card" style="border-left-color:var(--good)">
+          <h4>✓ Afleiders dicht bij het goede antwoord</h4>
+          <p>Alle 81 meerkeuzevragen zijn herschreven nadat bleek dat je er te veel kon wegstrepen zonder iets te weten. Elke afleider staat nu voor een concrete denkfout, en zeven vragen zijn code-uitvoer voorspellen in plaats van een definitie.</p>
+          <div class="fix"><b>Controle:</b> 93 Python-asserts over alle drie de sets, die niet alleen de goede antwoorden nagaan maar ook dat de afleiders écht fout zijn. Eén vraag sneuvelde erop: een claim over het gemiddelde bij een scheve boxplot bleek niet houdbaar.</div>
+        </div>
+        <div class="gap-card" style="border-left-color:var(--gold)">
+          <h4>◐ De oude toets past niet op deze cursus</h4>
+          <p>Het bestaande Tentamen 1 (drie versies, uit de vorige vakversie) toetst <span class="mono">pd.merge</span>, <span class="mono">.agg</span>, <span class="mono">.isin</span>, <span class="mono">pd.cut</span>, <span class="mono">describe</span>, <span class="mono">astype</span>, <span class="mono">set_index</span> en <span class="mono">groupby().transform()</span>, plus Streamlit-widgets en geodata.</p>
+          <div class="fix"><b>Stand nu:</b> merge en Streamlit zijn inmiddels gedekt, en de herkansing test geodata. Maar <span class="mono">describe</span>, <span class="mono">pd.cut</span> en <span class="mono">.agg</span> staan nog steeds in de oude toets en nergens in de cursus. Wie die drie wil toetsen, moet ze eerst ergens in WC3&ndash;WC6 laten landen.</div>
+        </div>
+      </div>
+
+      <div class="callout open" style="margin-top:16px">
+        <div class="icon">&#128221;</div>
+        <div>
+          <h4>Case 2 heeft de werkcolleges van week 3 en 4 mee bepaald</h4>
+          <p>Case 2 loopt over week 3&ndash;4, is zelfgekozen, en heeft twee vaste eisen: een <b>Streamlit-pagina</b> en minimaal één <b>join</b>. Die twee eisen zijn de directe reden dat WC5 een merge-deel heeft gekregen en WC6 een Streamlit-deel — en dat de opstap naar Streamlit al in WC4 staat, een week vóórdat het vak begint.</p>
+          <p style="margin-top:8px">Dat laatste is bewust: het lastige aan Streamlit is niet de <span class="mono">st.</span>-API maar het verschil tussen een notebook en een script, de terminal, en de installatie. Als die drie in week 3 één keer gelukt zijn, gaat het week 4-college over dashboards in plaats van over omgevingsproblemen.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="matrix" class="wide" style="max-width:none">
+      <div class="section-head" style="max-width:900px">
+        <div class="kicker">Dwarsdoorsnede</div>
+        <h2>Welk stuk poker hebben we eigenlijk gedekt?</h2>
+        <p>Los van Python/pandas/dataviz-vaardigheden: welke echte pokerkennis komt waar aan bod? Rood = nergens in de 9 werkcolleges behandeld. De <b>drie</b> grijs-uitgevaagde rijen zijn bewust besproken en afgewezen, geen vergeten gaten — bet sizing is de nieuwste daarvan, en de enige die voor volgend semester op de lijst staat. Sinds de eerste audit zijn er vier rijen bij gekomen, en de handsterkte-rij is van heuristiek naar volledige rangorde gegaan.</p>
+      </div>
+      <div class="matrix-scroll">
+        <table class="matrix">
+          <thead>
+            <tr>
+              <th class="concept-col">Pokerconcept</th>
+              <th>WC1</th><th>WC2</th><th>WC3</th><th>WC4</th><th>WC5</th><th>WC6</th><th>WC7</th><th>WC8</th><th>WC9</th>
+            </tr>
+          </thead>
+          <tbody id="matrix-body">
+            <tr><td class="concept-col">Hand-simulatie &amp; kaarten trekken</td><td><span class="status-dot covered">●</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td></tr>
+            <tr><td class="concept-col">Handsterkte: heuristiek → volledige rangorde</td><td><span class="status-dot covered">●</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot covered">●</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td></tr>
+            <tr><td class="concept-col">Spelregels: blinds, straten, community cards, showdown</td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot covered">●</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td></tr>
+            <tr><td class="concept-col">Raise-mechaniek &amp; max 1x per straat</td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot covered">●</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td></tr>
+            <tr><td class="concept-col">All-in (bewust)</td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot covered">●</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td></tr>
+            <tr><td class="concept-col">Pot odds</td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot covered">●</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td></tr>
+            <tr><td class="concept-col">Strategie-archetypes (tight/loose/balanced/aggressive) <span class="tag concept" style="margin-left:4px">verplaatst</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot covered">●</span></td><td><span class="status-dot partial">◐</span></td><td><span class="status-dot gap">○</span></td></tr>
+            <tr><td class="concept-col">Per-straat besluitvorming (ronde-bewust)</td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot covered">●</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td></tr>
+            <tr><td class="concept-col">Bluffen</td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot covered">●</span></td><td><span class="status-dot partial">◐</span></td><td><span class="status-dot gap">○</span></td></tr>
+            <tr><td class="concept-col">Tegenstander-gedrag deze hand <span class="tag concept" style="margin-left:4px">nieuw</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot covered">●</span></td><td><span class="status-dot partial">◐</span></td><td><span class="status-dot gap">○</span></td></tr>
+            <tr><td class="concept-col">Tournament standings / eindstand</td><td><span class="status-dot gap">○</span></td><td><span class="status-dot covered">●</span></td><td><span class="status-dot covered">●</span></td><td><span class="status-dot covered">●</span></td><td><span class="status-dot partial">◐</span></td><td><span class="status-dot covered">●</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot partial">◐</span></td><td><span class="status-dot partial">◐</span></td></tr>
+            <tr><td class="concept-col">Tabellen samenvoegen (join op eigen data) <span class="tag concept" style="margin-left:4px">nieuw</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot covered">●</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td></tr>
+            <tr><td class="concept-col">Window-functies op de hand_log <span class="tag concept" style="margin-left:4px">nieuw</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot covered">●</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td></tr>
+            <tr><td class="concept-col">Multi-week vergelijking (bot-versies)</td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot covered">●</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot covered">●</span></td><td><span class="status-dot gap">○</span></td></tr>
+            <tr><td class="concept-col">Actie-verdeling (call/raise/fold %)</td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot covered">●</span></td></tr>
+            <tr style="opacity:0.6"><td class="concept-col">Positie aan tafel <em style="color:var(--ink-muted); font-style:italic; font-size:0.78rem">(bewust niet toegevoegd)</em></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td></tr>
+            <tr><td class="concept-col">Hand-equity / winkans (numeriek)</td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot covered">●</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot partial">◐</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td></tr>
+            <tr style="opacity:0.6"><td class="concept-col">Blind-escalatie <em style="color:var(--ink-muted); font-style:italic; font-size:0.78rem">(bewust niet toegevoegd)</em></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td></tr>
+            <tr><td class="concept-col">Doorspelen met verdiende chips (carry-over) <span class="tag concept" style="margin-left:4px">nieuw</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot partial">◐</span></td><td><span class="status-dot covered">●</span></td><td><span class="status-dot gap">○</span></td></tr>
+            <tr style="opacity:0.6"><td class="concept-col">Bet sizing <em style="color:var(--ink-muted); font-style:italic; font-size:0.78rem">(bewust niet toegevoegd — kandidaat volgend semester)</em></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td></tr>
+            <tr><td class="concept-col">Variantie vs. skill (n_simulaties)</td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot gap">○</span></td><td><span class="status-dot covered">●</span></td><td><span class="status-dot gap">○</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="matrix-legend">
+        <span class="item"><span class="status-dot covered">●</span> gedekt</span>
+        <span class="item"><span class="status-dot partial">◐</span> licht/impliciet aanwezig</span>
+        <span class="item"><span class="status-dot gap">○</span> nergens behandeld</span>
+      </div>
+    </section>
+
+    <section id="cases" class="wide" style="max-width:none">
+      <div class="section-head" style="max-width:900px">
+        <div class="kicker">Vervolgonderzoek</div>
+        <h2>Welke vaardigheden toetsen de cases, en waar leren studenten die?</h2>
+        <p>Dezelfde vraag als bij de pokerconcepten, maar omgekeerd: niet &quot;wat behandelen we&quot;, maar &quot;wat wordt er beoordeeld, en is dat ergens onderwezen&quot;. De criteria hieronder komen uit de herziene rubrics in <span class="mono">Beoordelingstool/Cijferblad-IDS-VA.html</span>, niet uit de opdrachtomschrijvingen.</p>
+        <p style="margin-top:10px">Let op de vak-labels: op hetzelfde product beoordeelt <b>IDS</b> de data-kant en <b>Visual Analytics</b> de visualisatie-kant. De pokerlijn levert voor allebei materiaal, en niet in de verhouding die je zou verwachten.</p>
+      </div>
+      <div class="matrix-scroll">
+        <table class="matrix" style="min-width:880px">
+          <thead>
+            <tr><th class="concept-col">Criterium uit de rubric</th><th style="width:96px">Onderwezen</th><th style="text-align:left">Waar</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="concept-col" colspan="3" style="background:var(--felt-tint);font-weight:600">Case 1 &middot; Titanic (week 1&ndash;2)</td></tr>
+            <tr><td class="concept-col">Algoritme en validatie <span class="tag concept" style="margin-left:4px">IDS</span></td><td><span class="status-dot partial">◐</span></td><td style="text-align:left;font-size:0.82rem">Niet in de werkcolleges. Het case-template doet het voor: een regel met <span class='mono'>np.where</span>, toegepast op de test set, ingezonden op Kaggle</td></tr>
+            <tr><td class="concept-col">Programmeren <span class="tag concept" style="margin-left:4px">IDS</span></td><td><span class="status-dot covered">●</span></td><td style="text-align:left;font-size:0.82rem">WC1 Deel 1&ndash;2 (functies, loops), WC4 Deel 1 (default-argumenten). Herhaling wegwerken in een functie is precies wat de bot vraagt</td></tr>
+            <tr><td class="concept-col">Presentatie en reflectie <span class="tag concept" style="margin-left:4px">IDS</span></td><td><span class="status-dot gap">○</span></td><td style="text-align:left;font-size:0.82rem">Buiten de pokerlijn &mdash; presentatievaardigheid, geen Python</td></tr>
+            <tr><td class="concept-col">1D-visualisaties, barplot, scatterplot <span class="tag concept" style="margin-left:4px">VA</span></td><td><span class="status-dot covered">●</span></td><td style="text-align:left;font-size:0.82rem">WC1 Deel 3 (eerste plot), WC3 Ronde 1&ndash;2</td></tr>
+            <tr><td class="concept-col">Visual hierarchy <span class="tag concept" style="margin-left:4px">VA</span></td><td><span class="status-dot covered">●</span></td><td style="text-align:left;font-size:0.82rem">WC3 volledig, en opnieuw in WC6 Deel 1&ndash;6</td></tr>
+            <tr><td class="concept-col" colspan="3" style="background:var(--felt-tint);font-weight:600">Case 2 &middot; Streamlit dashboard (week 3&ndash;4)</td></tr>
+            <tr><td class="concept-col">Data verzameling <em>(twee bronnen joinen)</em> <span class="tag concept" style="margin-left:4px">IDS</span></td><td><span class="status-dot covered">●</span></td><td style="text-align:left;font-size:0.82rem">WC5 Deel 5. De rubric vraagt de sleutel én het aantal rijen vóór en ná de join &mdash; dat is letterlijk de regel die daar wordt aangeleerd</td></tr>
+            <tr><td class="concept-col">Data verkenning <em>(kwaliteit, effect op observaties)</em> <span class="tag concept" style="margin-left:4px">IDS</span></td><td><span class="status-dot partial">◐</span></td><td style="text-align:left;font-size:0.82rem">Alleen in de oefenstof en beide toetsen (<span class='mono'>isna</span>, <span class='mono'>fillna</span>, de <span class='mono'>dropna</span>-valkuil). Geen eigen blok in een werkcollege</td></tr>
+            <tr><td class="concept-col">Analyse <em>(nieuwe variabele afleiden)</em> <span class="tag concept" style="margin-left:4px">IDS</span></td><td><span class="status-dot covered">●</span></td><td style="text-align:left;font-size:0.82rem">WC3 Ronde 0 (<span class='mono'>np.where</span>/<span class='mono'>np.select</span>), WC6 Deel 7 (verandering over tijd), groupby vanaf WC2</td></tr>
+            <tr><td class="concept-col">Interactiviteit <span class="tag concept" style="margin-left:4px">VA</span></td><td><span class="status-dot covered">●</span></td><td style="text-align:left;font-size:0.82rem">WC6 Deel 11 &mdash; één <span class='mono'>multiselect</span> die doorwerkt in de grafiek, inclusief het rerun-model</td></tr>
+            <tr><td class="concept-col">Vergelijken en annoteren <span class="tag concept" style="margin-left:4px">VA</span></td><td><span class="status-dot covered">●</span></td><td style="text-align:left;font-size:0.82rem">WC6 Deel 5 en Deel 7. De rubric vraagt &quot;het verschil, het opgetelde verloop, of de waarde ten opzichte van het moment ervoor&quot; &mdash; dat zijn <span class='mono'>diff</span>, <span class='mono'>cumsum</span> en <span class='mono'>shift</span>, één op één</td></tr>
+            <tr><td class="concept-col">Opbouw, verhaallijn, dashboardontwerp <span class="tag concept" style="margin-left:4px">VA</span></td><td><span class="status-dot covered">●</span></td><td style="text-align:left;font-size:0.82rem">WC3 (actietitel, focal point), WC6 Deel 3&ndash;6</td></tr>
+            <tr><td class="concept-col" colspan="3" style="background:var(--felt-tint);font-weight:600">Case 3 &middot; Elektrisch vervoer / Mobility / Vluchten (week 5&ndash;6)</td></tr>
+            <tr><td class="concept-col">Opschonen <em>(elke ingreep beargumenteerd)</em> <span class="tag concept" style="margin-left:4px">IDS</span></td><td><span class="status-dot partial">◐</span></td><td style="text-align:left;font-size:0.82rem">Zelfde als Data verkenning: oefenstof en toets, geen werkcollege-blok</td></tr>
+            <tr><td class="concept-col">Data naar informatie <span class="tag concept" style="margin-left:4px">IDS</span></td><td><span class="status-dot covered">●</span></td><td style="text-align:left;font-size:0.82rem">WC6 Deel 7 (verandering over tijd), WC7 Deel 1 en 6 (aggregatie per gebied)</td></tr>
+            <tr><td class="concept-col">Voorspellen <em>(trend doortrekken, aanname benoemen)</em> <span class="tag concept" style="margin-left:4px">IDS</span></td><td><span class="status-dot gap">○</span></td><td style="text-align:left;font-size:0.82rem">Niet in de werkcolleges, en <b>bewust zo gelaten</b> &mdash; wordt binnen de case zelf opgepakt</td></tr>
+            <tr><td class="concept-col">Informatiearchitectuur <span class="tag concept" style="margin-left:4px">VA</span></td><td><span class="status-dot covered">●</span></td><td style="text-align:left;font-size:0.82rem">WC9 volledig, inclusief de 3-seconden-test die de rubric noemt</td></tr>
+            <tr><td class="concept-col">Lijngrafiek <span class="tag concept" style="margin-left:4px">VA</span></td><td><span class="status-dot covered">●</span></td><td style="text-align:left;font-size:0.82rem">WC6 Deel 1&ndash;5, met de spaghetti-val als vertrekpunt</td></tr>
+            <tr><td class="concept-col">Kaart <span class="tag concept" style="margin-left:4px">VA</span></td><td><span class="status-dot covered">●</span></td><td style="text-align:left;font-size:0.82rem">WC7 Deel 1 en 6 (Folium), WC9 (gelaagd)</td></tr>
+            <tr><td class="concept-col">Presentatievaardigheden <span class="tag concept" style="margin-left:4px">IDS+VA</span></td><td><span class="status-dot gap">○</span></td><td style="text-align:left;font-size:0.82rem">Buiten de pokerlijn</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="matrix-legend">
+        <span class="item"><span class="status-dot covered">●</span> onderwezen in een werkcollege</span>
+        <span class="item"><span class="status-dot partial">◐</span> deels, of buiten de werkcolleges om</span>
+        <span class="item"><span class="status-dot gap">○</span> niet onderwezen</span>
+      </div>
+
+      <div class="gap-grid" style="margin-top:20px">
+        <div class="gap-card" style="border-left-color:var(--good)">
+          <h4>De pokerlijn levert meer aan Visual Analytics dan aan IDS zelf</h4>
+          <p>De drie rubrics hebben samen <b>12 VA-criteria en 10 IDS-criteria</b>. Van die twaalf VA-criteria zijn er <b>elf</b> in een werkcollege onderwezen &mdash; alles behalve presentatievaardigheden. Van de tien IDS-criteria zijn er <b>vier</b> volledig gedekt en drie gedeeltelijk.</p><p style="margin-top:8px">Dat is geen toeval en ook geen fout: de IDS-criteria die overblijven gaan over opschonen, voorspellen en presenteren, en dat is precies wat de pokerlijn niet doet. Maar het betekent wel dat de Visual Maandagen een groter deel van de beoordeling dragen dan hun plek in het rooster doet vermoeden.</p>
+        </div>
+        <div class="gap-card" style="border-left-color:var(--good)">
+          <h4>Twee criteria zijn woordelijk wat een werkcollege doet</h4>
+          <p>Case 2 vraagt bij <em>Data verzameling</em> om de sleutel én het aantal rijen vóór en ná de join &mdash; dat is de regel uit WC5 Deel 5. En <em>Vergelijken en annoteren</em> vraagt om het verschil, het opgetelde verloop, of de waarde ten opzichte van het moment ervoor: dat zijn <span class="mono">diff</span>, <span class="mono">cumsum</span> en <span class="mono">shift</span> uit WC6 Deel 7.</p>
+          <div class="fix"><b>Waard om te benoemen:</b> studenten leggen die koppeling zelf niet. Eén zin in het werkcollege &mdash; dit is het criterium waarop je case straks beoordeeld wordt &mdash; maakt het verschil tussen een oefening en een reden.</div>
+        </div>
+        <div class="gap-card" style="border-left-color:var(--gold)">
+          <h4>Opschonen wordt in twee cases getoetst en nergens onderwezen</h4>
+          <p>Case 2 (<em>Data verkenning</em>) en Case 3 (<em>Opschonen</em>) vragen allebei dat elke ingreep beargumenteerd is, inclusief het effect op het aantal observaties. Dat zit nu alleen in de oefenstof en de twee toetsen: <span class="mono">isna().sum()</span>, opvullen met de mediaan, en de <span class="mono">dropna()</span>-valkuil waarbij één slechte kolom je dataset uitkleedt.</p>
+          <div class="fix"><b>Als er iets bij zou moeten, is dit de sterkste kandidaat</b> &mdash; en het hoeft geen eigen deel te zijn. De toernooidata heeft van nature lege waarden: <span class="mono">/locaties/{week}</span> geeft <span class="mono">eindstand: null</span> zolang er niet gedraaid is. Tien minuten binnen een bestaand deel is genoeg.</div>
+        </div>
+        <div class="gap-card" style="border-left-color:var(--ink-muted); opacity:0.8">
+          <h4>Voorspellen: getoetst, niet onderwezen, en dat is een keuze</h4>
+          <p>Case 3 vraagt een doorgetrokken trend met een benoemde aanname. Dat komt in geen enkel werkcollege voor. Onderzocht is of het in de pokerlijn zou passen &mdash; voorspellen of een hand gewonnen wordt uit de eigen toernooidata &mdash; en dat kan technisch, maar het is afgewezen: het vraagt een begrippenapparaat (hold-out, basiskans, overfitting) dat niet in het weekprogramma past. De trendlijn wordt binnen de case zelf opgepakt.</p>
+        </div>
+      </div>
+    </section>
+
+    <footer class="report-footer">
+      Curriculum-audit samengesteld door directe inspectie van alle 9 werkcollege-notebooks in <span class="mono">Poker_Analytics_2026/notebooks/</span>, plus de API- en engine-broncode voor de pokerregel-mechaniek. Tijden zijn opnieuw uit de tijdsindicatie-tabellen van de notebooks opgehaald bij elke herziening van dit rapport, werkcollege- en huiswerktijd bij elkaar; methode-percentages zijn tijd-gewogen op basis van die tijden. De 4–8 uur eigen botwerk in Week 3 en Week 5 zit daar bewust niet in — dat is een bandbreedte en zou de percentages vertekenen.
+      <br><br>De cijfers in <a href="#bonus">Het bonuspunt</a> zijn gemeten, niet geschat: de variantiecijfers komen uit <span class="mono">scripts/meet_toernooi_variantie.py</span>, dat een veld van 44 bots met bekende kwaliteit over vijf seeds draait en na te rekenen is. De engine-cijfers (raise-bedragen, all-ins, de raise-cap, de actieverdeling) komen uit een instrumenteerde toernooirun over 7.173 acties.
+    </footer>
+  </main>
+</div>
+
