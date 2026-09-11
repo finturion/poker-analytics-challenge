@@ -220,8 +220,18 @@ def briefing(week):
             continue
         nb = lees_notebook(pad)
         delen = delen_van(nb)
-        les = sum(m for _, m, hw in delen if m and not hw)
-        hw_min = sum(m for _, m, hw in delen if m and hw)
+        rijen = tijdstabel_totaal(nb)
+        # De tijdstabel is de bron, niet de koppen: die noemen niet altijd een
+        # tijd. Werkcollege 3 doet het nergens en Werkcollege 1 maar bij een
+        # deel -- tel je daar de koppen op, dan staat er 40 min waar het er 90
+        # zijn. Alleen zonder tabel vallen we terug op de koppen. Of de twee
+        # het met elkaar eens zijn is een aparte controle hieronder.
+        if rijen:
+            les = sum(m for m, hw in rijen if not hw)
+            hw_min = sum(m for m, hw in rijen if hw)
+        else:
+            les = sum(m for _, m, hw in delen if m and not hw)
+            hw_min = sum(m for _, m, hw in delen if m and hw)
         staart = f" + {hw_min} min huiswerk" if hw_min else ""
         print(f"\n  {label}   ({les} min werkcollege{staart})")
         for titel, minuten, huiswerk in delen:
