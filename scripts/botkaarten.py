@@ -45,6 +45,33 @@ STARTSTACK = 1000
 
 HOGE_KAARTEN = {"A", "K", "Q", "J", "10"}
 
+# Twintig situaties: vijf handen langs vier omstandigheden. Twintig is het
+# maximum dat /bot-test/ per aanvraag aanneemt, dus dit is precies vol.
+#
+# De vier kolommen zijn de knoppen waar een bot op hoort te reageren: een grote
+# stack zonder druk, dezelfde hand met een tegenstander die al geraised heeft,
+# een halve stack, en een stack waarmee je bijna niets meer kunt. Reageert een
+# bot op geen van de vier, dan is dat op zichzelf het antwoord.
+ROOSTER_HANDEN = [
+    ("A A", ["A", "A"]),
+    ("7 7", ["7", "7"]),
+    ("A K", ["A", "K"]),
+    ("K 7", ["K", "7"]),
+    ("7 2", ["7", "2"]),
+]
+ROOSTER_SITUATIES = [
+    ("ruim, rustig", {"stack": 1000, "ronde": "preflop", "pot": 30,
+                      "inzet_om_te_callen": 20}),
+    ("ruim, geraised", {"stack": 1000, "ronde": "river", "pot": 400,
+                        "inzet_om_te_callen": 200,
+                        "tegenstander_acties_deze_hand": [
+                            {"actie": "raise", "ronde": "river"}]}),
+    ("halve stack", {"stack": 300, "ronde": "preflop", "pot": 30,
+                     "inzet_om_te_callen": 20}),
+    ("bijna op", {"stack": 80, "ronde": "preflop", "pot": 60,
+                  "inzet_om_te_callen": 40}),
+]
+
 
 # ---------------------------------------------------------------------------
 # Data binnenhalen
@@ -66,6 +93,105 @@ def haal_van_api(week, ronde):
     )
     with urllib.request.urlopen(verzoek, timeout=900) as antwoord:
         return json.load(antwoord)
+
+
+def rooster_testgevallen():
+    """De twintig situaties, in de volgorde waarin de antwoorden terugkomen."""
+    return [{"hand": hand, **situatie}
+            for _, hand in ROOSTER_HANDEN
+            for _, situatie in ROOSTER_SITUATIES]
+
+
+def vraag_bot_via_api(student_id, week):
+    """Wat doet deze bot op de twintig situaties? Via /bot-test/, dus zonder code."""
+    import urllib.request
+
+    eigen_id = os.environ.get("POKER_STUDENT_ID")
+    token = os.environ.get("POKER_TOKEN")
+    if not (eigen_id and token):
+        return None, "Zet POKER_STUDENT_ID en POKER_TOKEN in je omgeving."
+
+    lading = json.dumps({"week": week, "van_student_id": student_id,
+                         "testgevallen": rooster_testgevallen()}).encode()
+    verzoek = urllib.request.Request(
+        f"{API_URL}/bot-test/{eigen_id}", data=lading,
+        headers={"Authorization": f"Bearer {token}",
+                 "Content-Type": "application/json"},
+    )
+    try:
+        with urllib.request.urlopen(verzoek, timeout=120) as antwoord:
+            return json.load(antwoord).get("acties"), None
+    except Exception as e:      # noqa: BLE001 -- alles hier is "geen rooster"
+        return None, f"{type(e).__name__}: {e}"
+
+
+def vraag_bot_uit_bestand(pad, week):
+    """Zelfde vraag, maar aan een bot-bestand op schijf. Voor testen en voor
+    een bot die je al hebt liggen."""
+    sys.path.insert(0, os.path.join(WORTEL, "api"))
+    from bot_validator import speel_testgevallen
+
+    with open(pad, encoding="utf-8") as f:
+        code = f.read()
+    uitkomst = speel_testgevallen(code, week, rooster_testgevallen(),
+                                  strategie="tight", bluf_kans=0.2)
+    return uitkomst["acties"], uitkomst["foutmelding"]
+
+
+def druk_rooster(acties, prof):
+    """
+    Naast elkaar: wat de bot op twintig kale situaties doet, en wat hij in het
+    toernooi werkelijk deed.
+
+    Het verschil is geen fout. In het toernooi zijn er een pot, tegenstanders en
+    een geschiedenis; in het rooster niet. Juist dat verschil is de vraag: waarom
+    doe je hier iets anders dan daar?
+    """
+    print("\nWat je bot doet op twintig kale situaties")
+    breedte = max(len(naam) for naam, _ in ROOSTER_SITUATIES) + 2
+    print("   " + " " * 6 + "".join(f"{naam:<{breedte}}" for naam, _ in ROOSTER_SITUATIES))
+    per_hand = {}
+    for i, (label, _) in enumerate(ROOSTER_HANDEN):
+        rij = acties[i * len(ROOSTER_SITUATIES):(i + 1) * len(ROOSTER_SITUATIES)]
+        per_hand[label] = rij
+        print(f"   {label:<6}" + "".join(f"{a or '?':<{breedte}}" for a in rij))
+
+    print("\nWaar dat wringt")
+    opmerkingen = []
+
+    in_rooster = {a for a in acties if a}
+    in_toernooi = {a for a, n in prof["acties"].items() if a and n}
+
+    for actie in sorted(in_rooster - in_toernooi):
+        opmerkingen.append(
+            f"je bot kiest {actie} op het rooster, maar deed dat in het toernooi geen enkele keer")
+    for actie in sorted(in_toernooi - in_rooster):
+        aantal = prof["acties"][actie]
+        opmerkingen.append(
+            f"in het toernooi koos je {aantal}× {actie}, maar op geen van de twintig situaties")
+
+    # Per handsoort: zegt het rooster iets anders dan wat hij deed?
+    soort_van_rooster = defaultdict(set)
+    for label, rij in per_hand.items():
+        soort = handsoort(label.split())
+        soort_van_rooster[soort] |= {a for a in rij if a}
+    for soort, teller in prof["per_handsoort"].items():
+        verwacht = soort_van_rooster.get(soort)
+        if not verwacht:
+            continue
+        onverwacht = {a: n for a, n in teller.items() if a and a not in verwacht}
+        if onverwacht:
+            samen = ", ".join(f"{n}× {a}" for a, n in sorted(onverwacht.items()))
+            opmerkingen.append(
+                f"met {soort} deed je in het toernooi {samen}, "
+                f"terwijl je bot op het rooster alleen {'/'.join(sorted(verwacht))} kiest")
+
+    if opmerkingen:
+        for regel in opmerkingen:
+            print(f"   - {regel}")
+        print("\n   Elk van deze regels is een vraag: waarom daar anders dan hier?")
+    else:
+        print("   - niets: wat je bot op het rooster doet, deed hij in het toernooi ook")
 
 
 # ---------------------------------------------------------------------------
@@ -191,7 +317,8 @@ def percentage(deel, geheel):
     return f"{100 * deel / geheel:4.0f}%" if geheel else "   -"
 
 
-def druk_kaart(naam, prof, eindstand, plek, aantal_bots, klas_mediaan, begonnen_met=None):
+def druk_kaart(naam, prof, eindstand, plek, aantal_bots, klas_mediaan,
+               begonnen_met=None, rooster=None, roosterfout=None):
     print("=" * 68)
     kop = f"{naam}"
     if eindstand is not None:
@@ -230,6 +357,11 @@ def druk_kaart(naam, prof, eindstand, plek, aantal_bots, klas_mediaan, begonnen_
         verdeling = "  ".join(f"{a} {percentage(n, totaal)}" for a, n in teller.most_common())
         print(f"   {soort:<12} {totaal:>4} handen   {verdeling}")
 
+    if rooster:
+        druk_rooster(rooster, prof)
+    elif roosterfout:
+        print(f"\nGeen rooster opgehaald: {roosterfout}")
+
     print("\nDrie handen om naar te vragen")
     for rij, waarom in opvallende_handen(prof["regels"]):
         plaats = f"sim {rij.get('simulatie')}, tafel {rij.get('tafel')}, hand {rij['hand_nummer']}"
@@ -260,6 +392,10 @@ def main():
     p.add_argument("--week", type=int, default=5)
     p.add_argument("--ronde", type=int, default=2, help="2 = de slotronde van vrijdag")
     p.add_argument("--student", help="alleen dit studentnummer")
+    p.add_argument("--verwacht", action="store_true",
+                   help="vraag de bot ook twintig kale situaties en zet dat naast "
+                        "wat hij in het toernooi deed")
+    p.add_argument("--botbestand", help="een bot-bestand op schijf in plaats van /bot-test/")
     p.add_argument("--map", dest="uitvoermap",
                    help="schrijf één tekstbestand per bot in deze map, "
                         "in plaats van alles naar het scherm")
@@ -301,7 +437,15 @@ def main():
     if args.uitvoermap:
         os.makedirs(args.uitvoermap, exist_ok=True)
 
+    def rooster_voor(naam):
+        if not args.verwacht:
+            return None, None
+        if args.botbestand:
+            return vraag_bot_uit_bestand(args.botbestand, args.week)
+        return vraag_bot_via_api(naam, args.week)
+
     for naam in namen:
+        rooster, roosterfout = rooster_voor(naam)
         if args.uitvoermap:
             # Zo kun je ze uitdelen: iedereen zijn eigen kaartje, en dat kost
             # niets extra ten opzichte van alleen de tien die je overhoort.
@@ -311,7 +455,7 @@ def main():
             try:
                 druk_kaart(naam, profielen[naam], eindstand.get(naam),
                            plek_van.get(naam), len(volgorde), medianen,
-                           startstacks.get(naam, STARTSTACK))
+                           startstacks.get(naam, STARTSTACK), rooster, roosterfout)
             finally:
                 sys.stdout = oud
             with open(pad, "w", encoding="utf-8") as f:
@@ -319,7 +463,7 @@ def main():
         else:
             druk_kaart(naam, profielen[naam], eindstand.get(naam),
                        plek_van.get(naam), len(volgorde), medianen,
-                       startstacks.get(naam, STARTSTACK))
+                       startstacks.get(naam, STARTSTACK), rooster, roosterfout)
 
     if args.uitvoermap:
         print(f"{len(namen)} kaartjes geschreven in {args.uitvoermap}/")
