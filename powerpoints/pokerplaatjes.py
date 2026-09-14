@@ -99,19 +99,51 @@ def bewaar(fig, map_, naam):
 # ---------------------------------------------------------------------------
 
 def plaat_hole_cards(map_):
-    """Wat jij ziet en wat de rest ziet: twee open kaarten, vijf gedekte."""
-    fig, ax = _kale_assen((7.4, 2.4), (-0.3, 11.2), (-0.7, 2.2))
+    """
+    Waar de zeven kaarten vandaan komen waaruit jij je beste vijf maakt.
 
-    ax.text(0, 1.95, "JOUW hole cards", fontsize=10, fontweight="bold", color=ACCENT)
-    teken_kaart(ax, 0, 0.3, "SA")
-    teken_kaart(ax, 1.2, 0.3, "HA")
-    ax.text(1.2, -0.35, "prive: alleen jij ziet ze", fontsize=8.5, color=GEDEMPT, ha="center")
+    Drie bronnen naast elkaar: jouw twee open kaarten, de dichte kaarten van de
+    anderen, en het deck waar de vijf op tafel nog uit moeten komen.
 
-    ax.text(3.6, 1.95, "Wat de anderen hebben", fontsize=10, fontweight="bold", color=GEDEMPT)
-    for i in range(5):
-        teken_kaart(ax, 3.6 + i * 1.2, 0.3, "XX", gedekt=True)
-    ax.text(6.0, -0.35, "dicht: je weet het niet, je schat het", fontsize=8.5,
-            color=GEDEMPT, ha="center")
+    Eerder stond hieronder "je weet niet wat de anderen hebben, je schat het".
+    Dat is fout: je schat niet hun kaarten, je schat je eigen winkans. Het
+    verschil is precies waar Deel 5 over gaat, dus daar mag de eerste dia van
+    het werkcollege niet overheen stappen.
+    """
+    fig, ax = _kale_assen((10.2, 3.7), (-0.4, 16.4), (-2.3, 3.85))
+
+    ax.text(0, 3.45, "JIJ", fontsize=11, fontweight="bold", color=ACCENT)
+    teken_kaart(ax, 0, 1.35, "SA", breedte=0.95, hoogte=1.38)
+    teken_kaart(ax, 1.1, 1.35, "HA", breedte=0.95, hoogte=1.38)
+    ax.text(1.05, 0.95, "je 2 hole cards", fontsize=9.5, color=PRIMAIR, ha="center", va="top")
+    ax.text(1.05, 0.5, "open voor jou, dicht voor de rest",
+            fontsize=8.5, color=GEDEMPT, ha="center", va="top")
+
+    ax.text(4.2, 3.45, "DE ANDEREN", fontsize=11, fontweight="bold", color=GEDEMPT)
+    for tegenstander in range(2):
+        basis = 4.2 + tegenstander * 2.3
+        for k in range(2):
+            teken_kaart(ax, basis + k * 0.62, 1.35, "XX", breedte=0.95, hoogte=1.38, gedekt=True)
+    ax.text(5.85, 0.95, "ieder 2 kaarten, dicht", fontsize=9.5, color=PRIMAIR,
+            ha="center", va="top")
+    ax.text(5.85, 0.5, "je ziet ze pas bij de showdown",
+            fontsize=8.5, color=GEDEMPT, ha="center", va="top")
+
+    ax.text(10.2, 3.45, "HET DECK", fontsize=11, fontweight="bold", color=GEDEMPT)
+    for k in range(4):
+        teken_kaart(ax, 10.2 + k * 0.14, 1.35 + k * 0.1, "XX",
+                    breedte=0.95, hoogte=1.38, gedekt=True)
+    ax.add_patch(FancyArrowPatch((11.95, 2.05), (13.05, 2.05), arrowstyle="-|>",
+                                 mutation_scale=13, color=ACCENT, linewidth=1.5))
+    ax.text(13.3, 2.45, "5 kaarten", fontsize=10, fontweight="bold", color=ACCENT)
+    ax.text(13.3, 2.0, "komen open op tafel", fontsize=9.5, color=PRIMAIR)
+    ax.text(13.3, 1.55, "de rest blijft dicht", fontsize=9, color=GEDEMPT)
+
+    ax.text(8.0, -0.7, "Jij maakt de beste 5 uit jouw 2 + de 5 op tafel — 7 kaarten om uit te kiezen.",
+            fontsize=12, fontweight="bold", color=PRIMAIR, ha="center")
+    ax.text(8.0, -1.45, "Je weet niet wat de anderen hebben, en je hoeft dat ook niet te raden: "
+                        "wat je schat is je eigen winkans.",
+            fontsize=10, color=ACCENT, ha="center", style="italic")
     return bewaar(fig, map_, "hole_cards")
 
 
@@ -220,21 +252,31 @@ def plaat_handverloop(map_):
 
 
 def plaat_kleuren(map_):
-    """De vier letters, en waarom D en C niet kloppen met het Nederlands."""
-    fig, ax = _kale_assen((7.6, 2.6), (-0.4, 11.6), (-1.3, 2.4))
+    """
+    De vier letters, en welke twee niet met het Nederlandse woord kloppen.
+
+    S en H kloppen allebei: Spades/schoppen en Hearts/harten beginnen in beide
+    talen met dezelfde letter. D en C niet -- die komen van Diamonds en Clubs,
+    terwijl wij ruiten en klaveren zeggen. Dat zijn dus de twee die je door
+    elkaar haalt, en dan bouw je een flush die er niet is.
+    """
+    fig, ax = _kale_assen((8.4, 3.0), (-0.4, 12.4), (-1.8, 2.6))
 
     for i, (letter, (symbool, is_rood, nl, en)) in enumerate(KLEUREN.items()):
-        x = i * 2.9
-        teken_kaart(ax, x, 0.45, f"{letter}A", breedte=0.95, hoogte=1.35)
-        ax.text(x + 1.25, 1.55, letter, fontsize=17, fontweight="bold",
+        x = i * 3.0
+        klopt = letter == nl[0].upper()
+        teken_kaart(ax, x, 0.5, f"{letter}A", breedte=0.98, hoogte=1.4)
+        ax.text(x + 1.3, 1.9, letter, fontsize=18, fontweight="bold",
                 color=ROOD if is_rood else PRIMAIR, va="top")
-        ax.text(x + 1.25, 1.0, nl, fontsize=10, color=PRIMAIR, va="top")
-        ax.text(x + 1.25, 0.62, f"van {en}", fontsize=8.5, color=GEDEMPT, va="top")
+        ax.text(x + 1.3, 1.28, nl, fontsize=10.5, color=PRIMAIR, va="top")
+        ax.text(x + 1.3, 0.88, en, fontsize=9, color=GEDEMPT, va="top", style="italic")
+        ax.text(x + 1.3, 0.48, "zelfde letter" if klopt else "NIET onze letter",
+                fontsize=8.5, color=ACCENT if klopt else ROOD, va="top",
+                fontweight="normal" if klopt else "bold")
 
-    ax.text(5.6, -0.85,
-            "Alleen H klopt met het Nederlandse woord. Haal D en C door elkaar "
-            "en je bouwt een flush die er niet is.",
-            fontsize=9.5, color=ROOD, ha="center")
+    ax.text(5.8, -1.05, "S en H kloppen in allebei de talen. D en C niet — "
+                        "haal die twee door elkaar en je bouwt een flush die er niet is.",
+            fontsize=10.5, color=PRIMAIR, ha="center")
     return bewaar(fig, map_, "kleuren")
 
 
@@ -299,45 +341,83 @@ def plaat_flowchart(map_):
 
 
 def plaat_raiseladder(map_):
-    """Wat een raise kost, en wat grote_raise daarnaast doet."""
-    fig, ax = _kale_assen((8.0, 3.2), (-0.5, 12.5), (-1.6, 3.0))
+    """
+    Twee regels naast elkaar: hoe het in het echte spel gaat, en wat onze
+    engine ervan maakt.
 
-    stappen = [("20", "op tafel"), ("40", "raise"), ("60", "raise"), ("80", "raise")]
-    for i, (bedrag, label) in enumerate(stappen):
-        x = i * 1.75
-        vak = FancyBboxPatch((x, 1.35), 1.3, 0.85,
+    De echte regel is niet "het volgende veelvoud van 20". Hij is: je verhoogt
+    met minstens zoveel als de vorige verhoging, en nooit met minder dan de big
+    blind. Raist iemand van 20 naar 100 -- een verhoging van 80 -- dan moet de
+    volgende minstens naar 180. Dat is precies de regel die bluffen duur maakt.
+
+    Onze engine doet iets simpelers, en die +10 die daar soms uit komt bestaat
+    in het echte spel niet. Dat staat er daarom bij: studenten die het opzoeken
+    horen niet te denken dat wij het fout uitleggen.
+    """
+    fig, ax = _kale_assen((10.6, 4.6), (-0.5, 17.0), (-3.0, 4.6))
+
+    # ---- de echte regel ----
+    ax.text(0, 4.15, "IN HET ECHTE SPEL", fontsize=10.5, fontweight="bold", color=ACCENT)
+    ax.text(0, 3.7, "Je verhoogt met minstens zoveel als de vorige verhoging — "
+                    "en nooit met minder dan de big blind.",
+            fontsize=10, color=PRIMAIR)
+
+    echte = [("20", "big blind", ""), ("40", "minimaal", "+20"),
+             ("100", "mag ook", "+60"), ("160", "dan minimaal", "+60")]
+    for i, (bedrag, label, stap) in enumerate(echte):
+        x = i * 2.6
+        vak = FancyBboxPatch((x, 1.85), 1.5, 0.95,
                              boxstyle="round,pad=0.04,rounding_size=0.1",
                              facecolor="white", edgecolor=LIJN, linewidth=1.3, zorder=3)
         ax.add_patch(vak)
-        ax.text(x + 0.65, 1.9, bedrag, fontsize=14, fontweight="bold",
+        ax.text(x + 0.75, 2.48, bedrag, fontsize=15, fontweight="bold",
                 ha="center", color=PRIMAIR, zorder=4)
-        ax.text(x + 0.65, 1.52, label, fontsize=7.5, ha="center", color=GEDEMPT, zorder=4)
-        if i:
-            ax.add_patch(FancyArrowPatch((x - 0.45, 1.78), (x, 1.78), arrowstyle="-|>",
+        ax.text(x + 0.75, 2.06, label, fontsize=7.5, ha="center", color=GEDEMPT, zorder=4)
+        if stap:
+            ax.add_patch(FancyArrowPatch((x - 1.0, 2.32), (x, 2.32), arrowstyle="-|>",
                                          mutation_scale=11, color=ACCENT, linewidth=1.3))
-            ax.text(x - 0.22, 2.35, "+20", fontsize=8.5, ha="center", color=ACCENT)
+            ax.text(x - 0.5, 2.9, stap, fontsize=9, ha="center", color=ACCENT,
+                    fontweight="bold")
 
-    ax.text(0, 0.75, "Een raise gaat naar het volgende veelvoud van de big blind — geen verdubbeling.",
+    ax.text(10.6, 2.75, "Wie 80 erbij legt,", fontsize=9.5, color=PRIMAIR)
+    ax.text(10.6, 2.3, "dwingt de volgende", fontsize=9.5, color=PRIMAIR)
+    ax.text(10.6, 1.85, "ook 80 erbij te leggen.", fontsize=9.5, color=PRIMAIR)
+
+    # ---- wat onze engine doet ----
+    ax.text(0, 1.05, "IN ONZE ENGINE", fontsize=10.5, fontweight="bold", color=ROOD)
+    ax.text(0, 0.6, "Simpeler: het bod gaat naar het volgende veelvoud van 20. "
+                    "Geen verdubbeling, en geen groeiende verhoging.",
             fontsize=10, color=PRIMAIR)
-    ax.text(0, 0.28, "Gemeten in een echt toernooi: 72% van de raises voegt 20 toe, 28% voegt 10 toe.",
-            fontsize=9, color=GEDEMPT)
 
-    vak = FancyBboxPatch((7.6, 1.1), 4.4, 1.3,
-                         boxstyle="round,pad=0.05,rounding_size=0.12",
-                         facecolor="#F0F6F3", edgecolor=ACCENT, linewidth=1.5, zorder=3)
+    onze = [("20", ""), ("40", "+20"), ("60", "+20"), ("80", "+20")]
+    for i, (bedrag, stap) in enumerate(onze):
+        x = i * 2.6
+        vak = FancyBboxPatch((x, -1.35), 1.5, 0.9,
+                             boxstyle="round,pad=0.04,rounding_size=0.1",
+                             facecolor="white", edgecolor=LIJN, linewidth=1.3, zorder=3)
+        ax.add_patch(vak)
+        ax.text(x + 0.75, -0.85, bedrag, fontsize=15, fontweight="bold",
+                ha="center", va="center", color=PRIMAIR, zorder=4)
+        if stap:
+            ax.add_patch(FancyArrowPatch((x - 1.0, -0.9), (x, -0.9), arrowstyle="-|>",
+                                         mutation_scale=11, color=ROOD, linewidth=1.3))
+            ax.text(x - 0.5, -0.42, stap, fontsize=9, ha="center", color=ROOD)
+
+    ax.text(10.6, -0.6, "Gemeten in een echt toernooi:", fontsize=9.5, color=GEDEMPT)
+    ax.text(10.6, -1.05, "72% van de raises voegt 20 toe,", fontsize=9.5, color=PRIMAIR)
+    ax.text(10.6, -1.5, "28% voegt er maar 10 toe — na een", fontsize=9.5, color=PRIMAIR)
+    ax.text(10.6, -1.95, "all-in die een oneven bedrag achterlaat.", fontsize=9.5, color=PRIMAIR)
+
+    vak = FancyBboxPatch((0, -2.85), 9.3, 0.75,
+                         boxstyle="round,pad=0.04,rounding_size=0.1",
+                         facecolor="#F0F6F3", edgecolor=ACCENT, linewidth=1.4, zorder=3)
     ax.add_patch(vak)
-    ax.text(9.8, 2.06, "grote_raise", fontsize=12, fontweight="bold",
-            ha="center", color=ACCENT, zorder=4)
-    # Op een regel liep dit net buiten het kader.
-    ax.text(9.8, 1.66, "in een keer naar 200", fontsize=9, ha="center",
-            color=PRIMAIR, zorder=4)
-    ax.text(9.8, 1.32, "tien big blinds", fontsize=9, ha="center",
-            color=GEDEMPT, zorder=4)
+    ax.text(0.3, -2.47, "grote_raise", fontsize=11.5, fontweight="bold",
+            color=ACCENT, va="center", zorder=4)
+    ax.text(2.5, -2.47, "zet in een keer naar 200 — tien big blinds, een vijfde van je startstack.",
+            fontsize=10, color=PRIMAIR, va="center", zorder=4)
 
-    ax.text(0, -0.55, "Max twee raises per straat. Een derde raise wordt automatisch een call;",
-            fontsize=9.5, color=PRIMAIR)
-    ax.text(0, -1.0, "all_in mag altijd. Daardoor kun je een grote inzet terugpakken.",
-            fontsize=9.5, color=PRIMAIR)
+    ax.text(10.6, -2.47, "Max 2 raises per straat.", fontsize=9.5, color=GEDEMPT, va="center")
     return bewaar(fig, map_, "raiseladder")
 
 
@@ -438,40 +518,47 @@ def plaat_montecarlo(map_):
 
 
 def plaat_montecarlo_poker(map_):
-    """Hoe dezelfde truc je winkans geeft: uitspelen, tellen, delen."""
-    fig, ax = _kale_assen((10.4, 4.0), (-0.5, 17.5), (-1.9, 4.4))
+    """
+    Hoe dezelfde truc je winkans geeft: uitspelen, tellen, delen.
+
+    De titels staan op twee regels en niet op een. Matplotlib breekt tekst niet
+    af binnen een vorm, dus een titel die breder is dan zijn kader loopt gewoon
+    de buurman in -- en dat deed hij: "1. Jouw hand staat vast" schoof dwars
+    door stap 2 heen.
+
+    De afsluitende zinnen staan hier niet meer: die staan al onder de dia, en
+    twee keer hetzelfde is precies wat een dia druk maakt.
+    """
+    fig, ax = _kale_assen((10.8, 2.9), (-0.5, 17.3), (-0.9, 2.9))
 
     stappen = [
-        ("1. Jouw hand staat vast", "A-A, dat weet je"),
-        ("2. Deel de rest willekeurig", "tegenstanders + bord"),
-        ("3. Speel uit tot de showdown", "wie heeft de beste vijf?"),
-        ("4. Turf of jij won", "1 of 0"),
-        ("5. Doe dat 1000 keer", "winkans = gewonnen / 1000"),
+        ("Jouw hand\nstaat vast", "A-A, dat weet je"),
+        ("Deel de rest\nwillekeurig", "tegenstanders + bord"),
+        ("Speel uit tot\nde showdown", "wie heeft de beste vijf?"),
+        ("Turf of\njij won", "1 of 0"),
+        ("Doe dat\n1000 keer", "gewonnen / 1000"),
     ]
     for i, (titel, onder) in enumerate(stappen):
-        x = i * 3.4
+        x = i * 3.45
         laatste = i == len(stappen) - 1
-        vak = FancyBboxPatch((x, 1.5), 2.9, 1.5,
+        vak = FancyBboxPatch((x, 0.15), 2.95, 1.95,
                              boxstyle="round,pad=0.05,rounding_size=0.14",
                              facecolor=ACCENT if laatste else "white",
                              edgecolor=ACCENT, linewidth=1.5, zorder=3)
         ax.add_patch(vak)
-        ax.text(x + 1.45, 2.52, titel, fontsize=9.5, fontweight="bold", ha="center",
-                color="white" if laatste else PRIMAIR, zorder=4, wrap=True)
-        ax.text(x + 1.45, 1.92, onder, fontsize=8.5, ha="center",
+        ax.text(x + 0.18, 1.92, str(i + 1), fontsize=9, fontweight="bold",
+                color=GROEN_LICHT if laatste else ACCENT, va="top", zorder=4)
+        ax.text(x + 1.48, 1.62, titel, fontsize=10, fontweight="bold", ha="center",
+                va="top", linespacing=1.35,
+                color="white" if laatste else PRIMAIR, zorder=4)
+        ax.text(x + 1.48, 0.45, onder, fontsize=8, ha="center",
                 color="#D8E6E0" if laatste else GEDEMPT, zorder=4)
         if i:
-            ax.add_patch(FancyArrowPatch((x - 0.5, 2.25), (x, 2.25), arrowstyle="-|>",
+            ax.add_patch(FancyArrowPatch((x - 0.5, 1.12), (x, 1.12), arrowstyle="-|>",
                                          mutation_scale=12, color=ACCENT, linewidth=1.4))
 
-    ax.text(8.3, 0.65, "Dat is precies wat schat_winkans() voor je doet.",
-            fontsize=12, fontweight="bold", color=PRIMAIR, ha="center")
-    ax.text(8.3, -0.1, "Je hoeft het niet te bouwen — je moet weten wat het getal betekent, "
-                       "en tegen hoeveel mensen het gerekend is.",
-            fontsize=10, color=GEDEMPT, ha="center", style="italic")
-    ax.text(8.3, -1.0, "Zelfde idee als n_simulaties in het toernooi: één toernooi is toeval, "
-                       "twintig toernooien zijn een meting.",
-            fontsize=10, color=ACCENT, ha="center")
+    ax.text(8.4, -0.55, "Dat is precies wat schat_winkans() voor je doet.",
+            fontsize=12.5, fontweight="bold", color=PRIMAIR, ha="center")
     return bewaar(fig, map_, "montecarlo_poker")
 
 

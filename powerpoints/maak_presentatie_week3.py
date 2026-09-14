@@ -209,9 +209,9 @@ ONDERDELEN = [
              "Tien worpen zeggen niets, duizend worpen komen dicht bij de waarheid. "
              "Meer proberen maakt het antwoord preciezer, nooit anders."),
             ("Zo komt je winkans tot stand", "montecarlo_poker",
-             "Precies wat schat_winkans() doet. Je hoeft het niet te bouwen — je moet "
-             "weten wat het getal betekent en tegen hoeveel mensen het gerekend is. "
-             "Hetzelfde idee als n_simulaties in het toernooi."),
+             "Je hoeft het niet te bouwen — je moet weten wat het getal betekent, en "
+             "tegen hoeveel mensen het gerekend is. Hetzelfde idee als n_simulaties in "
+             "het toernooi: één toernooi is toeval, twintig zijn een meting."),
         ],
     },
     {
@@ -262,10 +262,12 @@ ONDERDELEN = [
             "onder": "Je hoeft ze niet alle zes te doen. Kies er twee of drie die bij "
                      "jouw idee van een goede bot passen, en werk die dan ook echt uit.",
             "items": [
-                ("Andere drempels per straat",
-                 "Preflop weet je alleen je twee kaarten; op de river ligt alles op tafel."),
                 ("Je winkans-grens",
-                 "Vanaf welke winkans call je, vanaf welke raise je? Een getal dat je kunt meten."),
+                 "Vanaf welke winkans doe je mee, en vanaf welke raise je? Dat is een getal "
+                 "dat jij kiest — en waarvan je kunt meten of een ander getal beter werkt."),
+                ("Een andere grens per straat",
+                 "Preflop weet je alleen je twee kaarten en komen er nog vijf bij; op de "
+                 "river ligt alles er al. Dezelfde 40% betekent daar dus iets anders."),
                 ("De pot-odds-regel",
                  "Wiskundig correct maar naief: hij foldt bijna nooit preflop. Wil je dat?"),
                 ("Stack-bewustzijn",
@@ -279,10 +281,10 @@ ONDERDELEN = [
         "codedias": [
             ("Hoe dat er los in code uitziet",
              "Zes losse stukjes. Geen van alle is af — het zijn de vormen, niet de antwoorden.",
-             [("1 · drempel per straat",
-               'DREMPELS = {"preflop": 45, "flop": 40,\n            "turn": 35, "river": 30}\ngrens = DREMPELS[ronde]'),
-              ("2 · je winkans-grens",
-               'winkans = schat_winkans(hand, tegenstanders=5)\nif winkans > grens:\n    return "raise"'),
+             [("1 · je winkans-grens",
+               '# vanaf welke winkans doe je mee?\nGRENS = 40\n\nwinkans = schat_winkans(hand, tegenstanders=5)\nif winkans > GRENS:\n    return "raise"'),
+              ("2 · een andere grens per straat",
+               '# zelfde idee, maar per straat een eigen getal\nGRENS = {"preflop": 45, "flop": 40,\n         "turn": 35, "river": 30}\n\nif winkans > GRENS[ronde]:\n    return "raise"'),
               ("3 · de pot-odds-regel",
                'nodig = bereken_pot_odds(pot, inzet_om_te_callen)\nif winkans < nodig:\n    return "fold"'),
               ("4 · stack-bewustzijn",
@@ -555,6 +557,10 @@ def theoriedia(prs, onderdeel):
     return dia
 
 
+BEELD_CATEGORIE = {2: "DE SPELREGELS", 4: "DE RANGORDE",
+                   5: "MONTE CARLO", 7: "AAN DE SLAG"}
+
+
 def beelddia(prs, onderdeel, titel, plaatnaam, uitleg):
     """
     Eén plaat groot in beeld, met één alinea eronder.
@@ -563,7 +569,8 @@ def beelddia(prs, onderdeel, titel, plaatnaam, uitleg):
     er volledig op, dan leest de zaal mee in plaats van te kijken.
     """
     dia = nieuwe_dia(prs)
-    kop(dia, f"DEEL {onderdeel['nummer']} · DE SPELREGELS", titel)
+    categorie = BEELD_CATEGORIE.get(onderdeel["nummer"], "IN BEELD")
+    kop(dia, f"DEEL {onderdeel['nummer']} · {categorie}", titel)
 
     pad = os.path.join(PLOTMAP, f"{plaatnaam}.png")
     if os.path.exists(pad):
