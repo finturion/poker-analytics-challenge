@@ -15,7 +15,67 @@ Bevat:
   hand-evaluatie (dus inclusief kleur/flush/straat, ook al werkt de rest van
   de cursus met kaartwaarden zonder kleur).
 """
+import importlib
 import random
+import subprocess
+import sys
+
+# Op PyPI heet het pakket PyPokerEngine, in Python importeer je pypokerengine.
+PAKKET_OP_PYPI = "PyPokerEngine"
+MODULE = "pypokerengine"
+
+
+def _zorg_voor_pypokerengine():
+    """
+    Installeert PyPokerEngine als hij er nog niet is.
+
+    Dit staat bovenaan en niet in een functie verderop, want de imports
+    hieronder zijn op moduleniveau: zonder het pakket klapt `import
+    _hulpfuncties_week3` er meteen uit met een ModuleNotFoundError, nog voor
+    een student iets heeft kunnen aanroepen. Dan helpt een nette foutmelding
+    verderop in het bestand niets meer.
+
+    Er wordt geinstalleerd in dezelfde Python als waarin dit draait
+    (sys.executable). In Jupyter is dat de kernel, en dat is precies de
+    bedoeling -- `pip install` in een terminal belandt anders soms in een
+    andere omgeving dan het notebook gebruikt.
+    """
+    try:
+        importlib.import_module(MODULE)
+        return
+    except ImportError:
+        pass
+
+    print(f"{PAKKET_OP_PYPI} staat nog niet in deze omgeving. Ik installeer hem nu;")
+    print("dat duurt meestal een halve minuut. Je hoeft verder niets te doen.")
+
+    uitkomst = subprocess.run(
+        [sys.executable, "-m", "pip", "install", "--quiet", PAKKET_OP_PYPI],
+        capture_output=True, text=True,
+    )
+    if uitkomst.returncode != 0:
+        melding = (uitkomst.stderr or uitkomst.stdout or "").strip()
+        raise ImportError(
+            f"{PAKKET_OP_PYPI} kon niet geinstalleerd worden.\n\n"
+            f"Installeer hem zelf met:\n"
+            f"    {sys.executable} -m pip install {PAKKET_OP_PYPI}\n\n"
+            f"Wat pip zei:\n{melding[-600:]}"
+        )
+
+    # Zonder dit vindt Python het pakket dat net is neergezet nog niet: de
+    # lijst met beschikbare modules is bij het opstarten ingelezen.
+    importlib.invalidate_caches()
+    try:
+        importlib.import_module(MODULE)
+    except ImportError as e:
+        raise ImportError(
+            f"{PAKKET_OP_PYPI} is geinstalleerd, maar Python vindt hem nog niet.\n"
+            "Start je kernel opnieuw (Kernel > Restart) en draai deze cel nog een keer."
+        ) from e
+    print(f"{PAKKET_OP_PYPI} is geinstalleerd. Je kunt verder.")
+
+
+_zorg_voor_pypokerengine()
 
 from pypokerengine.api.game import setup_config, start_poker
 from pypokerengine.engine.card import Card
