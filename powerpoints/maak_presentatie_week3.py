@@ -27,6 +27,9 @@ import sys
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import pokerplaatjes
 from pptx import Presentation
 from pptx.dml.color import RGBColor
 from pptx.enum.shapes import MSO_SHAPE
@@ -90,6 +93,32 @@ ONDERDELEN = [
         "minuten": 16,
         "huiswerk": False,
         "kern": "De regels van Texas Hold'em, en wat Bot v2 erbij krijgt",
+        # De spelregels zijn het onderdeel waar tekst het slechtst werkt: je
+        # moet zien hoe het bord groeit en hoe een hand kantelt. Daarom hier
+        # zes beelddia's tussen de theorie en de opdracht.
+        "beelddias": [
+            ("Twee kaarten van jezelf, vijf van de tafel", "hole_cards",
+             "Jouw twee hole cards zijn privé. Wat de anderen hebben weet je niet — "
+             "je schat het. Dat schatten is waar Deel 5 over gaat."),
+            ("Er ligt al geld in de pot voordat iemand kiest", "tafel",
+             "Twee spelers leggen verplicht in: de small blind en de big blind, "
+             "twee keer zo groot. Daarom is folden nooit gratis."),
+            ("Vier straten, vier keer bieden", "straten",
+             "preflop → flop → turn → river. Na elke straat wordt er opnieuw geboden, "
+             "dus je bot beslist vier keer per hand."),
+            ("Waarom twee kaarten niet genoeg zijn", "handverloop",
+             "Twee azen tegen 7-8 schoppen. Preflop is dat geen wedstrijd; "
+             "op de river wint 7-8. Dit is geen uitzondering die we hebben opgezocht."),
+            ("De kleuren: twee tekens per kaart", "kleuren",
+             "Eerst de kleur, dan de rang. SA is schoppen aas. Let op de tien: "
+             "in de hulpfuncties heet die T, in je eigen bot \"10\"."),
+            ("Wat je bot per beslissing binnenkrijgt", "flowchart",
+             "Dit is de hele upgrade van deze week: je kies_actie wordt vier keer "
+             "per hand aangeroepen, elke keer met een andere ronde."),
+            ("Wat kost een raise eigenlijk?", "raiseladder",
+             "Geen verdubbeling: het bod gaat naar het volgende veelvoud van de "
+             "big blind. grote_raise is iets anders — die zet in één keer naar 200."),
+        ],
         "theorie": [
             ("Twee hole cards", "Privé, alleen jij ziet ze. 'Hole' = in het gat: ze liggen "
              "dicht op tafel. Je hoort ook 'pocket cards'; dat is hetzelfde."),
@@ -102,7 +131,7 @@ ONDERDELEN = [
         ],
         "opdracht": [
             "Live demo van één hand, en daarna bouw je zelf een rondje op in code.",
-            "Let op de raise-regel: maximaal twee raises per straat.",
+            "Let op de raise-regel: maximaal twee raises per straat — een derde wordt een call.",
         ],
         "inleveren": "Niets — dit is de uitleg waar Deel 3 op verder bouwt.",
     },
@@ -140,6 +169,12 @@ ONDERDELEN = [
              "schoppen aas, HK harten heer, DQ ruiten vrouw, CJ klaveren boer. "
              "Zonder kleur kun je geen flush herkennen."),
         ],
+        "beelddias": [
+            ("De negen handsoorten, zwakste bovenaan", "handsterkte",
+             "Elke rij is een echte vijfkaartshand. Let op het verschil tussen "
+             "straat (waardes op volgorde) en flush (dezelfde kleur) — en "
+             "straight flush, die allebei tegelijk is."),
+        ],
         "opdracht": [
             "Laat de helper een paar handen beoordelen en kijk of je de uitkomst had voorspeld.",
             "Let op: de helper klaagt niet als je dezelfde kaart twee keer gebruikt.",
@@ -168,6 +203,16 @@ ONDERDELEN = [
         ],
         "inleveren": "Je bot gebruikt schat_winkans() met tegenstanders=5.",
         "plot": "winkans",
+        "beelddias": [
+            ("Monte Carlo: wat is dat eigenlijk?", "montecarlo",
+             "Als je een kans niet kunt uitrekenen, probeer je hem gewoon heel vaak. "
+             "Tien worpen zeggen niets, duizend worpen komen dicht bij de waarheid. "
+             "Meer proberen maakt het antwoord preciezer, nooit anders."),
+            ("Zo komt je winkans tot stand", "montecarlo_poker",
+             "Precies wat schat_winkans() doet. Je hoeft het niet te bouwen — je moet "
+             "weten wat het getal betekent en tegen hoeveel mensen het gerekend is. "
+             "Hetzelfde idee als n_simulaties in het toernooi."),
+        ],
     },
     {
         "nummer": 6,
@@ -212,6 +257,64 @@ ONDERDELEN = [
             "Test met je eigen situaties, niet alleen met de gegeven voorbeelden.",
         ],
         "inleveren": "wo 09:00 een werkende Bot v2 · do 18:00 je verbeterde versie.",
+        "keuzelijst": {
+            "titel": "Wat kun je meenemen in Bot v2?",
+            "onder": "Je hoeft ze niet alle zes te doen. Kies er twee of drie die bij "
+                     "jouw idee van een goede bot passen, en werk die dan ook echt uit.",
+            "items": [
+                ("Andere drempels per straat",
+                 "Preflop weet je alleen je twee kaarten; op de river ligt alles op tafel."),
+                ("Je winkans-grens",
+                 "Vanaf welke winkans call je, vanaf welke raise je? Een getal dat je kunt meten."),
+                ("De pot-odds-regel",
+                 "Wiskundig correct maar naief: hij foldt bijna nooit preflop. Wil je dat?"),
+                ("Stack-bewustzijn",
+                 "Met 90 chips speel je anders dan met 900. Wanneer is all_in een plan?"),
+                ("Je twee raises per straat",
+                 "Meteen druk zetten, of pas als je het bord ziet? En pak je terug?"),
+                ("Hoeveel je inzet",
+                 "raise is het minimum, grote_raise zet naar 200. Wanneer is dat het waard?"),
+            ],
+        },
+        "codedias": [
+            ("Hoe dat er los in code uitziet",
+             "Zes losse stukjes. Geen van alle is af — het zijn de vormen, niet de antwoorden.",
+             [("1 · drempel per straat",
+               'DREMPELS = {"preflop": 45, "flop": 40,\n            "turn": 35, "river": 30}\ngrens = DREMPELS[ronde]'),
+              ("2 · je winkans-grens",
+               'winkans = schat_winkans(hand, tegenstanders=5)\nif winkans > grens:\n    return "raise"'),
+              ("3 · de pot-odds-regel",
+               'nodig = bereken_pot_odds(pot, inzet_om_te_callen)\nif winkans < nodig:\n    return "fold"'),
+              ("4 · stack-bewustzijn",
+               'if stack < 200:\n    return "all_in" if winkans > 50 else "fold"'),
+              ("5 · heeft iemand al geraised?",
+               'geraised = any(a["actie"] == "raise"\n               and a["ronde"] == ronde\n               for a in tegenstander_acties_deze_hand)'),
+              ("6 · hoeveel zet je in",
+               'return "grote_raise" if winkans > 70 else "raise"')]),
+            ("En hoe je ze samenvoegt",
+             "De volgorde is de hele truc: wat je eerst controleert, overschrijft de rest. "
+             "Dit is het skelet — de getallen erin zijn van jou.",
+             [("de vorm van je kies_actie",
+               'def kies_actie(hand, stack, ronde="preflop",\n'
+               '               pot=0, inzet_om_te_callen=0):\n'
+               '\n'
+               '    winkans = schat_winkans(hand, tegenstanders=5)\n'
+               '    nodig   = bereken_pot_odds(pot, inzet_om_te_callen)\n'
+               '    grens   = DREMPELS[ronde]\n'
+               '\n'
+               '    # eerst wat alles overschrijft\n'
+               '    if stack < 200:\n'
+               '        return "all_in" if winkans > 50 else "fold"\n'
+               '\n'
+               '    # dan: is deze call de prijs waard?\n'
+               '    if winkans < nodig:\n'
+               '        return "fold"\n'
+               '\n'
+               '    # en pas dan: hoe sterk sta je?\n'
+               '    if winkans > grens:\n'
+               '        return "raise"\n'
+               '    return "call"')]),
+        ],
     },
     {
         "nummer": 8,
@@ -282,8 +385,9 @@ SLOT = {
 # ---------------------------------------------------------------------------
 
 def maak_plots():
-    """De twee grafieken waar een getal beter landt dan als tekst."""
+    """De twee grafieken, plus de tekeningen uit pokerplaatjes.py."""
     os.makedirs(PLOTMAP, exist_ok=True)
+    pokerplaatjes.maak_alles(PLOTMAP)
 
     # Winkans tegen 1 en tegen 5 tegenstanders -- de gemeten cijfers uit Deel 5.
     handen = ["A-A", "K-K", "A-K", "10-9", "7-2"]
@@ -451,6 +555,105 @@ def theoriedia(prs, onderdeel):
     return dia
 
 
+def beelddia(prs, onderdeel, titel, plaatnaam, uitleg):
+    """
+    Eén plaat groot in beeld, met één alinea eronder.
+
+    Bewust weinig tekst: dit zijn de dia's waar je bij praat. Staat de uitleg
+    er volledig op, dan leest de zaal mee in plaats van te kijken.
+    """
+    dia = nieuwe_dia(prs)
+    kop(dia, f"DEEL {onderdeel['nummer']} · DE SPELREGELS", titel)
+
+    pad = os.path.join(PLOTMAP, f"{plaatnaam}.png")
+    if os.path.exists(pad):
+        from PIL import Image
+        with Image.open(pad) as afbeelding:
+            verhouding = afbeelding.height / afbeelding.width
+        max_b, max_h = Inches(11.7), Inches(4.45)
+        breedte = max_b
+        if breedte * verhouding > max_h:
+            breedte = Inches(max_h.inches / verhouding)
+        links = Inches((13.333 - breedte.inches) / 2)
+        dia.shapes.add_picture(pad, links, Inches(1.7), width=breedte)
+
+    tekstblok(dia, Inches(1.1), Inches(6.4), Inches(11.1), Inches(0.85),
+              [(uitleg, 12.5, False, PRIMAIR, 0)])
+    return dia
+
+
+def keuzelijstdia(prs, onderdeel, lijst):
+    """De dingen die je in je bot kunt stoppen, op een rij en genummerd."""
+    dia = nieuwe_dia(prs)
+    kop(dia, f"DEEL {onderdeel['nummer']} · 4 TOT 8 UUR", lijst["titel"])
+
+    items = lijst["items"]
+    helft = -(-len(items) // 2)
+    for kolom in (0, 1):
+        links = Inches(0.8 + kolom * 6.05)
+        kaart(dia, links, Inches(1.72), Inches(5.75), Inches(3.9))
+        regels = []
+        for i, (naam, uitleg) in enumerate(items[kolom * helft:(kolom + 1) * helft]):
+            nummer = kolom * helft + i + 1
+            regels.append((f"{nummer}.  {naam}", 14, True, ACCENT, 16 if i else 0))
+            regels.append((uitleg, 11, False, PRIMAIR, 3))
+        tekstblok(dia, links + Inches(0.3), Inches(1.98), Inches(5.15), Inches(3.4), regels)
+
+    strook = kaart(dia, Inches(0.8), Inches(5.9), Inches(11.7), Inches(0.95),
+                   RGBColor(240, 246, 243))
+    strook.line.color.rgb = ACCENT
+    tekstblok(dia, Inches(1.1), Inches(6.08), Inches(11.1), Inches(0.7),
+              [(lijst["onder"], 12, False, PRIMAIR, 0)])
+    return dia
+
+
+def codedia(prs, onderdeel, titel, onderschrift, blokken):
+    """
+    Codevoorbeelden in monospace, op een donkere kaart.
+
+    Bewust onaf: de vorm laten zien zonder de getallen weg te geven. Een blok
+    dat je kunt overtypen en dat dan werkt, neemt de opdracht weg.
+    """
+    dia = nieuwe_dia(prs)
+    kop(dia, f"DEEL {onderdeel['nummer']} · IN CODE", titel)
+
+    kolommen = 2 if len(blokken) > 1 else 1
+    per_kolom = -(-len(blokken) // kolommen)
+    breedte = Inches(5.75 if kolommen == 2 else 11.7)
+
+    for index, (label, code) in enumerate(blokken):
+        kolom = index // per_kolom
+        rij = index % per_kolom
+        links = Inches(0.8 + kolom * 6.05)
+        hoogte = Inches(4.25 / per_kolom - 0.12)
+        boven = Inches(1.72 + rij * (hoogte.inches + 0.12))
+
+        vak = kaart(dia, links, boven, breedte, hoogte, PRIMAIR)
+        vak.line.color.rgb = ACCENT
+
+        tekstvak = dia.shapes.add_textbox(links + Inches(0.22), boven + Inches(0.1),
+                                          breedte - Inches(0.44), hoogte - Inches(0.2))
+        tf = tekstvak.text_frame
+        tf.word_wrap = True
+        p = tf.paragraphs[0]
+        p.text = label
+        p.font.size = Pt(10)
+        p.font.bold = True
+        p.font.color.rgb = LICHTGROEN
+        for i, regel in enumerate(code.split("\n")):
+            pc = tf.add_paragraph()
+            pc.text = regel or " "
+            pc.font.size = Pt(10.5 if kolommen == 1 else 9)
+            pc.font.name = "Consolas"
+            pc.font.color.rgb = RGBColor(232, 238, 244)
+            if i == 0:
+                pc.space_before = Pt(5)
+
+    tekstblok(dia, Inches(1.1), Inches(6.25), Inches(11.1), Inches(0.9),
+              [(onderschrift, 12, False, PRIMAIR, 0)])
+    return dia
+
+
 def opdrachtdia(prs, onderdeel):
     dia = nieuwe_dia(prs)
     tijd = (f"{onderdeel['minuten']} MIN" if onderdeel["minuten"] else "4 TOT 8 UUR")
@@ -548,6 +751,12 @@ def main():
     overzichtsdia(prs)
     for onderdeel in ONDERDELEN:
         theoriedia(prs, onderdeel)
+        for titel, plaat, uitleg in onderdeel.get("beelddias", []):
+            beelddia(prs, onderdeel, titel, plaat, uitleg)
+        if onderdeel.get("keuzelijst"):
+            keuzelijstdia(prs, onderdeel, onderdeel["keuzelijst"])
+        for titel, onderschrift, blokken in onderdeel.get("codedias", []):
+            codedia(prs, onderdeel, titel, onderschrift, blokken)
         opdrachtdia(prs, onderdeel)
     slotdia(prs)
 
