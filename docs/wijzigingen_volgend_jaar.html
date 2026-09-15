@@ -1,0 +1,592 @@
+<!--
+  Wat er volgend jaar anders moet -- bron van het gepubliceerde artifact.
+
+  Gepubliceerd op: https://claude.ai/code/artifact/e51e48a8-8fd4-44c9-9a49-12773ddd8e1b
+
+  Dit bestand is de inhoud ZONDER de <!doctype>/<html>/<head>/<body>-skeleton: die
+  wordt bij publiceren toegevoegd. Haal je het artifact terug op om het te wijzigen,
+  dan zit die skeleton er wel in en moet hij eruit voordat je opnieuw publiceert --
+  anders staat hij er de volgende keer dubbel in.
+-->
+<title>Pokerbot Challenge — wat anders moet</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,400;7..72,600;7..72,700&family=Public+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root{
+    --vilt:#1B4D3E;
+    --vilt-licht:#2E7A5F;
+    --inkt:#121E31;
+    --papier:#F7F8F6;
+    --vlak:#FFFFFF;
+    --vlak-zacht:#EEF2EF;
+    --gedempt:#59636B;
+    --lijn:#DCE3DE;
+    --rood:#B3261E;
+    --oker:#8A6A12;
+
+    --schaal-xs:.735rem;
+    --schaal-s:.83rem;
+    --schaal-m:.955rem;
+    --schaal-l:1.16rem;
+    --schaal-xl:1.55rem;
+    --schaal-xxl:2.35rem;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --vilt:#5FB894;
+      --vilt-licht:#7FD3B0;
+      --inkt:#E6EDE9;
+      --papier:#10171A;
+      --vlak:#161F23;
+      --vlak-zacht:#1C282B;
+      --gedempt:#9AA8A4;
+      --lijn:#2A3A3B;
+      --rood:#F08A80;
+      --oker:#D8B25A;
+    }
+  }
+  :root[data-theme="dark"]{
+    --vilt:#5FB894;
+    --vilt-licht:#7FD3B0;
+    --inkt:#E6EDE9;
+    --papier:#10171A;
+    --vlak:#161F23;
+    --vlak-zacht:#1C282B;
+    --gedempt:#9AA8A4;
+    --lijn:#2A3A3B;
+    --rood:#F08A80;
+    --oker:#D8B25A;
+  }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    background:var(--papier);
+    color:var(--inkt);
+    font-family:"Public Sans","Segoe UI",system-ui,-apple-system,sans-serif;
+    font-size:var(--schaal-m);
+    line-height:1.62;
+    -webkit-font-smoothing:antialiased;
+  }
+  .blad{max-width:53rem;margin:0 auto;padding:3.4rem 1.5rem 6rem}
+
+  h1,h2,h3{font-family:Literata,Georgia,"Times New Roman",serif;text-wrap:balance;margin:0}
+  h1{font-size:var(--schaal-xxl);font-weight:700;line-height:1.16;letter-spacing:-.015em}
+  h2{font-size:var(--schaal-xl);font-weight:600;line-height:1.25}
+  h3{font-size:var(--schaal-l);font-weight:600;line-height:1.35}
+
+  .mono{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
+  code{
+    font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+    font-size:.89em;background:var(--vlak-zacht);
+    padding:.08em .34em;border-radius:3px;
+  }
+
+  /* ---------- kop ---------- */
+  header{border-bottom:2px solid var(--vilt);padding-bottom:1.9rem;margin-bottom:2.6rem}
+  .stempel{
+    font-family:"IBM Plex Mono",monospace;font-size:var(--schaal-xs);
+    text-transform:uppercase;letter-spacing:.12em;color:var(--vilt);
+    font-weight:500;display:block;margin-bottom:.9rem;
+  }
+  header p.lead{
+    font-size:1.07rem;color:var(--gedempt);max-width:44rem;
+    margin:1.1rem 0 0;line-height:1.66;
+  }
+
+  /* ---------- legenda ---------- */
+  .legenda{
+    display:flex;flex-wrap:wrap;gap:.5rem 1.6rem;
+    margin-top:1.6rem;font-size:var(--schaal-s);color:var(--gedempt);
+  }
+  .legenda span{display:flex;align-items:center;gap:.45rem}
+
+  .merk{
+    font-family:"IBM Plex Mono",monospace;font-size:var(--schaal-xs);
+    text-transform:uppercase;letter-spacing:.07em;font-weight:500;
+    padding:.14em .5em;border-radius:2px;white-space:nowrap;
+  }
+  .m-gemeten{background:var(--vilt);color:var(--papier)}
+  .m-voorstel{background:var(--vlak-zacht);color:var(--vilt);box-shadow:inset 0 0 0 1px var(--lijn)}
+  .m-fout{background:var(--rood);color:var(--papier)}
+  .m-keuze{background:transparent;color:var(--oker);box-shadow:inset 0 0 0 1px var(--oker)}
+
+  /* ---------- secties ---------- */
+  section{margin-top:3.4rem}
+  .sectiekop{
+    display:flex;align-items:baseline;justify-content:space-between;
+    gap:1rem;border-bottom:1px solid var(--lijn);padding-bottom:.6rem;
+  }
+  .sectiekop .telling{
+    font-family:"IBM Plex Mono",monospace;font-size:var(--schaal-s);
+    color:var(--gedempt);font-variant-numeric:tabular-nums;white-space:nowrap;
+  }
+  .sectie-intro{color:var(--gedempt);margin:.85rem 0 0;max-width:44rem}
+
+  /* ---------- items ---------- */
+  .item{padding:1.7rem 0;border-bottom:1px solid var(--lijn)}
+  .item:last-child{border-bottom:none}
+  .item-kop{display:flex;align-items:flex-start;gap:.75rem;flex-wrap:wrap}
+  .item-kop h3{flex:1 1 20rem;min-width:0}
+  .meta{
+    font-family:"IBM Plex Mono",monospace;font-size:var(--schaal-xs);
+    color:var(--gedempt);margin:.5rem 0 0;
+    display:flex;flex-wrap:wrap;gap:.3rem .9rem;
+  }
+  .meta b{font-weight:500;color:var(--inkt)}
+  .item p{margin:.8rem 0 0;max-width:44rem}
+  .item p + p{margin-top:.6rem}
+
+  .bewijs{
+    margin:.95rem 0 0;padding:.85rem 1rem;background:var(--vlak);
+    border-left:3px solid var(--vilt);border-radius:0 3px 3px 0;
+    font-size:var(--schaal-s);max-width:44rem;
+  }
+  .bewijs .titel{
+    font-family:"IBM Plex Mono",monospace;font-size:var(--schaal-xs);
+    text-transform:uppercase;letter-spacing:.08em;color:var(--vilt);
+    font-weight:500;display:block;margin-bottom:.35rem;
+  }
+  .bewijs p{margin:0;font-variant-numeric:tabular-nums}
+  .bewijs p + p{margin-top:.4rem}
+
+  .tabelwrap{overflow-x:auto;margin:.95rem 0 0;max-width:44rem}
+  table{border-collapse:collapse;width:100%;font-size:var(--schaal-s)}
+  th,td{
+    text-align:left;padding:.42rem .8rem .42rem 0;
+    border-bottom:1px solid var(--lijn);vertical-align:top;
+  }
+  th{
+    font-family:"IBM Plex Mono",monospace;font-size:var(--schaal-xs);
+    text-transform:uppercase;letter-spacing:.06em;color:var(--gedempt);font-weight:500;
+  }
+  td.getal{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;white-space:nowrap}
+
+  /* ---------- afgerond ---------- */
+  .afgerond{margin-top:3.4rem;padding-top:1.4rem;border-top:1px solid var(--lijn)}
+  .afgerond ul{margin:1rem 0 0;padding-left:1.1rem;color:var(--gedempt);max-width:44rem}
+  .afgerond li{margin-bottom:.45rem}
+  .afgerond li b{color:var(--inkt);font-weight:600}
+
+  footer{
+    margin-top:3.4rem;padding-top:1.4rem;border-top:1px solid var(--lijn);
+    font-size:var(--schaal-s);color:var(--gedempt);
+  }
+
+  a{color:var(--vilt);text-decoration-thickness:1px;text-underline-offset:2px}
+  a:focus-visible{outline:2px solid var(--vilt);outline-offset:2px;border-radius:2px}
+
+  @media (max-width:640px){
+    .blad{padding:2.3rem 1.1rem 4rem}
+    h1{font-size:1.75rem}
+  }
+</style>
+
+<div class="blad">
+
+<header>
+  <span class="stempel">Poker Analytics Challenge · Introduction to Data Science · voor 2027–2028</span>
+  <h1>Wat er volgend jaar anders moet</h1>
+  <p class="lead">
+    Alles wat dit blok is blijven liggen of onderweg fout bleek, op één plek. Per punt staat
+    waar het zit, hoeveel werk het is, en — waar dat er is — het bewijs. Een paar punten zijn
+    geen taak maar een keuze die je moet maken; die staan er als vraag bij.
+  </p>
+  <div class="legenda">
+    <span><i class="merk m-fout">fout</i> klopt aantoonbaar niet</span>
+    <span><i class="merk m-gemeten">gemeten</i> met cijfers onderbouwd</span>
+    <span><i class="merk m-voorstel">voorstel</i> te doen, nog niet besloten</span>
+    <span><i class="merk m-keuze">keuze</i> jouw beslissing</span>
+  </div>
+</header>
+
+<!-- ============ A ============ -->
+<section>
+  <div class="sectiekop">
+    <h2>Toetsing en AI-bestendigheid</h2>
+    <span class="telling">5 punten</span>
+  </div>
+  <p class="sectie-intro">
+    De eindopdracht van 60% is al zo AI-bestendig als een toets kan zijn: de vragen komen uit
+    de eigen code van de student, en er wordt gescoord op hoeveel hulp hij nodig had. De
+    overige 40% observeert alleen het product.
+  </p>
+
+  <div class="item">
+    <div class="item-kop">
+      <h3>Een codemoment in de casepresentaties</h3>
+      <i class="merk m-voorstel">voorstel</i>
+    </div>
+    <p class="meta"><span>raakt <b>30% van het cijfer</b></span><span>kost <b>2 uur per case</b>, samen</span><span>geen nieuwe afspraak</span></p>
+    <p>
+      Een groep presenteert het dashboard en jij beoordeelt dat. Je ziet niet wie wat deed en
+      niet of iemand begrijpt wat er staat. Het live moment bestaat dus wel, maar het raakt de
+      code niet.
+    </p>
+    <p>
+      Verleng de zitting die er al is met vijf minuten: dashboard op het scherm, editor ernaast,
+      jij noemt een naam die niemand vooraf weet en pakt één regel uit hún code.
+      <em>“Ik maak hier <code>fillna(0)</code> van. Voorspel wat er met jullie correlatie
+      gebeurt.”</em> Draaien, uitleggen, score 0–3 op dezelfde ladder als de eindopdracht.
+      Twee van de vier studenten, ongekondigd — niemand weet of hij aan de beurt is, dus
+      iedereen moet het kunnen.
+    </p>
+    <div class="bewijs">
+      <span class="titel">Wat het kost</span>
+      <p>12 groepen × 10 minuten = 2 uur per case, samen met Edward in dezelfde zitting.
+      Voor alle drie de cases 6 uur over het blok.</p>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-kop">
+      <h3>De pokerbonus uitbetalen na een overhoring</h3>
+      <i class="merk m-voorstel">voorstel</i>
+    </div>
+    <p class="meta"><span>raakt <b>1,0 bonuspunt</b></span><span>kost <b>een half uur</b></span><span>maandag van week 6</span></p>
+    <p>
+      Nu krijgt een student punten voor wáár zijn bot eindigt. Nergens wordt gevraagd of hij
+      weet waarom die doet wat hij doet. Maak er één zin van: <em>punten uit het toernooi worden
+      uitgekeerd als je ze kunt verantwoorden.</em>
+    </p>
+    <p>
+      De snit is <b>niet “top 10”</b> maar <b>iedereen die punten scoort</b> — per definitie
+      hooguit tien mensen, en in de praktijk minder door overlap tussen de twee rondes. Dan is
+      er geen willekeur: je wordt bevraagd dan en slechts dan als je er iets voor krijgt.
+      <code>scripts/botkaarten.py --verwacht</code> levert het kaartje waarmee je aan tafel gaat.
+    </p>
+    <p>
+      Dit maakt de bonus niet AI-bestendig — een student kan bot én verhaal laten schrijven en
+      het daarna serieus bestuderen. Dat is geen falen van de toets; dat is iemand die het
+      geleerd heeft.
+    </p>
+  </div>
+
+  <div class="item">
+    <div class="item-kop">
+      <h3>Botkaarten uitdelen aan de hele klas</h3>
+      <i class="merk m-voorstel">voorstel</i>
+    </div>
+    <p class="meta"><span><code>scripts/botkaarten.py --map</code></span><span>kost <b>niets extra</b></span></p>
+    <p>
+      Het kaartje met wat je bot werkelijk deed is het leereffect; de overhoring is de controle
+      daarop. Eén run maakt ze voor alle 44, dus geef ze aan iedereen en overhoor alleen wie
+      punten scoort. Uitdelen aan het begin van Werkcollege 9, terwijl de rest aan de kaart werkt.
+    </p>
+  </div>
+
+  <div class="item">
+    <div class="item-kop">
+      <h3>De weging van 60% laten staan</h3>
+      <i class="merk m-gemeten">gemeten</i>
+    </div>
+    <p class="meta"><span>besloten in sep 2026</span><span>reden vastgelegd</span></p>
+    <p>
+      Het idee om de pokerlijn 10% te geven en de eindpresentatie naar 50% te brengen is
+      onderzocht en afgewezen. Twee redenen. De eindopdracht is het enige onderdeel dat nu al
+      doet wat je wil, en gewicht daarvan afhalen om een zwakker onderdeel te versterken is de
+      verkeerde kant op. En de bonusladder is niet stabiel genoeg om echt gewicht te dragen.
+    </p>
+    <div class="bewijs">
+      <span class="titel">Variantiemeting, 44 bots × 5 seeds</span>
+      <p>Bij 20 simulaties gaat 83% van de punten naar de betere helft — de ladder beloont
+      skill-<em>klasse</em>.</p>
+      <p>Maar bij twee onafhankelijke seeds overlapt de top 5 op gemiddeld <b>1,3 van de 5
+      namen</b>, en meer simuleren verandert dat niet.</p>
+      <p>Het verschil tussen naburige strategieën is ~120 chips; de ruis binnen één bot over
+      drie seeds loopt op tot <b>781</b>.</p>
+    </div>
+    <p>
+      Op een bonus van 1,0 is dat acceptabel. Op 10% van een cijfer geef je een tiende van het
+      cijfer voor de seed. Wil de pokerlijn ooit meetellen, dan kan dat niet op toernooiplek.
+    </p>
+  </div>
+
+  <div class="item">
+    <div class="item-kop">
+      <h3>Het schriftelijk tentamen toetst wat AI het goedkoopst maakt</h3>
+      <i class="merk m-keuze">keuze</i>
+    </div>
+    <p class="meta"><span>week 4, V/ONV</span><span>20 mc · 5 foutmeldingen · 10 code</span></p>
+    <p>
+      Een gesloten toets is AI-bestendig door de setting, maar deze toetst vooral syntaxkennis —
+      precies het deel dat een model triviaal maakt. En omdat hij V/ONV is, trekt hij weinig.
+      Het sterkste eraan zijn de foutmeldingsvragen, met name de drie die géén crash zijn maar
+      stil verkeerd gedrag; dat type overleeft wél.
+    </p>
+    <p><b>De vraag:</b> verschuif je het zwaartepunt naar foutmeldingen en voorspel-vragen, of
+    laat je de toets wat hij is omdat hij toch alleen een drempel vormt?</p>
+  </div>
+</section>
+
+<!-- ============ B ============ -->
+<section>
+  <div class="sectiekop">
+    <h2>Lesmateriaal</h2>
+    <span class="telling">6 punten</span>
+  </div>
+
+  <div class="item">
+    <div class="item-kop">
+      <h3>Geen enkel notebook noemt de referentiebots</h3>
+      <i class="merk m-fout">fout</i>
+    </div>
+    <p class="meta"><span>alle 9 notebooks</span><span><b>0 treffers</b> op “referentiebot”</span></p>
+    <p>
+      Backend, endpoints en testharnas staan er; de lesstof niet. De vijf bots spelen wél mee in
+      het toernooi van week 3, dus studenten zien vijf namen in hun uitslag die niemand heeft
+      uitgelegd.
+    </p>
+    <p>
+      Wat er moet: in Werkcollege 5 een introductie met de niveautabel en waar je op mag mikken,
+      en in Werkcollege 7 of 8 het moment waarop de code opengaat en studenten hun eigen
+      beslisregel naast een uitgeschreven regel leggen. Dat tweede is het punt van openbaar
+      maken; zonder dat is het alleen een naam in een ranglijst.
+    </p>
+  </div>
+
+  <div class="item">
+    <div class="item-kop">
+      <h3>“Vijf richtingen” zijn er zes</h3>
+      <i class="merk m-fout">fout</i>
+    </div>
+    <p class="meta"><span><code>Week3_Werkcollege4.ipynb</code>, Deel 7</span><span>vijf minuten werk</span></p>
+    <p>
+      De kop zegt vijf, de lijst telt er zes. De zesde (“Hoeveel je inzet”) is er waarschijnlijk
+      bij gekomen toen <code>grote_raise</code> werd toegevoegd, zonder dat de kop meeging. Het
+      deck van week 3 zegt inmiddels zes.
+    </p>
+  </div>
+
+  <div class="item">
+    <div class="item-kop">
+      <h3>Niet alleen H klopt met het Nederlandse woord — ook S</h3>
+      <i class="merk m-fout">fout</i>
+    </div>
+    <p class="meta"><span><code>Week3_Werkcollege4.ipynb</code>, Deel 2</span><span>één zin</span></p>
+    <p>
+      Bij de kleurtabel staat “Alleen <code>H</code> klopt met het Nederlandse woord”. Spades en
+      schoppen beginnen allebei met een S. Er kloppen er dus twee, en het zijn D en C die
+      afwijken — precies de twee die je door elkaar haalt. Het deck is al aangepast, het notebook
+      niet.
+    </p>
+  </div>
+
+  <div class="item">
+    <div class="item-kop">
+      <h3>Drie rubric-criteria worden nergens onderwezen</h3>
+      <i class="merk m-voorstel">voorstel</i>
+    </div>
+    <p class="meta"><span>Case 1 t/m 3</span><span>uit de audit</span></p>
+    <div class="tabelwrap">
+      <table>
+        <thead><tr><th>Criterium</th><th>Case</th><th>Waar het nu staat</th></tr></thead>
+        <tbody>
+          <tr><td>Algoritme en validatie</td><td>1</td><td>nergens — het case-template doet het voor met een regel <code>np.where</code></td></tr>
+          <tr><td>Data verkenning / opschonen</td><td>2 en 3</td><td>alleen in de oefenstof en de toets, geen eigen blok</td></tr>
+          <tr><td>Voorspellen (trend doortrekken)</td><td>3</td><td>nergens in de werkcolleges</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      Dat het template de lastigste stap voordoet is het scherpste punt: dan is er niets meer te
+      leren en alles om over te nemen.
+    </p>
+  </div>
+
+  <div class="item">
+    <div class="item-kop">
+      <h3>De oude toets vraagt om stof die er niet meer is</h3>
+      <i class="merk m-keuze">keuze</i>
+    </div>
+    <p class="meta"><span>Tentamen 1, drie versies</span><span>uit de vorige vakversie</span></p>
+    <p>
+      <code>describe</code>, <code>pd.cut</code> en <code>.agg</code> staan nog in de oude toets
+      en nergens in de cursus. Wie die drie wil toetsen, moet ze eerst ergens in WC3–WC6 laten
+      landen. <code>merge</code> en Streamlit zijn inmiddels wél gedekt, en de herkansing test
+      geodata.
+    </p>
+  </div>
+
+  <div class="item">
+    <div class="item-kop">
+      <h3>Vrije inzetbedragen als verdiepingsspoor</h3>
+      <i class="merk m-voorstel">voorstel</i>
+    </div>
+    <p class="meta"><span>uitgesteld in sep 2026</span><span>raakt de adapter en de validator</span></p>
+    <p>
+      Nu heeft een bot twee maten: <code>raise</code> (het minimum) en <code>grote_raise</code>
+      (200). Een echte keuze zou <code>("raise", bedrag)</code> zijn. Dat is bewust uitgesteld —
+      eerst moet dit blok goed lopen. Bij invoering: de validator moet het bedrag controleren en
+      de adapter het clampen, en de bestaande meting over sizing (Spearman 0,73 met sizing
+      alleen, 0,83 met de raise-cap van 2 erbij) is het vertrekpunt.
+    </p>
+  </div>
+</section>
+
+<!-- ============ C ============ -->
+<section>
+  <div class="sectiekop">
+    <h2>Techniek</h2>
+    <span class="telling">4 punten</span>
+  </div>
+
+  <div class="item">
+    <div class="item-kop">
+      <h3>Het hand-log bewaart maar één actie per hand</h3>
+      <i class="merk m-fout">fout</i>
+    </div>
+    <p class="meta"><span><code>api/poker_adapter.py</code></span><span>raakt WC8 en de botkaarten</span></p>
+    <p>
+      Per hand komt er één regel in het log, met de <b>eerste</b> actie en zonder straat. “Hoe
+      vaak foldde hij op de river” is er dus niet uit te halen — en dat is precies een vraag die
+      je bij een overhoring wil stellen.
+    </p>
+    <p>
+      De straatinformatie bestaat wel: <code>_acties_deze_hand</code> krijgt sinds deze week een
+      veld <code>ronde</code>, maar dat gaat naar de tegenstanders en niet naar het log. Elke
+      beslissing wegschrijven maakt het log flink dikker; dat is de afweging.
+    </p>
+  </div>
+
+  <div class="item">
+    <div class="item-kop">
+      <h3>Een setup-cel bovenaan elk notebook</h3>
+      <i class="merk m-voorstel">voorstel</i>
+    </div>
+    <p class="meta"><span>alle notebooks</span><span>lost het nbformat-probleem op</span></p>
+    <p>
+      <code>_hulpfuncties_week3.py</code> installeert nu zelf PyPokerEngine en nbformat, en praat
+      nbformat ook aan bij Plotly. Maar in Werkcollege 4 staan de Plotly-cellen op positie 36, 38
+      en 40 en wordt het hulpbestand pas op cel 45 geïmporteerd. Wie van boven naar beneden
+      werkt, loopt dus alsnog tegen de fout aan.
+    </p>
+    <div class="bewijs">
+      <span class="titel">Waarom installeren alleen niet helpt</span>
+      <p>Plotly bindt nbformat bij het importeren van <code>plotly.io._renderers</code>. Ontbrak
+      het pakket toen, dan staat daar <code>None</code> — en dat blijft zo, ook nadat pip het
+      heeft neergezet.</p>
+      <p>Gemeten in een lege omgeving: installeren midden in de sessie loste de fout <b>niet</b>
+      op; die verwijzing bijwerken wel, zonder kernel-herstart.</p>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-kop">
+      <h3>De oefenstof heeft geen generator</h3>
+      <i class="merk m-fout">fout</i>
+    </div>
+    <p class="meta"><span><code>Weekopbouw_toetsing.html</code> + <code>.docx</code></span><span>twee bestanden, nul koppeling</span></p>
+    <p>
+      De audit zegt dat deze stof “uit dezelfde bron gegenereerd” wordt. Die bron bestaat niet:
+      er is alleen de HTML en de docx, en niets houdt ze synchroon. Op dit moment is de HTML de
+      bron en wordt de docx er met pandoc uit gemaakt — maar dat is een afspraak in iemands
+      hoofd, geen mechaniek.
+    </p>
+    <p>
+      Dat is niet theoretisch. Vijf verwijzingen wezen na de herindeling naar het verkeerde
+      werkcollege, en één vraag was inhoudelijk fout geworden toen de raise-cap van 1 naar 2 ging.
+      Beide gevonden door het na te rekenen, niet door het te lezen.
+    </p>
+  </div>
+
+  <div class="item">
+    <div class="item-kop">
+      <h3>De bovengrens van de referentiebots is onbereikbaar</h3>
+      <i class="merk m-gemeten">gemeten</i>
+    </div>
+    <p class="meta"><span>Bluffer en Inzetgrootte</span><span>1e en 2e van 49</span></p>
+    <div class="tabelwrap">
+      <table>
+        <thead><tr><th>Bot</th><th>Niveau</th><th>Gemiddeld</th><th>Plek van 49</th></tr></thead>
+        <tbody>
+          <tr><td>Tafellezer</td><td class="getal">1</td><td class="getal">733</td><td class="getal">44e</td></tr>
+          <tr><td>PotOdds</td><td class="getal">1</td><td class="getal">877</td><td class="getal">37e</td></tr>
+          <tr><td>Allrounder</td><td class="getal">2</td><td class="getal">1090</td><td class="getal">14e</td></tr>
+          <tr><td>Bluffer</td><td class="getal">3</td><td class="getal">1585</td><td class="getal">2e</td></tr>
+          <tr><td>Inzetgrootte</td><td class="getal">3</td><td class="getal">1616</td><td class="getal">1e</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      Geen enkele simulatiestudent kwam boven de twee sterkste uit; de beste testbot haalde 1285.
+      Hun beschrijving zegt nu dat verslaan een stretchdoel is. Kijk volgend jaar met echte
+      inzendingen of dat klopt — de testbots waren simpele drempelbots, dus studenten met 4 tot 8
+      uur werk komen mogelijk hoger.
+    </p>
+  </div>
+</section>
+
+<!-- ============ D ============ -->
+<section>
+  <div class="sectiekop">
+    <h2>Rooster en organisatie</h2>
+    <span class="telling">3 punten</span>
+  </div>
+
+  <div class="item">
+    <div class="item-kop">
+      <h3>Het rooster heeft één IDS-slot, de weken hebben er twee lessen</h3>
+      <i class="merk m-fout">fout</i>
+    </div>
+    <p class="meta"><span>oneven blokweken</span><span>WC1, WC4 en WC7</span></p>
+    <p>
+      Volgens de notebooks staan Werkcollege 1, 4 en 7 op maandag (“dat komt maandag in
+      Werkcollege 3”, en WC3/6/9 heten letterlijk Visual Maandag). Het weekrooster kent maar één
+      IDS-slot: woensdag 13:40–15:20, en zegt over maandag “niet op de HvA, behalve 12:00–13:40
+      in een even week”. Eén van de twee klopt niet.
+    </p>
+    <p>
+      De weekbriefing meldt dit elke oneven week als MOET-punt zolang het niet is rechtgezet.
+      Uitzoeken welk van de twee het origineel is.
+    </p>
+  </div>
+
+  <div class="item">
+    <div class="item-kop">
+      <h3>Een verborgen Brightspace-topic verbergt het bestand niet</h3>
+      <i class="merk m-keuze">keuze</i>
+    </div>
+    <p class="meta"><span><code>/content/enforced/…</code></span><span>te testen met een studentaccount</span></p>
+    <p>
+      Availability dates hangen aan een topic, niet aan een bestand. Het notebook onder
+      <code>/content/enforced/</code> houdt zijn eigen URL, dus wie die uit een eerdere periode
+      nog heeft kan hem mogelijk blijven openen. Test dat één keer met een studentaccount voordat
+      je materiaal alvast klaarzet — en verberg tot die tijd niets waarvan het uitmaakt.
+    </p>
+  </div>
+
+  <div class="item">
+    <div class="item-kop">
+      <h3>Het DataCamp-rooster herzien</h3>
+      <i class="merk m-voorstel">voorstel</i>
+    </div>
+    <p class="meta"><span><code>api/datacamp_rooster.py</code></span><span>uitgesteld naar volgend semester</span></p>
+    <p>
+      De voorgestelde wijzigingen staan al in de commentaren van dat bestand: Seaborn afstemmen
+      met de VA-kant (het Titanic-template vraagt er expliciet om), en Working with Categorical
+      Data hoort bij geen enkel werkcollege. Beslis dat vóór het blok begint, niet erin.
+    </p>
+  </div>
+</section>
+
+<!-- ============ dit jaar al gedaan ============ -->
+<div class="afgerond">
+  <h2>Dit jaar al opgelost — niet opnieuw doen</h2>
+  <ul>
+    <li><b>Het hand-log loog.</b> <code>eerste_actie or "fold"</code> gaf ook fold aan bots die niet aan zet kwamen; 5% van de fold-regels had positieve winst. Nu met <code>actie=None</code>, <code>aan_zet</code> en <code>uitgespeeld</code>.</li>
+    <li><b>De winkans rekende kop-op-kop</b> terwijl de les hem naast de prijs aan een tafel van zes legde. <code>schat_winkans</code> heeft nu <code>tegenstanders</code>, en WC4 Deel 5 en 6 zijn herzien.</li>
+    <li><b>Tafels van zeven.</b> Een restgroep van één bot werd bij de vorige tafel geplakt — bij 49 bots geen hypothetisch geval.</li>
+    <li><b>De tegenstander-acties hadden geen straat.</b> 17% van de beslissingen zag een raise van een eerdere straat aan voor een actuele.</li>
+    <li><b>WC8 Deel 1 wisselde botbestanden uit</b> in de week waarin de bonuspunten vallen. Nu via <code>/bot-test/</code>, net als WC5.</li>
+    <li><b>Werkcollege 9 keek naar het verkeerde toernooi.</b> <code>/locaties</code> kende de ronde niet en gaf altijd de woensdagstand.</li>
+    <li><b>Het raise-bedrag in WC4 was fout</b> (small blind in plaats van big blind), inclusief de bijbehorende controlevraag.</li>
+  </ul>
+</div>
+
+<footer>
+  Opgesteld 15 september 2026, tijdens blok 1 van 2026–2027. De gemeten cijfers komen uit
+  <code>scripts/meet_toernooi_variantie.py</code>, <code>scripts/test_referentiebots.py</code> en
+  de curriculum-audit. Punten zonder merkteken “gemeten” zijn waarnemingen, geen metingen.
+</footer>
+
+</div>
