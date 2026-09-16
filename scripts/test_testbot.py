@@ -1,5 +1,5 @@
 """
-Doet de ijkbot mee, callt hij alles, en blijft hij van de bonus af?
+Doet de testbot mee, callt hij alles, en blijft hij van de bonus af?
 
 De laatste vraag is de belangrijkste: hij speelt echt mee en beinvloedt de chips
 aan tafel, maar hij mag geen enkele student een bonuspunt kosten.
@@ -10,7 +10,7 @@ import sys
 import tempfile
 
 WORTEL = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-WERKMAP = tempfile.mkdtemp(prefix="ijkbottest_")
+WERKMAP = tempfile.mkdtemp(prefix="testbottest_")
 
 TOKENS = {f"5000000{i:02d}": f"token{i}" for i in range(8)}
 os.environ.pop("DATABASE_URL", None)
@@ -22,7 +22,7 @@ sys.path.insert(0, os.path.join(WORTEL, "api"))
 import database as db
 from bonus_rooster import puntenverdeling
 from poker_adapter import speel_toernooi
-from toernooi_runner import IJKBOTS, OEFENBOTS
+from toernooi_runner import TESTBOTS, OEFENBOTS
 
 geslaagd, gezakt = 0, []
 
@@ -37,9 +37,9 @@ def check(naam, voorwaarde, detail=""):
         print(f"  FOUT {naam}  {detail}")
 
 
-print("\n--- Er is precies één ijkbot, en die callt ---")
-check("precies één ijkbot", len(IJKBOTS) == 1, sorted(IJKBOTS))
-naam, functie = next(iter(IJKBOTS.items()))
+print("\n--- Er is precies één testbot, en die callt ---")
+check("precies één testbot", len(TESTBOTS) == 1, sorted(TESTBOTS))
+naam, functie = next(iter(TESTBOTS.items()))
 check("zijn naam zegt wat hij doet", "callt" in naam.lower(), naam)
 antwoorden = {functie(hand) for hand in (["A", "A"], ["7", "2"], ["K", "3"], ["10", "10"])}
 check("hij callt ongeacht zijn kaarten", antwoorden == {"call"}, antwoorden)
@@ -61,14 +61,14 @@ check("en kiest alleen call", acties == {"call"}, acties)
 check("zijn eindstand staat in de uitslag", naam in uit["eindstand_per_bot"], "")
 
 print("\n--- Maar hij pakt geen bonuspunten af ---")
-# namen_deelnemers bevat alleen de studenten; de ijkbot hoort er niet in.
+# namen_deelnemers bevat alleen de studenten; de testbot hoort er niet in.
 toernooi = {
     "eindstand_per_bot": {**uit["eindstand_per_bot"], naam: 9999},
     "namen_deelnemers": [b for b in bots if b != naam],
     "startstacks": None,
 }
 verdeling = puntenverdeling(toernooi)
-check("de ijkbot komt niet in de puntenverdeling voor", naam not in verdeling, sorted(verdeling))
+check("de testbot komt niet in de puntenverdeling voor", naam not in verdeling, sorted(verdeling))
 check("alle punten gaan naar studenten",
       set(verdeling) <= {b for b in bots if b != naam}, sorted(verdeling))
 check("en er wordt wél uitgekeerd",
