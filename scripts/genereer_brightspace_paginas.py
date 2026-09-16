@@ -134,9 +134,10 @@ WEKEN = [
             ("woensdag 09:00", "een werkende Bot v2"),
             ("donderdag 18:00", "verbeterde Bot v2, plus: je groep heeft het onderwerp van Case 2 vastgelegd"),
         ],
-        "let_op": "Vanaf deze week spelen er vijf referentiebots mee in het toernooi. Die "
-                  "veranderen nooit en kunnen geen bonuspunten pakken; ze staan er zodat je "
-                  "kunt zien of je bot beter wordt en niet alleen of de klas verandert.",
+        "let_op": "In het toernooi speelt <code>Testbot_CalltAlles</code> mee: een bot die "
+                  "altijd callt, nooit naar zijn kaarten kijkt en geen bonuspunten kan pakken. "
+                  "Hij staat er als ondergrens. Verlies je van hem, dan ligt dat niet aan de "
+                  "kaarten maar aan je drempels.",
     },
     {
         "week": 4,
