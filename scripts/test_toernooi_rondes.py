@@ -106,6 +106,31 @@ check(
     "een ronde die nog niet gedraaid is meldt dat netjes",
 )
 
+# --- buiten de bonusweek begint elke ronde schoon ---
+# Doorspelen is de mechaniek van week 5: daar bepaalt je woensdag-inzending
+# waarmee je donderdag aan tafel gaat. In week 3 is een tweede ronde gewoon een
+# tweede poging -- opnieuw draaien omdat er bots bij zijn gekomen, bijvoorbeeld --
+# en dan moet iedereen weer op 1000 staan. Anders meet ronde 2 vooral ronde 1 nog
+# een keer en zijn de twee standen niet met elkaar te vergelijken.
+w3_ronde1 = draai_toernooi(3, n_simulaties=2, n_handen=20, ronde=1)
+w3_ronde2 = draai_toernooi(3, n_simulaties=2, n_handen=20, ronde=2)
+
+check(w3_ronde2["startstacks"] is None, "week 3 ronde 2 krijgt geen startstacks mee")
+check(
+    all(abs(stand - STANDAARD_INITIAL_STACK) < 1e-6
+        for stand in bereken_startstacks(w3_ronde1["eindstand_per_bot"]).values()) is False,
+    "en dat is niet omdat de eindstand van ronde 1 toevallig overal 1000 was",
+)
+check(
+    abs(sum(w3_ronde2["eindstand_per_bot"].values())
+        - STANDAARD_INITIAL_STACK * len(w3_ronde2["eindstand_per_bot"])) < 1e-6,
+    "de chips in week 3 ronde 2 tellen op tot 1000 per bot",
+)
+check(
+    haal_gecacht_resultaat_op(3, ronde=1)["eindstand_per_bot"] == w3_ronde1["eindstand_per_bot"],
+    "en ronde 1 van week 3 blijft gewoon naast ronde 2 staan",
+)
+
 chips_in = sum(ronde2["startstacks"].values())
 chips_uit = sum(ronde2["eindstand_per_bot"].values())
 check(

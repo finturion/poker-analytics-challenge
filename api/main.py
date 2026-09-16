@@ -304,8 +304,11 @@ def toernooi(
     zodat je eigen oude en nieuwe bot naast elkaar in dezelfde uitslag staan.
 
     Met `ronde` draai je meerdere toernooien in dezelfde week zonder dat ze
-    elkaars uitslag overschrijven. Ronde 1 is de woensdag-run; vanaf ronde 2
-    speelt iedereen door met de chips uit de vorige ronde + 1000 erbij.
+    elkaars uitslag overschrijven. Ronde 1 is de woensdag-run.
+
+    Alleen in de bonusweek speelt iedereen vanaf ronde 2 door met de chips uit de
+    vorige ronde + 1000 erbij. In de andere weken begint elke ronde schoon op
+    1000, zodat twee rondes van dezelfde week onderling te vergelijken zijn.
 
     `formatief=true` draait een repetitie van die ronde: dezelfde startstacks,
     maar met de bots van dit moment, en weggeschreven onder een eigen sleutel.

@@ -126,6 +126,16 @@ def _verzamel_bots_over_weken(hoofdweek, vergelijk_met_week=None):
 STANDAARD_N_SIMULATIES = 5
 N_SIMULATIES_BONUSWEEK = 20
 
+# In welke weken de bots met hun verdiende chips doorspelen naar de volgende ronde.
+#
+# Doorspelen is een bonusweek-mechaniek en geen eigenschap van rondes: het bestaat
+# omdat je woensdag-inzending bepaalt waarmee je donderdag aan tafel gaat, en dat
+# telt alleen daar voor punten. In de andere weken is een tweede ronde gewoon een
+# tweede poging -- je herstelt een fout, of je draait opnieuw omdat er bots bij
+# zijn gekomen -- en dan wil je iedereen weer op 1000 hebben. Anders meet ronde 2
+# vooral ronde 1 nog een keer, en zijn de standen onderling niet te vergelijken.
+WEKEN_MET_DOORSPELEN = (BONUSWEEK,)
+
 
 def n_simulaties_voor(week):
     """
@@ -191,12 +201,15 @@ def _startstacks_uit_vorige_ronde(week, vergelijk_met_week, ronde):
     cache staat -- dan begint iedereen gewoon weer op de standaardstack, wat
     het oude gedrag is.
 
+    Retourneert ook None in weken die niet doorspelen (zie WEKEN_MET_DOORSPELEN):
+    daar begint elke ronde schoon op 1000.
+
     Er wordt altijd naar de échte vorige ronde gekeken, nooit naar een
     formatieve run. Daardoor krijgt de formatieve repetitie van een ronde
     precies dezelfde startstacks als die ronde zelf, en kan een oefenronde de
     uitslag die meetelt niet verschuiven.
     """
-    if ronde <= 1:
+    if ronde <= 1 or week not in WEKEN_MET_DOORSPELEN:
         return None
     vorige = db.laad_toernooi_resultaat(cache_sleutel(week, vergelijk_met_week, ronde - 1))
     if not vorige or not vorige.get("eindstand_per_bot"):
@@ -234,11 +247,14 @@ def draai_toernooi(
     niet kunnen weten of zijn aanpassing hielp of dat hij gewoon betere kaarten
     kreeg.
 
-    Vanaf ronde 2 spelen de bots door met wat ze verdiend hebben: hun stack is
-    de eindstand van de vorige ronde + 1000 voor iedereen. Wie op woensdag niet
+    In de bonusweek spelen de bots vanaf ronde 2 door met wat ze verdiend hebben:
+    hun stack is de eindstand van de vorige ronde + 1000 voor iedereen. Wie op woensdag niet
     (of met een niks-doende bot) meedeed, begint dus achter op wie dat wel deed.
     De bot zelf mag tussen de rondes wél vernieuwd zijn -- er wordt altijd de
     nieuwste goedgekeurde inzending gebruikt; alleen de chips zijn erfelijk.
+
+    In alle andere weken begint elke ronde schoon: iedereen op 1000. Daar is een
+    tweede ronde een tweede poging, geen vervolg.
 
     Retourneert:
         {
