@@ -24,6 +24,9 @@ import sys
 import numpy as np
 import pandas as pd
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from toernooicijfers import RANDEN
+
 STARTSTACK = 1000
 
 
@@ -73,7 +76,7 @@ def blok1(df):
 
 def blok2(df):
     print("\n2 · DE VERDELING")
-    randen = [-10_000, -200, -100, -50, -20, -1, 0, 20, 50, 100, 200, 10_000]
+    randen = RANDEN
     tellingen, _ = np.histogram(df["winst"], bins=randen)
     breedste = max(tellingen.max(), 1)
     for n, links, rechts in zip(tellingen, randen[:-1], randen[1:]):
