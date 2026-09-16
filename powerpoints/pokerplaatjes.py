@@ -315,16 +315,18 @@ def plaat_flowchart(map_):
             linewidth=0.9, linestyle=(0, (2, 2)), zorder=2,
             connectionstyle="arc3,rad=0.12"))
 
-    vak = FancyBboxPatch((3.1, -0.35), 6.0, 1.2,
+    vak = FancyBboxPatch((2.7, -0.55), 6.8, 1.45,
                          boxstyle="round,pad=0.05,rounding_size=0.12",
                          facecolor="white", edgecolor=PRIMAIR, linewidth=1.6, zorder=3)
     ax.add_patch(vak)
-    ax.text(6.1, 0.55, "kies_actie krijgt:", fontsize=10, fontweight="bold",
+    ax.text(6.1, 0.66, "kies_actie krijgt:", fontsize=10, fontweight="bold",
             ha="center", color=PRIMAIR, zorder=4)
-    ax.text(6.1, 0.12, "hand · stack · ronde · pot · inzet_om_te_callen",
+    ax.text(6.1, 0.27, "hand = je 2 hole cards", fontsize=9.5, fontweight="bold",
+            ha="center", color=ROOD, zorder=4)
+    ax.text(6.1, -0.13, "stack · ronde · pot · inzet_om_te_callen",
             fontsize=9, ha="center", color=ACCENT, zorder=4)
 
-    ax.add_patch(FancyArrowPatch((6.1, -0.35), (6.1, -1.05), arrowstyle="-|>",
+    ax.add_patch(FancyArrowPatch((6.1, -0.55), (6.1, -1.05), arrowstyle="-|>",
                                  mutation_scale=11, color=PRIMAIR, linewidth=1.3, zorder=2))
     vak = FancyBboxPatch((2.9, -2.3), 6.4, 1.0,
                          boxstyle="round,pad=0.05,rounding_size=0.12",
@@ -334,8 +336,8 @@ def plaat_flowchart(map_):
     ax.text(6.1, -1.95, "fold · call · raise · grote_raise · all_in",
             fontsize=10.5, fontweight="bold", ha="center", color=PRIMAIR, zorder=4)
 
-    ax.text(6.4, -2.75, "Je kies_actie wordt vier keer per hand aangeroepen — "
-                        "een keer per straat, elke keer met een andere ronde.",
+    ax.text(6.4, -2.75, "Vier keer per hand, elke keer met een andere ronde en pot — "
+                        "maar altijd met dezelfde twee kaarten. Het bord krijg je niet.",
             fontsize=9.5, color=PRIMAIR, ha="center", style="italic")
     return bewaar(fig, map_, "flowchart")
 
