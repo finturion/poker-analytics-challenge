@@ -201,15 +201,29 @@ def _volledig_deck():
     return [Card(kleur, rang) for kleur in _KLEUREN for rang in range(2, 15)]
 
 
-def schat_winkans(hand, simulaties=1000, seed=None, tegenstanders=1):
+def schat_winkans(hand, simulaties=1000, seed=None, tegenstanders=1, bord=None):
     """
-    Monte Carlo-schatting van je winkans preflop: hoeveel procent van de tijd
-    wint `hand`, over `simulaties` volledig uitgespeelde (willekeurige) borden?
+    Monte Carlo-schatting van je winkans: hoeveel procent van de tijd wint
+    `hand`, over `simulaties` uitgespeelde borden?
 
     hand: lijst met 2 kaartWAARDEN, zoals overal in de cursus (bv. ["A", "K"]).
-    De kleur van je eigen kaarten maakt voor de winkans niet uit en wordt
-    willekeurig gekozen; PyPokerEngine's eigen hand-evaluatie (dus inclusief
-    flush/straat) bepaalt per simulatie wie wint.
+    De kleur van je eigen kaarten maakt preflop voor de winkans niet uit en
+    wordt willekeurig gekozen; PyPokerEngine's eigen hand-evaluatie (dus
+    inclusief flush/straat) bepaalt per simulatie wie wint.
+
+    MET EEN BORD ERBIJ (vanaf Week 5)
+    ---------------------------------
+    Geef `bord` mee zodra er kaarten op tafel liggen, dan rekent hij niet meer
+    met een willekeurig bord maar met dat van jou -- de ontbrekende kaarten
+    worden eromheen gedeeld:
+
+        schat_winkans(["SA", "HA"], bord=["DA", "C7", "S2"], tegenstanders=3)
+
+    Dan moet `hand` wél kleuren hebben, in dezelfde notatie als `bord` en als
+    beschrijf_hand(): "SA" is schoppenaas, "CT" is klaveren tien. Zonder kleur
+    kan niemand zien of jij aan een flush werkt, en dan is een winkans mét bord
+    een slechtere schatting dan een zonder. Daarom weigert hij dat combinatie
+    in plaats van stilletjes iets uit te rekenen wat niet klopt.
 
     TEGENSTANDERS IS HET BELANGRIJKSTE ARGUMENT
     -------------------------------------------
@@ -243,27 +257,56 @@ def schat_winkans(hand, simulaties=1000, seed=None, tegenstanders=1):
     if tegenstanders < 1:
         raise ValueError("tegenstanders moet minstens 1 zijn")
 
+    bord = list(bord or [])
+    if len(bord) > 5:
+        raise ValueError(f"Een bord heeft hoogstens 5 kaarten, je gaf er {len(bord)}.")
+
+    heeft_kleur = all(len(str(k)) >= 2 and str(k)[0] in "SHDC" for k in hand)
+    if bord and not heeft_kleur:
+        raise ValueError(
+            "Met een bord erbij moet `hand` kleuren hebben, net als `bord`: "
+            'bv. schat_winkans(["SA", "HA"], bord=["DA", "C7", "S2"]). '
+            "Zonder kleur kun je geen flush herkennen, en dan is de schatting "
+            "slechter dan die zonder bord."
+        )
+
+    vast_bord = gen_cards(bord) if bord else []
+    vaste_hole = gen_cards(hand) if heeft_kleur else None
+    if vaste_hole is not None:
+        dubbel = {str(k) for k in vaste_hole} & {str(k) for k in vast_bord}
+        if dubbel:
+            raise ValueError(f"Deze kaart ligt al op tafel: {', '.join(sorted(dubbel))}")
+
     rng = random.Random(seed)
     overwinningen = 0.0
     for _ in range(simulaties):
         deck = _volledig_deck()
         rng.shuffle(deck)
 
-        gebruikt = []
-        eigen_hole = []
-        for rang in hand:
-            kandidaten = [k for k in deck if k.rank == _RANG_NAAR_GETAL[rang] and k not in gebruikt]
-            gekozen = rng.choice(kandidaten)
-            eigen_hole.append(gekozen)
-            gebruikt.append(gekozen)
+        if vaste_hole is not None:
+            # Kleuren staan vast: neem precies deze kaarten uit het deck.
+            bekend = {str(k) for k in vaste_hole} | {str(k) for k in vast_bord}
+            eigen_hole = list(vaste_hole)
+            gebruikt = [k for k in deck if str(k) in bekend]
+        else:
+            gebruikt, eigen_hole = [], []
+            for rang in hand:
+                kandidaten = [k for k in deck
+                              if k.rank == _RANG_NAAR_GETAL[rang] and k not in gebruikt]
+                gekozen = rng.choice(kandidaten)
+                eigen_hole.append(gekozen)
+                gebruikt.append(gekozen)
 
         resterend = [k for k in deck if k not in gebruikt]
         rng.shuffle(resterend)
         handen_tegen = [resterend[2 * i:2 * i + 2] for i in range(tegenstanders)]
-        bord = resterend[2 * tegenstanders:2 * tegenstanders + 5]
+        # Het bekende deel van het bord staat vast; de rest wordt eromheen gedeeld.
+        nog_te_delen = 5 - len(vast_bord)
+        volledig_bord = list(vast_bord) + resterend[
+            2 * tegenstanders:2 * tegenstanders + nog_te_delen]
 
-        mijn_sterkte = HandEvaluator.eval_hand(eigen_hole, bord)
-        sterktes_tegen = [HandEvaluator.eval_hand(h, bord) for h in handen_tegen]
+        mijn_sterkte = HandEvaluator.eval_hand(eigen_hole, volledig_bord)
+        sterktes_tegen = [HandEvaluator.eval_hand(h, volledig_bord) for h in handen_tegen]
         beste_tegen = max(sterktes_tegen)
 
         if mijn_sterkte > beste_tegen:

@@ -11,6 +11,7 @@ import database as db
 from bonus_rooster import BONUSWEEK
 from referentiebots import referentiebots_voor
 from poker_adapter import bereken_startstacks, speel_toernooi
+from winkans import schat_winkans
 
 # Reservebots vullen de tafel aan als er nog te weinig geldige inzendingen zijn
 # (bv. vroeg in de week, of tijdens het uitproberen van deze API). Ze spelen
@@ -22,8 +23,16 @@ OEFENBOTS = {
 
 
 def _laad_kies_actie(bot_code):
-    """Voert de ingeleverde bot-code uit en pakt de kies_actie-functie eruit."""
-    namespace = {}
+    """
+    Voert de ingeleverde bot-code uit en pakt de kies_actie-functie eruit.
+
+    `schat_winkans` staat klaar in de naamruimte, zodat een bot hem kan
+    aanroepen zonder te importeren. Importeren zou ook niet kunnen: het
+    hulpbestand van het notebook staat niet op de server, en `sys` staat op de
+    verbodenlijst. bot_validator zet dezelfde naam klaar in zijn testproces,
+    zodat de validatie niet strenger is dan het spel.
+    """
+    namespace = {"schat_winkans": schat_winkans}
     try:
         exec(bot_code, namespace)
     except Exception:

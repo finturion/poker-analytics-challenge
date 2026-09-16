@@ -8,6 +8,7 @@ een apart subprocess met een timeout en zonder netwerktoegang.
 """
 import ast
 import json
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -35,6 +36,15 @@ BLUF_KANS_MIN, BLUF_KANS_MAX = 0.0, 1.0
 # één vaste invoer, maar met een klein setje representatieve situaties). Zo
 # vinden we bugs die alleen bij een zwakke hand of een lage stack optreden.
 _TEST_HANDEN = [["A", "K"], ["7", "2"], ["Q", "Q"]]
+# Dezelfde handen mét kleur, voor bots die `hand_met_kleur` en `bord` gebruiken.
+# Bewust geen enkele kaart die ook in _TEST_RONDE_SCENARIOS op het bord ligt:
+# een kaart die twee keer bestaat laat schat_winkans terecht struikelen, en dan
+# zou de validator een bot afkeuren om een fout die de validator zelf maakte.
+_MET_KLEUR = {
+    ("A", "K"): ["SA", "HK"],
+    ("7", "2"): ["S7", "H2"],
+    ("Q", "Q"): ["SQ", "HQ"],
+}
 _TEST_STACKS = [1000, 50]
 
 # Per week ligt vast welke functienaam de bot moet aanbieden, en welke extra
@@ -133,21 +143,37 @@ def _valideer_strategie_en_bluf_kans(config: dict, strategie, bluf_kans) -> str 
     return None
 
 
-_RONDE_PARAMETERS = {"ronde", "pot", "inzet_om_te_callen", "tegenstander_acties_deze_hand"}
+# De broncode van winkans.py, om in het testproces in te plakken. Eén keer
+# inlezen bij het opstarten: hij verandert niet tijdens het draaien.
+with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "winkans.py"),
+          encoding="utf-8") as _bestand:
+    _WINKANS_BRON = _bestand.read()
+
+
+_RONDE_PARAMETERS = {"ronde", "pot", "inzet_om_te_callen", "tegenstander_acties_deze_hand",
+                     "bord", "hand_met_kleur"}
 # Representatieve situaties op elke straat, om te checken dat een bot die
 # ronde/pot/inzet_om_te_callen/tegenstander_acties_deze_hand gebruikt, in elke
 # fase van de hand een herkenbare actie teruggeeft (niet alleen preflop, waar
 # de meeste bots het eerst getest worden) -- inclusief een variatie in wat
 # tegenstanders deze hand al gedaan hebben, want dat is precies waar een bot
 # die daarop reageert onderuit kan gaan (bv. een lege lijst niet aankunnen).
+#
+# `bord` staat er sinds Week 5 bij, en het PREFLOP-scenario met een lege lijst
+# is het belangrijkste van de drie. Een bot die schat_winkans met een bord
+# aanroept, moet zelf afvangen dat er preflop nog geen bord is -- doet hij dat
+# niet, dan crasht hij op elke eerste beslissing van elke hand, en een crash is
+# een fold. Zonder dit scenario zou zo'n bot de validatie halen en daarna elke
+# hand weggooien.
 _TEST_RONDE_SCENARIOS = [
-    {"ronde": "preflop", "pot": 30, "inzet_om_te_callen": 10, "tegenstander_acties_deze_hand": []},
+    {"ronde": "preflop", "pot": 30, "inzet_om_te_callen": 10, "tegenstander_acties_deze_hand": [],
+     "bord": []},
     {"ronde": "flop", "pot": 120, "inzet_om_te_callen": 0, "tegenstander_acties_deze_hand": [
         {"bot_naam": "TestBot", "actie": "call", "bedrag": 20},
-    ]},
+    ], "bord": ["D4", "C9", "HT"]},
     {"ronde": "river", "pot": 400, "inzet_om_te_callen": 200, "tegenstander_acties_deze_hand": [
         {"bot_naam": "TestBot", "actie": "raise", "bedrag": 200},
-    ]},
+    ], "bord": ["D4", "C9", "HT", "S3", "C6"]},
 ]
 
 
@@ -172,6 +198,12 @@ def _bouw_testgevallen(config: dict, strategie, bluf_kans, parameternamen: set[s
             continue
         for stack in _TEST_STACKS:
             basis = {"hand": hand, "stack": stack}
+            # Alleen meegeven als de student hem zelf in zijn signatuur heeft
+            # gezet -- net als ronde/pot/bord. Stond dit er onvoorwaardelijk,
+            # dan kreeg ELKE bestaande bot een TypeError op een argument dat hij
+            # nooit gevraagd heeft.
+            if "hand_met_kleur" in parameternamen:
+                basis["hand_met_kleur"] = _MET_KLEUR[tuple(hand)]
             if config["heeft_strategie"]:
                 basis["strategie"] = strategie
             if config["heeft_bluf_kans"]:
@@ -208,11 +240,22 @@ def _draai_in_apart_proces(code: str, functienaam: str, testgevallen: list[dict]
     # Let op: het studentbestand (`code`) heeft zijn eigen, willekeurige inspringing.
     # Die mag NIET door textwrap.dedent worden aangeraakt -- daarom blijft `code`
     # ongewijzigd op kolom 0 staan, los van de rest.
-    runner_script = "import json\n\n" + code + "\n\n" + footer
+    # schat_winkans staat klaar vóór de studentcode, precies zoals
+    # toernooi_runner._laad_kies_actie hem in de naamruimte zet. Zonder dit zou
+    # een bot die hem gebruikt hier stukgaan en in het toernooi werken -- of
+    # andersom, en dat is erger: dan keurt de validatie iets goed dat het niet doet.
+    #
+    # De bron wordt INGEPLAKT en niet geimporteerd. `python -I` haalt de map van
+    # het script zelf uit sys.path, dus winkans.py ernaast zetten werkt niet, en
+    # sys.path aanpassen zou `sys` in de naamruimte van de student leggen --
+    # precies wat de verbodenlijst tegenhoudt. Inplakken houdt de isolatie heel.
+    runner_script = ("import json\n\n" + _WINKANS_BRON + "\n\n"
+                     + code + "\n\n" + footer)
 
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
+    werkmap = tempfile.mkdtemp(prefix="botcheck_")
+    tijdelijk_pad = os.path.join(werkmap, "bot_runner.py")
+    with open(tijdelijk_pad, "w") as f:
         f.write(runner_script)
-        tijdelijk_pad = f.name
 
     try:
         proces = subprocess.run(
@@ -224,7 +267,7 @@ def _draai_in_apart_proces(code: str, functienaam: str, testgevallen: list[dict]
     except subprocess.TimeoutExpired:
         return None, f"Je bot-code draaide langer dan {TIMEOUT_SECONDS} seconden (oneindige loop?)."
     finally:
-        os.remove(tijdelijk_pad)
+        shutil.rmtree(werkmap, ignore_errors=True)
 
     if proces.returncode != 0 or MARKER not in proces.stdout:
         foutregel = proces.stderr.strip().splitlines()[-1] if proces.stderr.strip() else "Onbekende fout."

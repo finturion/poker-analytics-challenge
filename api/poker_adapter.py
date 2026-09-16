@@ -110,7 +110,7 @@ def _ondersteunt_all_in_regels(kies_actie):
 
 def roep_student_bot_aan(
     kies_actie, hand, stack, strategie, bluf_kans, ronde=None, pot=None, inzet_om_te_callen=None,
-    tegenstander_acties_deze_hand=None,
+    tegenstander_acties_deze_hand=None, bord=None, hand_met_kleur=None,
 ):
     """
     Roept de functie van de student aan met alleen de argumenten die hij
@@ -128,6 +128,15 @@ def roep_student_bot_aan(
         "pot": pot,
         "inzet_om_te_callen": inzet_om_te_callen,
         "tegenstander_acties_deze_hand": tegenstander_acties_deze_hand,
+        # De kaarten op tafel, en je eigen twee MET kleur. Twee aparte namen, en
+        # `hand` blijft precies wat hij was -- twee rangen zonder kleur. Anders
+        # zou elke bot uit Week 1 en 3 breken die `hand[0] == hand[1]` doet of
+        # een rang in een verzameling opzoekt.
+        #
+        # Ze horen bij elkaar: een winkans mét bord kan alleen als je ook je
+        # eigen kleuren kent, want zonder kleur is een flush niet te zien.
+        "bord": bord,
+        "hand_met_kleur": hand_met_kleur,
     }
     try:
         parameters = inspect.signature(kies_actie).parameters
@@ -180,6 +189,11 @@ class StudentBotSpeler(BasePokerPlayer):
             self._kies_actie, hand, eigen_stack, self._strategie, self._bluf_kans,
             ronde=ronde, pot=pot, inzet_om_te_callen=inzet_om_te_callen,
             tegenstander_acties_deze_hand=list(self._acties_deze_hand),
+            # In de notatie van de engine en van beschrijf_hand(): "SA", "CT".
+            # Preflop is dit een lege lijst, niet None -- dan hoeft een bot geen
+            # onderscheid te maken tussen "nog geen bord" en "geen bord gekregen".
+            bord=list(round_state.get("community_card") or []),
+            hand_met_kleur=list(hole_card),
         )
         # Een grote raise telt voor de cap net zo hard als een gewone: anders zou je
         # met "grote_raise" onbeperkt kunnen blijven verhogen.
