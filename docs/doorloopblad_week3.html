@@ -1,14 +1,3 @@
-<!--
-  Doorloopblad Week 3 -- bron van het gepubliceerde artifact.
-
-  Gepubliceerd op: https://claude.ai/code/artifact/9753106d-cd84-4e96-8b8e-5dfb41776c1b
-
-  De cijfers komen uit scripts/collegecijfers.py. Nieuw toernooi gedraaid?
-  Draai dat script en vervang de getallen in blok 1 t/m 4 en in de voet.
-
-  Dit bestand is de inhoud ZONDER de <!doctype>/<html>/<head>/<body>-skeleton:
-  die wordt bij publiceren toegevoegd.
--->
 <title>Doorloopblad Week 3</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,600;7..72,700&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -166,25 +155,25 @@ df["winst"] = df.groupby(["bot_naam", "simulatie", "tafel"])["stack"].diff().fil
       <tbody>
         <tr><td>gemiddelde</td><td class="g">0,0</td><td>nulsom: wat de een wint, verliest de ander</td></tr>
         <tr><td>mediaan</td><td class="g">0,0</td><td>de meeste handen gebeurt er niets</td></tr>
-        <tr><td>std</td><td class="g">32</td><td></td></tr>
-        <tr><td>laagste / hoogste</td><td class="g">−1000 / +1010</td><td>iemand verloor zijn hele stack in één hand</td></tr>
+        <tr><td>std</td><td class="g">39</td><td></td></tr>
+        <tr><td>laagste / hoogste</td><td class="g">−1030 / +1750</td><td>iemand verloor zijn hele stack in één hand</td></tr>
       </tbody>
     </table>
     <p class="uit" style="margin-top:.2cm"><span class="vraag">Vraag aan de zaal:</span> gemiddelde nul,
-    mediaan nul, std 32. Maar in één hand ging er 1000 om. <b>Wat zeggen die drie getallen dan eigenlijk?</b></p>
+    mediaan nul, std 39. Maar in één hand ging er 1750 om. <b>Wat zeggen die drie getallen dan eigenlijk?</b></p>
   </div>
 
   <div class="blok">
     <h2>2 · En dat zie je in het histogram</h2>
     <div class="code">df["winst"].hist(bins=40)</div>
-    <div class="staaf"><span class="lab">−200 en lager</span><span class="bar" style="width:.08cm"></span><span class="n">8</span></div>
-    <div class="staaf"><span class="lab">−100 tot −50</span><span class="bar" style="width:.08cm"></span><span class="n">4</span></div>
-    <div class="staaf"><span class="lab">−20 tot −1</span><span class="bar" style="width:1.95cm"></span><span class="n">1399</span></div>
-    <div class="staaf"><span class="lab">0 tot 20</span><span class="bar" style="width:6.4cm"></span><span class="n">4630</span></div>
-    <div class="staaf"><span class="lab">20 tot 50</span><span class="bar" style="width:.25cm"></span><span class="n">173</span></div>
-    <div class="staaf"><span class="lab">200 en hoger</span><span class="bar" style="width:.08cm"></span><span class="n">12</span></div>
+    <div class="staaf"><span class="lab">−200 en lager</span><span class="bar" style="width:.08cm"></span><span class="n">9</span></div>
+    <div class="staaf"><span class="lab">−100 tot −20</span><span class="bar" style="width:.1cm"></span><span class="n">53</span></div>
+    <div class="staaf"><span class="lab">−20 tot −1</span><span class="bar" style="width:1.95cm"></span><span class="n">1488</span></div>
+    <div class="staaf"><span class="lab">0 tot 20</span><span class="bar" style="width:6.4cm"></span><span class="n">4838</span></div>
+    <div class="staaf"><span class="lab">20 tot 50</span><span class="bar" style="width:.42cm"></span><span class="n">310</span></div>
+    <div class="staaf"><span class="lab">200 en hoger</span><span class="bar" style="width:.08cm"></span><span class="n">7</span></div>
     <p class="uit" style="margin-top:.16cm">Bijna alles zit in één bakje rond nul: die handen werden
-    weggelegd zonder in de blinds te zitten. <b>Twaalf handen van de 6250 bepalen het hele beeld —
+    weggelegd zonder in de blinds te zitten. <b>Zeven handen van de 6750 bepalen het hele beeld —
     en die zie je in geen enkel samenvattend getal terug.</b></p>
   </div>
 </div>
@@ -197,34 +186,36 @@ az["actie"].value_counts(normalize=True)</div>
     <table>
       <thead><tr><th>actie</th><th>aandeel</th><th>gemidd.</th><th>mediaan</th></tr></thead>
       <tbody>
-        <tr><td><b>fold</b></td><td class="g"><b>95,3%</b></td><td class="g">−3</td><td class="g">0</td></tr>
-        <tr><td>call</td><td class="g">2,9%</td><td class="g">+13</td><td class="g">+30</td></tr>
-        <tr><td>raise</td><td class="g">1,1%</td><td class="g">+34</td><td class="g">+30</td></tr>
-        <tr><td>grote_raise</td><td class="g">0,7%</td><td class="g">+32</td><td class="g">+30</td></tr>
+        <tr><td><b>fold</b></td><td class="g"><b>92,2%</b></td><td class="g">−3</td><td class="g">0</td></tr>
+        <tr><td>call</td><td class="g">5,9%</td><td class="g">+10</td><td class="g">+30</td></tr>
+        <tr><td>raise</td><td class="g">1,3%</td><td class="g">+65</td><td class="g">+30</td></tr>
+        <tr><td>grote_raise</td><td class="g">0,6%</td><td class="g">+19</td><td class="g">+30</td></tr>
       </tbody>
     </table>
     <p class="uit" style="margin-top:.2cm"><span class="vraag">Dit is het gesprek van vandaag.</span>
-    De klas foldt <b>95%</b> van alles. En elke andere actie levert gemiddeld géld op.
+    De klas foldt <b>92%</b> van alles. En elke andere actie levert gemiddeld géld op.
     <span class="let">Let op</span> <code>aan_zet</code> — zonder dat filter tel je handen mee waarin de bot
     nooit iets koos.</p>
   </div>
 
   <div class="blok">
-    <h2>4 · Eén toernooi is toeval</h2>
-    <div class="code">fold = az.groupby("bot_naam")["actie"].apply(
+    <h2>4 · De bot die niet nadenkt wint</h2>
+    <div class="code">eind = df.groupby("bot_naam")["stack"].last()
+fold = df.groupby("bot_naam")["actie"].apply(
         lambda s: (s == "fold").mean() * 100)</div>
     <table>
-      <thead><tr><th>foldt</th><th>bots</th><th>eindstand</th></tr></thead>
+      <thead><tr><th>plek</th><th>bot</th><th>eind</th><th>foldt</th></tr></thead>
       <tbody>
-        <tr><td>&lt; 90%</td><td class="g">3</td><td class="g">1355</td></tr>
-        <tr><td>90–97%</td><td class="g">5</td><td class="g">919</td></tr>
-        <tr><td>97–99%</td><td class="g">5</td><td class="g">1002</td></tr>
-        <tr><td>99–100%</td><td class="g">12</td><td class="g">944</td></tr>
+        <tr><td class="g">1</td><td><b>Testbot_CalltAlles</b></td><td class="g"><b>1748</b></td><td class="g">0%</td></tr>
+        <tr><td class="g">2</td><td>501011284</td><td class="g">1738</td><td class="g">82,5%</td></tr>
+        <tr><td class="g">3</td><td>500959250</td><td class="g">1256</td><td class="g">58,7%</td></tr>
+        <tr><td class="g">4</td><td>500851324</td><td class="g">1202</td><td class="g">96,3%</td></tr>
       </tbody>
     </table>
-    <p class="uit" style="margin-top:.2cm">Correlatie fold% met eindstand: <b>−0,85</b>. De winnaar
-    (1624) foldt de helft; twaalf bots folden 99% of meer. Het notebook waarschuwt hiervoor in Deel 7:
-    <em>boven de 80% speel je bijna geen handen en kun je ook niks winnen.</em></p>
+    <p class="uit" style="margin-top:.2cm"><span class="vraag">Dit is de dia waar je op eindigt.</span>
+    Een bot die niet naar zijn kaarten kijkt, geen winkans berekent en geen pot odds kent, wint van
+    26 bots waar uren aan is gewerkt. Met <b>10 chips</b> voorsprong — en die ene die bijna won,
+    foldt 82,5% en niet 99%. Correlatie fold% met eindstand: <b>−0,69</b>.</p>
   </div>
 </div>
 
@@ -243,12 +234,12 @@ az["actie"].value_counts(normalize=True)</div>
 </div>
 
 <footer>
-  Getallen uit het toernooi van <b>week 3, ronde 1 — 16 september 2026</b>: 25 bots, 5 simulaties,
-  6250 logregels. Mediaan 974, van 732 tot 1624, zeven bots boven de startstack.
+  Getallen uit <b>week 3, ronde 3</b>: 27 bots (26 studenten + de testbot), 5 simulaties, 6750
+  logregels, iedereen start op 1000. Mediaan 946, van 558 tot 1748, zes studenten boven de startstack.
   <span class="let">Nieuw toernooi gedraaid?</span> <code>python3 scripts/collegecijfers.py uitslag.json</code>
   print deze vier blokken opnieuw, dan vervang je alleen de getallen.
-  <br>Eén ding dat per toernooi omdraait: hier is de ruis binnen een bot (170) <b>kleiner</b> dan het
-  verschil tussen bots (892), dus de rangorde ligt redelijk vast. Dat komt doordat bijna iedereen
+  <br>Eén ding dat per toernooi omdraait: hier is de ruis binnen een bot (250) <b>kleiner</b> dan het
+  verschil tussen bots (1190), dus de rangorde ligt redelijk vast. Dat komt doordat bijna iedereen
   hetzelfde doet — bij een gevarieerder veld kan dat omslaan.
 </footer>
 
