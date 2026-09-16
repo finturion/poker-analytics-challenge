@@ -19,8 +19,10 @@ from pptx.util import Inches, Pt
 
 HIER = os.path.dirname(os.path.abspath(__file__))
 UITVOER = os.path.join(HIER, "hoorcollege", "03_Exploring_Manipulating_Data_aangevuld.pptx")
-# Getekend door maak_histogram_hoorcollege.py. Ontbreekt hij, dan slaat de dia hem over.
-HISTOGRAM = os.path.join(HIER, "plots_week3", "eindstanden_histogram.png")
+# Getekend door maak_histogram_hoorcollege.py. Ontbreekt een plaat, dan meldt het
+# script dat en blijft die dia leeg -- het deck komt er verder gewoon uit.
+PLOT_WINST = os.path.join(HIER, "plots_week3", "winst_per_hand_histogram.png")
+PLOT_EINDSTAND = os.path.join(HIER, "plots_week3", "eindstanden_histogram.png")
 
 TITELKLEUR = RGBColor(0x25, 0x16, 0x7A)
 TEKSTKLEUR = RGBColor(0x00, 0x00, 0x00)
@@ -124,9 +126,9 @@ def doorloopblad_dias(c):
             ],
         ),
         (
-            "Waar 27 bots zijn geëindigd",
+            "De winst per hand, getekend",
             [],
-            HISTOGRAM,
+            PLOT_WINST,
         ),
         (
             "Categorisch, dan bivariaat",
@@ -149,6 +151,11 @@ def doorloopblad_dias(c):
                 (1, f"En die ene die bijna won foldt {c['uitslag'][1][3]}, niet 99%", False, TEKSTKLEUR),
                 (0, f"Correlatie fold% met eindstand: {c['correlatie']}", True, TITELKLEUR),
             ],
+        ),
+        (
+            "Waar de bots zijn geëindigd",
+            [],
+            PLOT_EINDSTAND,
         ),
     ]
 
@@ -403,17 +410,16 @@ Die piek rond nul zijn handen die zijn weggelegd zonder in de blinds te zitten: 
 verliest niets en je wint niets. Het spel gebeurt in de handen aan de randen, en dat
 zijn er een paar van de duizenden.""",
 
-    "Waar 27 bots zijn geëindigd": """Iedereen begon op 1000, de stippellijn.
-Dertien bots eindigen tussen 900 en 1000 -- die hebben iets verloren en verder
-nauwelijks gespeeld. Links één uitschieter naar beneden, rechts twee die er ver
-bovenuit steken.
+    "De winst per hand, getekend": """De y-as is logaritmisch en dat is geen truc:
+de piek is duizenden handen hoog en de staarten zijn één hand. Lineair krijg je één
+balk en verder wit.
 
-Vraag aan de zaal voordat je doorklikt: wie denk je dat die twee rechts zijn? Op
-de volgende dia staat het antwoord, en dat is niet wat ze verwachten.
+Dat is de vraag voor de zaal. df["winst"].hist(bins=40) geeft precies dat lege
+plaatje -- wie had gemerkt dat er iets ontbrak? De standaardinstelling van een
+grafiek is een keuze die iemand anders voor je heeft gemaakt.
 
-Waarom dit de eindstanden zijn en niet de winst per hand: dat laatste is voor 92%
-een blind van tien of twintig chips, dus getekend krijg je één balk en verder wit.
-Die verdeling staat als tabel op de dia hiervoor, waar hij wel leesbaar is.""",
+Wijs op de bar helemaal rechts. Dat is één hand waarin 1750 chips omgingen, en die
+zit in geen enkel getal van de dia's hiervoor.""",
 
     "Categorisch, dan bivariaat": """[Blok 3 - het gesprek van vandaag] Laat ze de
 tabel zelf lezen voordat je iets zegt.
@@ -439,6 +445,17 @@ iets aangetoond, is precies wat het criterium Analyse van Case 2 beoordeelt.
 
 De vraag voor donderdag is niet "moet ik minder folden" maar "waar liggen mijn
 drempels, en waarom daar".""",
+
+    "Waar de bots zijn geëindigd": """Dezelfde dataset, andere eenheid, andere as.
+De winst per hand had een log-as nodig; de eindstand is één getal per bot en past
+gewoon lineair.
+
+Iedereen begon op 1000, de stippellijn. Links daarvan staat wie chips heeft
+ingeleverd. De klont in het midden zijn de bots die iets verloren en verder
+nauwelijks hebben gespeeld; rechts steken er twee ver bovenuit, en die ken je nu.
+
+Als je één ding wilt meegeven: dit is waarom een gemiddelde hier niets zegt. Het
+gemiddelde is per definitie 1000, want het is een nulsom. De vorm is het verhaal.""",
 
     "Groepscase 2 — wat je oplevert": """De deadline is donderdag 18:00 en dat is geen
 inlevermoment maar een BESLUIT: welke vraag, welke twee bronnen, op welke kolom die

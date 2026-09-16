@@ -427,7 +427,7 @@
 <section>
   <div class="sectiekop">
     <h2>Techniek</h2>
-    <span class="telling">4 punten</span>
+    <span class="telling">5 punten</span>
   </div>
 
   <div class="item">
@@ -514,6 +514,26 @@
       uur werk komen mogelijk hoger.
     </p>
   </div>
+  <div class="item">
+    <div class="item-kop">
+      <h3>De lesversie van een functie en de referentiebot-versie liepen uiteen</h3>
+      <i class="merk m-fout">fout</i>
+    </div>
+    <p class="meta"><span><code>Week3_Werkcollege4.ipynb</code> Deel 1 · <code>api/referentiebots/bot_potodds.py</code></span><span>gemeten: 1 crash, 0 waarschuwingen</span></p>
+    <p>
+      Dezelfde functie stond op twee plekken. De referentiebot ving <code>inzet &lt;= 0</code> af,
+      de lesversie niet — en die tweede is degene die studenten overtypen. Deel 7 voedde hem
+      <code>pot=0, inzet=0</code> en dan deelt hij door nul.
+    </p>
+    <p>
+      Dit is opgelost, maar het patroon niet: elke functie die zowel in een notebook als in de
+      backend staat, kan zo uit elkaar lopen zonder dat iets het meldt. <b>Wat er moet:</b> een
+      testje dat de codecellen van elk notebook draait tegen de testset van het deel waar ze bij
+      horen. Dan valt dit soort divergentie om vóór een student erop stuit — de zeven
+      testbestanden in <code>scripts/</code> dekken de API wél en de notebooks niet.
+    </p>
+  </div>
+
 </section>
 
 <!-- ============ D ============ -->
@@ -580,11 +600,13 @@
     <li><b>WC8 Deel 1 wisselde botbestanden uit</b> in de week waarin de bonuspunten vallen. Nu via <code>/bot-test/</code>, net als WC5.</li>
     <li><b>Werkcollege 9 keek naar het verkeerde toernooi.</b> <code>/locaties</code> kende de ronde niet en gaf altijd de woensdagstand.</li>
     <li><b>Het raise-bedrag in WC4 was fout</b> (small blind in plaats van big blind), inclusief de bijbehorende controlevraag.</li>
+    <li><b>Pot odds zonder inzet crashten.</b> <code>bereken_pot_odds</code> deelde door <code>pot + inzet</code>, en de testset van WC4 Deel 7 begint met allebei nul — eerste aan zet preflop. Wie TODO 1 netjes volgde, kreeg een <code>ZeroDivisionError</code> op de eerste regel van zijn eigen testset. Nu: zonder inzet is er geen prijs, dus 0% nodig.</li>
+    <li><b>Doorspelen met je chips gold in elke week.</b> Vanaf ronde 2 kreeg iedereen de eindstand van de ronde ervoor als startstack. Dat hoort bij de bonusweek; in week 3 maakte het een tweede ronde onvergelijkbaar met de eerste. Nu staat het in <code>WEKEN_MET_DOORSPELEN</code>.</li>
   </ul>
 </div>
 
 <footer>
-  Opgesteld 15 september 2026, tijdens blok 1 van 2026–2027. De gemeten cijfers komen uit
+  Opgesteld 15 september 2026, bijgewerkt 16 september, tijdens blok 1 van 2026–2027. De gemeten cijfers komen uit
   <code>scripts/meet_toernooi_variantie.py</code>, <code>scripts/test_referentiebots.py</code> en
   de curriculum-audit. Punten zonder merkteken “gemeten” zijn waarnemingen, geen metingen.
 </footer>
