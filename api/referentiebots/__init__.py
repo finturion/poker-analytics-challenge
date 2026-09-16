@@ -46,13 +46,24 @@ gegarandeerd fout als je er niet op let:
 from . import (bot_allrounder, bot_bluffer, bot_inzetgrootte, bot_potodds,
                bot_tafellezer)
 
-# In welke weken ze meespelen. Week 1 niet: daar kennen bots alleen hun eigen twee
-# kaarten en zou een scherpe referentiebot alleen demoraliseren.
-WEKEN_MET_REFERENTIEBOTS = (3, 5)
+# In welke weken ze meespelen. Alleen week 5.
+#
+# Week 1 niet: daar kennen bots alleen hun eigen twee kaarten, en een scherpe
+# referentiebot zou alleen demoraliseren.
+#
+# Week 3 ook niet meer, en dat is een wijziging na de eerste ronde van
+# 2026-2027. Ze deden daar wel mee, maar leverden niets op: studenten krijgen
+# in week 3 nog geen niveautabel te zien en de code gaat pas in week 5 open, dus
+# de bots waren daar vijf onbekende namen in de uitslag zonder uitleg erbij. Een
+# meetlat waarvan je niet weet wat hij doet, is geen meetlat -- hij verschuift
+# alleen de chips aan tafel.
+#
+# In week 5 wel: dan is hun code openbaar, dan kun je je eigen beslisregel naast
+# een uitgeschreven regel leggen, en dan is de vergelijking iets waard.
+WEKEN_MET_REFERENTIEBOTS = (5,)
 
-# Vanaf welke week hun code openbaar is. In week 3 is het een meetlat waar je
-# tegen speelt; in week 5, als de pokerlijn afrondt, mag je zien hoe ze het doen --
-# dan valt er nog van te leren voor de slotinzending.
+# Vanaf welke week hun code openbaar is. Dat is dezelfde week waarin ze
+# meespelen: je speelt niet tegen iets waarvan je niet mag zien hoe het werkt.
 OPENBAAR_VANAF_WEEK = 5
 
 # DRIE NIVEAUS, NIET VIJF -- en dat is een meetuitkomst, geen ontwerpkeuze.

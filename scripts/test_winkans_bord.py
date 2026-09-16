@@ -65,10 +65,12 @@ from bot_validator import valideer_bot_code
 
 BOT = '''
 def kies_actie(hand, hand_met_kleur, bord, stack, strategie, bluf_kans, pot, inzet_om_te_callen):
+    # seed vast, zodat deze test elke run hetzelfde doet. Zonder seed folde hij
+    # soms alles en viel de test om zonder dat er iets veranderd was.
     if bord:
-        kans = schat_winkans(hand_met_kleur, bord=bord, simulaties=60, tegenstanders=3)
+        kans = schat_winkans(hand_met_kleur, bord=bord, simulaties=60, seed=3, tegenstanders=3)
     else:
-        kans = schat_winkans(hand, simulaties=60, tegenstanders=3)
+        kans = schat_winkans(hand, simulaties=60, seed=3, tegenstanders=3)
     nodig = 100 * inzet_om_te_callen / (pot + inzet_om_te_callen) if (pot + inzet_om_te_callen) else 0
     if kans < nodig:
         return "fold"
@@ -83,9 +85,9 @@ check("hij is op meerdere straten getest", r["actie_resultaten"] and len(r["acti
 # Een bot die het preflop-geval vergeet hoort te struikelen, want preflop is het
 # bord leeg en dan weigert schat_winkans een hand zonder kleur... of juist mét.
 VERGEET = BOT.replace(
-    "    if bord:\n        kans = schat_winkans(hand_met_kleur, bord=bord, simulaties=60, tegenstanders=3)\n"
-    "    else:\n        kans = schat_winkans(hand, simulaties=60, tegenstanders=3)\n",
-    "    kans = schat_winkans(hand, bord=bord, simulaties=60, tegenstanders=3)\n")
+    "    if bord:\n        kans = schat_winkans(hand_met_kleur, bord=bord, simulaties=60, seed=3, tegenstanders=3)\n"
+    "    else:\n        kans = schat_winkans(hand, simulaties=60, seed=3, tegenstanders=3)\n",
+    "    kans = schat_winkans(hand, bord=bord, simulaties=60, seed=3, tegenstanders=3)\n")
 r2 = valideer_bot_code(VERGEET, 5, strategie="tight", bluf_kans=0.3)
 check("een bot die kleur en bord door elkaar haalt wordt afgekeurd", r2["geldig"] is False, r2)
 check("met een melding waar 'kleur' in staat", "kleur" in (r2["foutmelding"] or ""),

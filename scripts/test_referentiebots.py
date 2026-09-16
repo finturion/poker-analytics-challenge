@@ -119,6 +119,15 @@ for naam, info in sorted(REFERENTIEBOTS.items()):
               f"{naam}: reageert verschillend op verschillende situaties")
 
 print("\n3. Opzet en zichtbaarheid\n")
+# --- in welke weken ze WEL en NIET meespelen ---
+# Week 3 is er na de eerste ronde van 2026-2027 uit gehaald: daar kregen
+# studenten geen niveautabel te zien en stond de code nog dicht, dus waren het
+# vijf onbekende namen in hun uitslag. Deze check houdt dat vast.
+check(referentiebots_voor(1) == {}, "week 1 heeft geen referentiebots")
+check(referentiebots_voor(3) == {}, "week 3 heeft geen referentiebots meer")
+check(len(referentiebots_voor(5)) == 5, "week 5 heeft ze alle vijf")
+check(broncode(3) is None, "en in week 3 is er ook geen code openbaar")
+
 check(set(REFERENTIEBOTS) == set(referentiebots_voor(WEKEN_MET_REFERENTIEBOTS[0])),
       f"alle bots spelen mee in week {WEKEN_MET_REFERENTIEBOTS[0]}")
 check(referentiebots_voor(1) == {}, "in week 1 spelen ze niet mee")
