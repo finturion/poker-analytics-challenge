@@ -1,0 +1,255 @@
+<!--
+  Doorloopblad Week 3 -- bron van het gepubliceerde artifact.
+
+  Gepubliceerd op: https://claude.ai/code/artifact/9753106d-cd84-4e96-8b8e-5dfb41776c1b
+
+  De cijfers komen uit scripts/collegecijfers.py. Nieuw toernooi gedraaid?
+  Draai dat script en vervang de getallen in blok 1 t/m 4 en in de voet.
+
+  Dit bestand is de inhoud ZONDER de <!doctype>/<html>/<head>/<body>-skeleton:
+  die wordt bij publiceren toegevoegd.
+-->
+<title>Doorloopblad Week 3</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,600;7..72,700&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root{
+    --vilt:#1B4D3E; --inkt:#121E31; --papier:#FFFFFF; --zacht:#EEF2EF;
+    --gedempt:#5A646B; --lijn:#D3DCD6; --rood:#B3261E; --oker:#7C5F10;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --vilt:#5FB894; --inkt:#E6EDE9; --papier:#10171A; --zacht:#1B262A;
+      --gedempt:#9AA8A4; --lijn:#2C3B3C; --rood:#F08A80; --oker:#D8B25A;
+    }
+  }
+  :root[data-theme="dark"]{
+    --vilt:#5FB894; --inkt:#E6EDE9; --papier:#10171A; --zacht:#1B262A;
+    --gedempt:#9AA8A4; --lijn:#2C3B3C; --rood:#F08A80; --oker:#D8B25A;
+  }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0;background:var(--papier);color:var(--inkt);
+    font-family:"Public Sans","Segoe UI",system-ui,sans-serif;
+    font-size:9.1pt;line-height:1.36;-webkit-font-smoothing:antialiased;
+  }
+  .a4{
+    width:21cm;min-height:29.7cm;margin:0 auto;padding:1.15cm 1.25cm 1cm;
+    background:var(--papier);
+  }
+  h1,h2{font-family:Literata,Georgia,serif;margin:0;text-wrap:balance}
+  h1{font-size:16.5pt;font-weight:700;line-height:1.1;letter-spacing:-.01em}
+  h2{
+    font-size:9.4pt;font-weight:700;text-transform:uppercase;letter-spacing:.09em;
+    color:var(--vilt);margin:0 0 .28cm;padding-bottom:.1cm;
+    border-bottom:1.2px solid var(--vilt);
+  }
+  .mono,code{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace}
+  code{font-size:8.2pt;background:var(--zacht);padding:.03em .22em;border-radius:2px}
+
+  header{display:flex;align-items:flex-start;justify-content:space-between;gap:.7cm;
+    border-bottom:2px solid var(--vilt);padding-bottom:.32cm;margin-bottom:.42cm}
+  header .sub{font-size:8.3pt;color:var(--gedempt);margin-top:.12cm;max-width:12.5cm}
+  header .klok{
+    font-family:"IBM Plex Mono",monospace;font-size:8.2pt;color:var(--vilt);
+    text-align:right;white-space:nowrap;font-weight:500;line-height:1.5;
+  }
+
+  .rij{display:grid;grid-template-columns:1fr 1fr;gap:.6cm;margin-bottom:.42cm}
+  .blok{break-inside:avoid}
+
+  ol.stappen{margin:0;padding-left:.95em;font-size:8.7pt}
+  ol.stappen li{margin-bottom:.13cm}
+  ol.stappen li b{font-weight:600}
+  .verb{
+    font-family:"IBM Plex Mono",monospace;font-size:7.6pt;color:var(--vilt);
+    display:block;margin-top:.02cm;
+  }
+
+  table{border-collapse:collapse;width:100%;font-size:8.3pt}
+  th,td{text-align:left;padding:.09cm .35cm .09cm 0;border-bottom:.8px solid var(--lijn);vertical-align:top}
+  th{font-family:"IBM Plex Mono",monospace;font-size:7.4pt;text-transform:uppercase;
+    letter-spacing:.05em;color:var(--gedempt);font-weight:500}
+  td.g{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;white-space:nowrap}
+
+  .code{
+    background:var(--zacht);border-left:2.5px solid var(--vilt);
+    padding:.2cm .3cm;margin:.14cm 0 .1cm;font-family:"IBM Plex Mono",monospace;
+    font-size:7.9pt;line-height:1.44;white-space:pre-wrap;overflow-x:auto;
+  }
+  .uit{font-size:7.9pt;color:var(--gedempt);margin:.05cm 0 .28cm}
+  .uit b{color:var(--inkt);font-weight:600}
+
+  .vraag{color:var(--rood);font-weight:600}
+  .let{color:var(--oker);font-weight:600}
+
+  .staaf{display:flex;align-items:center;gap:.2cm;font-size:7.7pt;margin-bottom:.045cm}
+  .staaf .lab{font-family:"IBM Plex Mono",monospace;width:2.5cm;text-align:right;color:var(--gedempt);white-space:nowrap}
+  .staaf .bar{height:.26cm;background:var(--vilt);border-radius:1px}
+  .staaf .n{font-family:"IBM Plex Mono",monospace;color:var(--gedempt)}
+
+  footer{margin-top:.4cm;padding-top:.22cm;border-top:.8px solid var(--lijn);
+    font-size:7.7pt;color:var(--gedempt)}
+
+  @page{size:A4;margin:0}
+  @media print{
+    body{background:#fff;color:#000;font-size:9pt}
+    .a4{width:auto;min-height:auto;margin:0;padding:1.1cm 1.2cm}
+  }
+</style>
+
+<div class="a4">
+
+<header>
+  <div>
+    <h1>Week 3 conceptueel doorlopen</h1>
+    <p class="sub">Werkcollege 4 en 5 langs, zonder een cel in te vullen — en daarna
+    hetzelfde gereedschap op het toernooi van vanmorgen.</p>
+  </div>
+  <div class="klok">15 min doorloop<br>20 min toernooi<br>samen ±35 min</div>
+</header>
+
+<div class="rij">
+  <div class="blok">
+    <h2>Werkcollege 4 — de stapeling</h2>
+    <ol class="stappen">
+      <li><b>Functies met een standaardwaarde.</b> Een parameter die je niet hoeft mee te geven.
+        <span class="verb">def f(x, drempel=30)</span></li>
+      <li><b>Dictionary als opzoektabel.</b> Sleutel → waarde, met een terugvaloptie.
+        <span class="verb">drempels.get(ronde, 30)</span></li>
+      <li><b>Filteren en groeperen.</b> Van alle regels naar alleen wat je nodig hebt, dan per groep één getal.
+        <span class="verb">df[df[...] == ...] · groupby</span></li>
+      <li><b>De spelregels.</b> Vier straten, dus je bot beslist vier keer per hand.</li>
+      <li><b>Handsterkte.</b> Welke vijf van de zeven kaarten tellen.</li>
+      <li><b>Winkans.</b> Hoe vaak win je — en tegen hoeveel mensen is dat gerekend?
+        <span class="verb">schat_winkans(hand, tegenstanders=5)</span></li>
+      <li><b>Pot odds.</b> Wat kost meedoen, uitgedrukt in een percentage.
+        <span class="verb">bereken_pot_odds(pot, inzet)</span></li>
+      <li><b>Die twee naast elkaar</b> is een beslisregel. Dat is de hele week.</li>
+    </ol>
+  </div>
+
+  <div class="blok">
+    <h2>Werkcollege 5 — van bot naar data</h2>
+    <ol class="stappen">
+      <li><b>Live testen.</b> Studentnummer invullen, de API draait zijn bot op jouw situaties. Je ziet gedrag, geen code.</li>
+      <li><b>De uitslag lezen.</b> v2 naast v1, zelf de kolommen bouwen.
+        <span class="verb">pivot · verschilkolom</span></li>
+      <li><b>De spelregels terugvinden in je eigen log.</b> Filter één hand en je ziet de hele tafel.
+        <span class="verb">winst telt op tot nul</span></li>
+      <li><b>Peer review.</b> Drie criteria, verplichte toelichting.</li>
+      <li><b>Aftrap Case 2.</b> Onderwerp vast vóór donderdag 18:00.</li>
+      <li><b>Twee tabellen samenvoegen</b> op een sleutel die niet vanzelf past.
+        <span class="verb">merge · rijen tellen vóór en ná</span></li>
+      <li><b>Van notebook naar script.</b> Zelfde idee als de widget van vanochtend: een knop die een grafiek stuurt.
+        <span class="verb">ipywidgets → Streamlit</span></li>
+      <li><b>Wat pas je aan?</b> Eén ding, met de verwachting erbij.</li>
+    </ol>
+  </div>
+</div>
+
+<div class="blok" style="margin-bottom:.42cm">
+  <h2>Het toernooi als dataset — begin hier</h2>
+  <div class="code">df = pd.DataFrame(resultaat["hand_log"]).sort_values(
+        ["bot_naam", "simulatie", "tafel", "hand_nummer"])
+df["winst"] = df.groupby(["bot_naam", "simulatie", "tafel"])["stack"].diff().fillna(df["stack"] - 1000)</div>
+  <p class="uit">Het log bewaart de stack ná elke hand, dus winst is het verschil met de hand ervoor —
+  binnen dezelfde zitting, want simulaties zijn parallelle werelden. <b>Controle: alle winst samen is precies 0.</b>
+  Is dat niet zo, dan klopt je groepering niet.</p>
+</div>
+
+<div class="rij">
+  <div class="blok">
+    <h2>1 · Wat de samenvatting verbergt</h2>
+    <div class="code">df["winst"].describe()</div>
+    <table>
+      <tbody>
+        <tr><td>gemiddelde</td><td class="g">0,0</td><td>nulsom: wat de een wint, verliest de ander</td></tr>
+        <tr><td>mediaan</td><td class="g">0,0</td><td>de meeste handen gebeurt er niets</td></tr>
+        <tr><td>std</td><td class="g">32</td><td></td></tr>
+        <tr><td>laagste / hoogste</td><td class="g">−1000 / +1010</td><td>iemand verloor zijn hele stack in één hand</td></tr>
+      </tbody>
+    </table>
+    <p class="uit" style="margin-top:.2cm"><span class="vraag">Vraag aan de zaal:</span> gemiddelde nul,
+    mediaan nul, std 32. Maar in één hand ging er 1000 om. <b>Wat zeggen die drie getallen dan eigenlijk?</b></p>
+  </div>
+
+  <div class="blok">
+    <h2>2 · En dat zie je in het histogram</h2>
+    <div class="code">df["winst"].hist(bins=40)</div>
+    <div class="staaf"><span class="lab">−200 en lager</span><span class="bar" style="width:.08cm"></span><span class="n">8</span></div>
+    <div class="staaf"><span class="lab">−100 tot −50</span><span class="bar" style="width:.08cm"></span><span class="n">4</span></div>
+    <div class="staaf"><span class="lab">−20 tot −1</span><span class="bar" style="width:1.95cm"></span><span class="n">1399</span></div>
+    <div class="staaf"><span class="lab">0 tot 20</span><span class="bar" style="width:6.4cm"></span><span class="n">4630</span></div>
+    <div class="staaf"><span class="lab">20 tot 50</span><span class="bar" style="width:.25cm"></span><span class="n">173</span></div>
+    <div class="staaf"><span class="lab">200 en hoger</span><span class="bar" style="width:.08cm"></span><span class="n">12</span></div>
+    <p class="uit" style="margin-top:.16cm">Bijna alles zit in één bakje rond nul: die handen werden
+    weggelegd zonder in de blinds te zitten. <b>Twaalf handen van de 6250 bepalen het hele beeld —
+    en die zie je in geen enkel samenvattend getal terug.</b></p>
+  </div>
+</div>
+
+<div class="rij">
+  <div class="blok">
+    <h2>3 · Categorisch, dan bivariaat</h2>
+    <div class="code">az = df[df["aan_zet"]]
+az["actie"].value_counts(normalize=True)</div>
+    <table>
+      <thead><tr><th>actie</th><th>aandeel</th><th>gemidd.</th><th>mediaan</th></tr></thead>
+      <tbody>
+        <tr><td><b>fold</b></td><td class="g"><b>95,3%</b></td><td class="g">−3</td><td class="g">0</td></tr>
+        <tr><td>call</td><td class="g">2,9%</td><td class="g">+13</td><td class="g">+30</td></tr>
+        <tr><td>raise</td><td class="g">1,1%</td><td class="g">+34</td><td class="g">+30</td></tr>
+        <tr><td>grote_raise</td><td class="g">0,7%</td><td class="g">+32</td><td class="g">+30</td></tr>
+      </tbody>
+    </table>
+    <p class="uit" style="margin-top:.2cm"><span class="vraag">Dit is het gesprek van vandaag.</span>
+    De klas foldt <b>95%</b> van alles. En elke andere actie levert gemiddeld géld op.
+    <span class="let">Let op</span> <code>aan_zet</code> — zonder dat filter tel je handen mee waarin de bot
+    nooit iets koos.</p>
+  </div>
+
+  <div class="blok">
+    <h2>4 · Eén toernooi is toeval</h2>
+    <div class="code">fold = az.groupby("bot_naam")["actie"].apply(
+        lambda s: (s == "fold").mean() * 100)</div>
+    <table>
+      <thead><tr><th>foldt</th><th>bots</th><th>eindstand</th></tr></thead>
+      <tbody>
+        <tr><td>&lt; 90%</td><td class="g">3</td><td class="g">1355</td></tr>
+        <tr><td>90–97%</td><td class="g">5</td><td class="g">919</td></tr>
+        <tr><td>97–99%</td><td class="g">5</td><td class="g">1002</td></tr>
+        <tr><td>99–100%</td><td class="g">12</td><td class="g">944</td></tr>
+      </tbody>
+    </table>
+    <p class="uit" style="margin-top:.2cm">Correlatie fold% met eindstand: <b>−0,85</b>. De winnaar
+    (1624) foldt de helft; twaalf bots folden 99% of meer. Het notebook waarschuwt hiervoor in Deel 7:
+    <em>boven de 80% speel je bijna geen handen en kun je ook niks winnen.</em></p>
+  </div>
+</div>
+
+<div class="blok">
+  <h2>Terugkoppelen naar het hoorcollege</h2>
+  <table>
+    <thead><tr><th>Uit de dia's</th><th>Zelfde idee, jullie data</th></tr></thead>
+    <tbody>
+      <tr><td><code>groupby('continent')['pop'].sum()</code></td><td><code>groupby('bot_naam')['winst'].sum()</code> — letterlijk dezelfde regel</td></tr>
+      <tr><td>EDA-recept: describe → univariaat → bivariaat</td><td>blok 1 → blok 3 hierboven, op je eigen log</td></tr>
+      <tr><td><code>np.random.normal</code>: een verdeling máken</td><td><code>schat_winkans</code> doet dat om een kans te schatten die je niet kunt uitrekenen</td></tr>
+      <tr><td>widget met een dropdown die een grafiek stuurt</td><td>Werkcollege 5, Deel 7: dezelfde gedachte in Streamlit</td></tr>
+      <tr><td>centrale tendens: gemiddelde of mediaan</td><td>blok 1 en 3 — hier maakt de keuze het verschil tussen twee conclusies</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<footer>
+  Getallen uit het toernooi van <b>week 3, ronde 1 — 16 september 2026</b>: 25 bots, 5 simulaties,
+  6250 logregels. Mediaan 974, van 732 tot 1624, zeven bots boven de startstack.
+  <span class="let">Nieuw toernooi gedraaid?</span> <code>python3 scripts/collegecijfers.py uitslag.json</code>
+  print deze vier blokken opnieuw, dan vervang je alleen de getallen.
+  <br>Eén ding dat per toernooi omdraait: hier is de ruis binnen een bot (170) <b>kleiner</b> dan het
+  verschil tussen bots (892), dus de rangorde ligt redelijk vast. Dat komt doordat bijna iedereen
+  hetzelfde doet — bij een gevarieerder veld kan dat omslaan.
+</footer>
+
+</div>
