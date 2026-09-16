@@ -21,6 +21,23 @@ OEFENBOTS = {
     "OefenBot_Agressief": lambda hand, **_: "raise",
 }
 
+# Eén bot die altijd callt, in elk toernooi van elke week.
+#
+# Hij is er als ondergrens waar je iets aan hebt. Hij denkt niet na, kijkt niet
+# naar zijn kaarten en heeft geen enkele regel -- dus als jouw bot van hem
+# verliest, ligt dat niet aan de kaarten maar aan je drempels. Gemeten in ronde 1
+# van week 3 in 2026-2027: de klas foldde 95,3% van alle beslissingen en twaalf
+# van de 25 bots foldden 99% of meer. Voor zulke bots is "callt alles" geen
+# strohalm maar een serieuze tegenstander, en dat is precies wat je wil laten
+# zien.
+#
+# In één zin uit te leggen, en dat is het verschil met de referentiebots: die
+# zijn uit week 3 gehaald omdat studenten daar nog niet te horen krijgen wat ze
+# doen. Deze staat op zijn eigen naam.
+IJKBOTS = {
+    "Ijkbot_CalltAlles": lambda hand, **_: "call",
+}
+
 
 def _laad_kies_actie(bot_code):
     """
@@ -262,6 +279,11 @@ def draai_toernooi(
     for naam, info in referentie.items():
         bots.setdefault(naam, info)
 
+    # Ook ná namen_hoofdweek, om dezelfde reden: de ijkbot speelt echt mee en
+    # beïnvloedt de chips aan tafel, maar doet niet mee om de bonuspunten.
+    for naam, functie in IJKBOTS.items():
+        bots.setdefault(naam, {"kies_actie": functie, "strategie": None, "bluf_kans": None})
+
     aangevuld = 0
     for oefen_naam, oefen_functie in OEFENBOTS.items():
         if len(bots) >= 2:
@@ -279,6 +301,7 @@ def draai_toernooi(
             "namen_deelnemers": namen_hoofdweek,
             "aangevuld_met_oefenbots": aangevuld,
             "referentiebots": sorted(referentie),
+            "ijkbots": sorted(IJKBOTS),
             "n_simulaties": n_simulaties,
             "hand_log": [],
             "eindstand_per_bot": {},
@@ -305,6 +328,7 @@ def draai_toernooi(
         "namen_deelnemers": namen_hoofdweek,
         "aangevuld_met_oefenbots": aangevuld,
         "referentiebots": sorted(referentie),
+            "ijkbots": sorted(IJKBOTS),
         "n_simulaties": n_simulaties,
         "startstacks": startstacks,
         "hand_log": uitkomst["hand_log"],
