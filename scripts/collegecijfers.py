@@ -6,6 +6,7 @@ actuele getallen. Zo blijft het blad een format en geen momentopname.
 
     python3 scripts/collegecijfers.py uitslag.json
     python3 scripts/collegecijfers.py --api --week 3 --ronde 1
+    python3 scripts/collegecijfers.py --api --bewaar toernooi_week3.json
 
 Met --api leest hij STUDENT_ID en TOKEN uit de omgeving:
 
@@ -127,10 +128,17 @@ def main():
     bron.add_argument("--api", action="store_true")
     p.add_argument("--week", type=int, default=3)
     p.add_argument("--ronde", type=int, default=1)
+    p.add_argument("--bewaar", metavar="PAD",
+                   help="schrijf de opgehaalde uitslag ook weg als JSON, "
+                        "zodat het demo-notebook er zonder token bij kan")
     args = p.parse_args()
 
     uitslag = (haal_van_api(args.week, args.ronde) if args.api
                else json.load(open(args.bestand, encoding="utf-8")))
+    if args.bewaar:
+        with open(args.bewaar, "w", encoding="utf-8") as bestand:
+            json.dump(uitslag, bestand, ensure_ascii=False)
+        print(f"Uitslag bewaard in {args.bewaar}")
     if not uitslag.get("hand_log"):
         sys.exit(uitslag.get("boodschap") or "Geen hand_log in deze uitslag.")
 
