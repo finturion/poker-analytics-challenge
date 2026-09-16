@@ -20,7 +20,7 @@ from pptx.util import Inches, Pt
 HIER = os.path.dirname(os.path.abspath(__file__))
 UITVOER = os.path.join(HIER, "hoorcollege", "03_Exploring_Manipulating_Data_aangevuld.pptx")
 # Getekend door maak_histogram_hoorcollege.py. Ontbreekt hij, dan slaat de dia hem over.
-HISTOGRAM = os.path.join(HIER, "plots_week3", "winst_histogram.png")
+HISTOGRAM = os.path.join(HIER, "plots_week3", "eindstanden_histogram.png")
 
 TITELKLEUR = RGBColor(0x25, 0x16, 0x7A)
 TEKSTKLEUR = RGBColor(0x00, 0x00, 0x00)
@@ -124,7 +124,7 @@ def doorloopblad_dias(c):
             ],
         ),
         (
-            "Hetzelfde, getekend",
+            "Waar 27 bots zijn geëindigd",
             [],
             HISTOGRAM,
         ),
@@ -403,13 +403,17 @@ Die piek rond nul zijn handen die zijn weggelegd zonder in de blinds te zitten: 
 verliest niets en je wint niets. Het spel gebeurt in de handen aan de randen, en dat
 zijn er een paar van de duizenden.""",
 
-    "Hetzelfde, getekend": """De y-as is logaritmisch, en dat is geen truc maar de
-enige manier om allebei te zien: de piek is duizenden handen hoog en de staart is
-één hand. Lineair zie je één balk en verder wit.
+    "Waar 27 bots zijn geëindigd": """Iedereen begon op 1000, de stippellijn.
+Dertien bots eindigen tussen 900 en 1000 -- die hebben iets verloren en verder
+nauwelijks gespeeld. Links één uitschieter naar beneden, rechts twee die er ver
+bovenuit steken.
 
-Goede vraag aan de zaal: df["winst"].hist(bins=40) geeft precies dat lege plaatje.
-Wie had gemerkt dat er iets ontbrak? De standaardinstelling van een grafiek is een
-keuze die iemand anders voor je heeft gemaakt.""",
+Vraag aan de zaal voordat je doorklikt: wie denk je dat die twee rechts zijn? Op
+de volgende dia staat het antwoord, en dat is niet wat ze verwachten.
+
+Waarom dit de eindstanden zijn en niet de winst per hand: dat laatste is voor 92%
+een blind van tien of twintig chips, dus getekend krijg je één balk en verder wit.
+Die verdeling staat als tabel op de dia hiervoor, waar hij wel leesbaar is.""",
 
     "Categorisch, dan bivariaat": """[Blok 3 - het gesprek van vandaag] Laat ze de
 tabel zelf lezen voordat je iets zegt.
