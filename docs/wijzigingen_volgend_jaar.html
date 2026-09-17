@@ -372,9 +372,28 @@
       een regel die klopt in plaats van een aanname.
     </p>
     <p>
-      <b>De open vraag:</b> WC5 zit al op 130 minuten en kan er geen 16 bij hebben. Er moet dus iets
-      uit — de peer review (20 min) naar huiswerk, of de Streamlit-opstap (10 min) door naar WC6.
-      Dat is een keuze, geen rekensom.
+      <b>Besloten:</b> de peer review (Deel 4, 20 min) gaat naar huiswerk. Daarmee komt WC5 op
+      130 − 20 + 16 = <b>126 minuten</b>, en WC4 op 107. Allebei korter dan nu, met één idee per
+      middag.
+    </p>
+    <p>
+      Dat kan omdat de review al volledig via de API loopt: <code>/gallery/{week}</code> geeft de
+      grafieken anoniem terug en <code>/peer-review/{student_id}</code> neemt het oordeel aan. Er
+      is geen moment nodig waarop iedereen tegelijk in de zaal zit. Twee dingen die dan wél
+      geregeld moeten zijn:
+    </p>
+    <ul>
+      <li><b>Een eigen deadline.</b> Drie reviews is een voorwaarde voor een voldoende
+        (<code>MIN_REVIEWS_VOOR_VOLDAAN = 3</code>). In de zaal gebeurde dat vanzelf; als huiswerk
+        moet het op Brightspace staan, met dezelfde donderdag 18:00 als de bot.</li>
+      <li><b>Niet vóór woensdag 09:00.</b> De gallery vult zich met de inzendingen van die
+        deadline. Wie dinsdagavond begint, vindt niets en denkt dat het stuk is — één zin in het
+        notebook lost dat op.</li>
+    </ul>
+    <p>
+      Wat je inlevert is een oordeel over andermans werk, en dat is precies het soort opdracht
+      waarvan je wil weten of het gemaakt is. Het is dus ook een plek om bij de mondeling in
+      week 6 op terug te komen: <i>welke grafiek heb je beoordeeld, en waarom gaf je die score?</i>
     </p>
   </div>
 
