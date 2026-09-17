@@ -322,7 +322,60 @@
 <section>
   <div class="sectiekop">
     <h2>Lesmateriaal</h2>
-    <span class="telling">6 punten</span>
+    <span class="telling">7 punten</span>
+  </div>
+
+  <div class="item">
+    <div class="item-kop">
+      <h3>Werkcollege 4 doet drie nieuwe ideeën tegelijk — maak er één van</h3>
+      <i class="merk m-voorstel">voorstel</i>
+    </div>
+    <p class="meta"><span><code>Week3_Werkcollege4.ipynb</code> · <code>Week3_Werkcollege5.ipynb</code></span><span>123 min + 4–8 u · 23 TODO’s</span></p>
+    <p>
+      In één middag komen handsterkte, winkans én pot odds binnen, en daarna moet er woensdag
+      09:00 een werkende bot staan. Dat is te veel tegelijk: wie op Deel 6 vastloopt, levert een
+      bot in die nog op Deel 3 staat. De uitslag laat dat ook zien — <b>92% van alle beslissingen
+      was fold</b>, en dat is niet wat een tight strategie doet maar wat een onafgemaakte bot doet.
+    </p>
+    <p><b>Wat er moet: één idee per werkcollege.</b></p>
+    <ul>
+      <li><b>WC4 = “hoe vaak win ik?”</b> Spelregels, handsterkte, winkans. Pot odds gaat eruit,
+        inclusief Deel 6 (16 min). Wat overblijft is 107 minuten in plaats van 123, en belangrijker:
+        de bot die woensdag wordt ingeleverd heeft precies één beslisregel, en die snapt iedereen.</li>
+      <li><b>WC5 = “wat kost meedoen?”</b> Daar landt pot odds, op het moment dat studenten hun
+        eigen toernooi-uitslag voor zich hebben en zien wat folden ze heeft opgeleverd. De
+        donderdag-deadline van 18:00 is dan precies waar de tweede beslisregel in de bot komt.</li>
+    </ul>
+    <p>
+      <b>En een nieuw deel in WC4: wat je bot wél en niet weet.</b> Nu staat dat nergens, en het is
+      de vraag die tijdens het werkcollege het vaakst gesteld wordt — ziet mijn bot het bord?
+      (Nee.) Weet hij wat de ander heeft? (Nee.) Kent hij zijn kleuren? (In week 3 niet, vanaf
+      week 5 wel.) Eén tabel met twee kolommen, acht minuten, en het scheelt een middag
+      misverstanden. Het hoort in WC4 omdat het daar de grens van de opdracht afbakent.
+    </p>
+    <p>
+      <b>Daar hoort meteen het punt bij dat nu helemaal ontbreekt:</b> je bot beslist
+      <b>vier keer per hand</b>, en elke keer tegen minder tegenstanders. Het notebook zet
+      <code>tegenstanders=5</code> en laat het daarbij; in werkelijkheid zitten er op de river vaak
+      nog maar één of twee mensen in de hand, en dan is diezelfde winkans een heel ander getal.
+      Dat is dezelfde les als de bord-uitbreiding van week 5, maar dan zonder nieuwe techniek.
+    </p>
+    <p class="meta"><span><b>Dit vraagt één backend-wijziging</b></span></p>
+    <p>
+      Een bot kan het aantal actieve tegenstanders nu niet opvragen. Afleiden kan half — de folds
+      staan wél in <code>tegenstander_acties_deze_hand</code> — maar dan moet je weten met hoeveel
+      je begon, en tafels zijn niet allemaal even groot. De engine weet het wel:
+      <code>round_state["seats"]</code> geeft per stoel een <code>state</code>
+      (<code>participating</code> / <code>folded</code> / <code>allin</code>). Eén extra parameter
+      in <code>roep_student_bot_aan</code>, zoals <code>bord</code> en <code>hand_met_kleur</code>
+      dat ook zijn, en dan is <code>schat_winkans(hand, tegenstanders=actieve_tegenstanders)</code>
+      een regel die klopt in plaats van een aanname.
+    </p>
+    <p>
+      <b>De open vraag:</b> WC5 zit al op 130 minuten en kan er geen 16 bij hebben. Er moet dus iets
+      uit — de peer review (20 min) naar huiswerk, of de Streamlit-opstap (10 min) door naar WC6.
+      Dat is een keuze, geen rekensom.
+    </p>
   </div>
 
   <div class="item">
