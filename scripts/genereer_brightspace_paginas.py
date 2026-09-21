@@ -83,6 +83,9 @@ WEKEN = [
             ("_hulpfuncties.py", "Hulpfuncties week 1",
              "Downloaden en in dezelfde map als je notebook zetten, anders werkt de eerste cel niet."),
         ],
+        "hoorcolleges": [
+            ("01_Intro to Data Science.pptx", "Hoorcollege 1 — Intro to Data Science", None),
+        ],
         "powerpoints": [
             # De naam op Brightspace, niet de bestandsnaam in de repo -- zie
             # ANDERE_NAAM_OP_BRIGHTSPACE.
@@ -109,6 +112,9 @@ WEKEN = [
             ("pokerdata_voorbeeld.csv", "Voorbeelddata bij Werkcollege 3",
              "In dezelfde map als het notebook."),
         ],
+        "hoorcolleges": [
+            ("02_Data Science Proces.pptx", "Hoorcollege 2 — Het Data Science-proces", None),
+        ],
         "powerpoints": [],
         "deadlines": [],
         "let_op": None,
@@ -129,6 +135,15 @@ WEKEN = [
              "Hier zit schat_winkans() in. Let op de parameter tegenstanders: standaard 1, "
              "maar aan een tafel van zes moet je 5 meegeven."),
         ],
+        "hoorcolleges": [
+            ("03_Exploring Manipulating Data.pptx",
+             "Hoorcollege 3 — Exploring en manipulating data",
+             "Achteraan staan de dia's over de bot: wat hij deze week kon, wat er in "
+             "week 5 bij komt, en de uitslag van het toernooi."),
+            ("02_Dashboard opdracht omschrijving.pptx",
+             "Aftrap Groepscase 2 — het Streamlit-dashboard",
+             "De volledige rubric staat onder Cases &gt; Rubric voor de cases."),
+        ],
         "powerpoints": [],
         "deadlines": [
             ("woensdag 09:00", "een werkende Bot v2"),
@@ -147,6 +162,7 @@ WEKEN = [
             ("Week4_Werkcollege6.ipynb", "Werkcollege 6 — Visual Maandag", None),
         ],
         "hulpbestanden": [],
+        "hoorcollege_volgt": True,
         "powerpoints": [],
         "deadlines": [],
         "let_op": None,
@@ -169,6 +185,7 @@ WEKEN = [
              "erheen. Je eigen <code>mijn_bot_week3.py</code> heb je er ook bij nodig: "
              "daar begin je Bot v3 mee."),
         ],
+        "hoorcollege_volgt": True,
         "powerpoints": [],
         "deadlines": [
             ("woensdag 09:00", "Bot v3 — <strong>dit toernooi telt mee</strong>: 1e 0,5 · 2e 0,4 · 3e 0,3 · 4e 0,2 · 5e 0,1"),
@@ -197,6 +214,7 @@ WEKEN = [
              "het notebook haalt de grenzen normaal zelf via de API op, en dat ophalen is "
              "onderdeel van de opdracht."),
         ],
+        "hoorcollege_volgt": True,
         "powerpoints": [],
         "deadlines": [],
         "let_op": "Dit notebook heeft <code>geopandas</code> nodig, en dat is de enige "
@@ -284,19 +302,41 @@ ANDERE_NAAM_OP_BRIGHTSPACE = {
 }
 
 
-def bestandslink(pad: str, label: str) -> str:
-    return (f'<p><a rel="noopener" href="{BASISPAD}/{pad}" target="_blank">'
-            f'{html.escape(label)}</a></p>')
+# bestandslink() is weg. Die maakte de /content/enforced/-links die de pagina's
+# lieten vastlopen; zie bestandenblok() hieronder. Wil je links terug, dan via
+# Insert Quicklink in Brightspace en niet met een pad uit dit script.
 
 
 def bestandenblok(items) -> str:
-    """Link, en daaronder als losse alinea waar het bestand moet staan."""
-    regels = []
+    """
+    De bestanden als LIJST MET NAMEN, zonder link.
+
+    Waarom geen link: in september 2026 liepen de pagina's op Brightspace vast,
+    en het bleef gebeuren nadat het HvA-template eruit was. Wat overbleef als
+    verschil waren deze links -- rauwe /content/enforced/-paden die Brightspace
+    bij het openen moet opzoeken en op rechten controleren. Week 4 had er één en
+    liep al vast; met een PowerPoint erbij werd de pagina zelfs onbewerkbaar.
+
+    Een pagina zonder links kan dat niet overkomen. De student ziet de
+    bestandsnaam en pakt het bestand in Content, waar het toch al staat. Wil je
+    de links terug, voeg ze dan met Insert Quicklink toe: dat is Brightspace' eigen
+    mechanisme en geen pad dat wij verzinnen.
+    """
+    regels = ["<ul>"]
     for pad, label, toelichting in items:
-        regels.append(bestandslink(pad, label))
+        naam = html.escape(bestandsnaam_op_brightspace(pad))
+        regel = f"<li><strong>{html.escape(label)}</strong><br><code>{naam}</code>"
         if toelichting:
-            regels.append(f"<p>{toelichting}</p>")
+            regel += f"<br>{toelichting}"
+        regels.append(regel + "</li>")
+    regels.append("</ul>")
     return "\n".join(regels)
+
+
+def bestandsnaam_op_brightspace(pad: str) -> str:
+    """Het pad uit WEKEN is soms URL-gecodeerd, want het was een href."""
+    from urllib.parse import unquote
+    return unquote(pad).split("/")[-1]
 
 
 def weekpagina(w: dict) -> str:
@@ -310,6 +350,8 @@ def weekpagina(w: dict) -> str:
     delen.append(f'<h1>{html.escape(titel)}</h1>')
     delen.append(f'<p>{html.escape(w["lead"])}</p>')
     delen.append(f'<p>Pokerbot Analytics Challenge · {datum_nl(ma)} t/m {datum_nl(vr)} 2026</p>')
+    delen.append('<p class="lead">De bestanden die hieronder staan vind je onder '
+                 f'<strong>Content &gt; Week {w["week"]}</strong>.</p>')
 
     if w["deadlines"]:
         regels = "\n".join(f'<li><strong>{wanneer}</strong> — {wat}</li>'
@@ -319,7 +361,14 @@ def weekpagina(w: dict) -> str:
         delen.append('<h2>Deadlines</h2>\n'
                      '<p>Deze week lever je geen nieuwe botversie in.</p>')
 
-    delen.append('<h2>Notebooks</h2>\n' + bestandenblok(w["werkcolleges"]))
+    delen.append('<h2>Werkcolleges</h2>\n' + bestandenblok(w["werkcolleges"]))
+
+    hoor = w.get("hoorcolleges")
+    if hoor:
+        delen.append('<h2>Hoorcollege</h2>\n' + bestandenblok(hoor))
+    elif w.get("hoorcollege_volgt"):
+        delen.append('<h2>Hoorcollege</h2>\n'
+                     '<p>De slides van het hoorcollege komen hier zodra ze klaar zijn.</p>')
 
     if w["hulpbestanden"]:
         delen.append('<h2>Hulpbestanden</h2>\n' + bestandenblok(w["hulpbestanden"]))
@@ -351,9 +400,12 @@ def weekpagina(w: dict) -> str:
             'inzending. Je studentnummer en token staan bovenaan je notebook.</p>'
         )
 
+    # Ook deze als tekst. Het is een externe link en die is niet verdacht, maar
+    # één uitzondering maakt de regel "deze pagina's hebben geen links" onwaar,
+    # en dan gaat iemand hem later toch weer oprekken.
     delen.append(
-        f'<p><a rel="noopener" href="{API}/docs" target="_blank">API-documentatie</a> — '
-        'voor wie de resultaten zelf uit de API wil ophalen.</p>'
+        f'<h2>API</h2>\n<p>Wie de resultaten zelf wil ophalen: de documentatie '
+        f'staat op <code>{API}/docs</code></p>'
     )
 
     delen.append(VOET)
@@ -415,8 +467,8 @@ def overzichtspagina() -> str:
         'en de cellen eronder halen de uitslag op. Zo vaak opnieuw inleveren als je wilt — het '
         'systeem gebruikt altijd je laatste inzending. Je studentnummer en token krijg je in '
         'week 1 en die blijven het hele blok geldig.</p>\n'
-        f'<p><a rel="noopener" href="{API}/docs" target="_blank">API-documentatie</a> — '
-        'voor wie de resultaten zelf uit de API wil ophalen.</p>'
+        f'<h2>API</h2>\n<p>Wie de resultaten zelf wil ophalen: de documentatie '
+        f'staat op <code>{API}/docs</code></p>'
     )
 
     delen.append(VOET)
