@@ -36,13 +36,25 @@ def api_get(pad, token, params=None):
     )
 
 
-def api_post(pad, token, json_body, params=None):
+# Een toernooi draaien duurt lang. Elke bot loopt in zijn eigen `python -I`-
+# subproces, en met 27 bots x 5 simulaties x 50 handen -- waarvan een deel ook nog
+# schat_winkans aanroept -- is een minuut ver te kort. Op de gratis Render-plan
+# duurt het langer dan op een laptop.
+#
+# Belangrijk: als de HTTP-verbinding afbreekt, stopt het toernooi NIET. De server
+# rekent door en schrijft de uitslag in de cache. Het enige wat je kwijt bent is
+# het antwoord -- vandaar de knop "Huidige uitslag ophalen" hiernaast, en de
+# uitleg bij de timeout hieronder.
+TOERNOOI_TIMEOUT = 900
+
+
+def api_post(pad, token, json_body, params=None, timeout=60):
     return requests.post(
         f"{st.session_state.api_url}{pad}",
         params=params or {},
         json=json_body,
         headers={"Authorization": f"Bearer {token}"},
-        timeout=60,
+        timeout=timeout,
     )
 
 
@@ -393,8 +405,29 @@ def docent_tab():
 
     with kolom_opnieuw:
         if st.button("Toernooi opnieuw draaien", help="Start een verse run (bv. na te late inzendingen)."):
-            response = api_post(f"/toernooi/{int(week)}/opnieuw", docent_token, json_body=None, params=params)
-            if response.status_code != 200:
+            with st.spinner("Het toernooi draait. Bij 27 bots duurt dit een paar minuten."):
+                try:
+                    response = api_post(f"/toernooi/{int(week)}/opnieuw", docent_token,
+                                        json_body=None, params=params,
+                                        timeout=TOERNOOI_TIMEOUT)
+                except requests.exceptions.Timeout:
+                    # Geen stacktrace: dit is geen fout in de code maar een run die
+                    # langer duurt dan we durven wachten. De server rekent door.
+                    st.warning(
+                        f"Na {TOERNOOI_TIMEOUT // 60} minuten nog geen antwoord. "
+                        "Het toernooi loopt op de server door en de uitslag komt in "
+                        "de cache -- er is niets misgegaan en je hoeft niet opnieuw "
+                        "te starten. Wacht een paar minuten en klik dan op "
+                        "**Huidige uitslag ophalen**."
+                    )
+                    response = None
+                except requests.exceptions.RequestException as fout:
+                    st.error(f"Verbinding mislukt: {fout}")
+                    response = None
+
+            if response is None:
+                pass
+            elif response.status_code != 200:
                 st.error(f"Mislukt ({response.status_code}): {_foutmelding(response)}")
             else:
                 _toon_toernooi_resultaat(response.json(), gedraaid_nu=True)
