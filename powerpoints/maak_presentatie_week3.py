@@ -42,15 +42,9 @@ NOTEBOOK = os.path.join(WORTEL, "notebooks", "Week3_Werkcollege4.ipynb")
 PLOTMAP = os.path.join(HIER, "plots_week3")
 UITVOER = os.path.join(HIER, "Pokerbot_Upgrade_Week3.pptx")
 
-# Zelfde palet als het Week 1-deck.
-BG = RGBColor(248, 249, 250)
-PRIMAIR = RGBColor(18, 30, 49)
-ACCENT = RGBColor(27, 77, 62)
-GEDEMPT = RGBColor(80, 90, 100)
-KAART = RGBColor(255, 255, 255)
-LIJN = RGBColor(220, 225, 230)
-LICHTGROEN = RGBColor(79, 195, 161)
-WAARSCHUWING = RGBColor(179, 38, 30)
+# Palet en bouwstenen staan in dekstijl.py, want het week-6-deck gebruikt ze ook.
+from dekstijl import (BG, PRIMAIR, ACCENT, GEDEMPT, KAART, LIJN, LICHTGROEN,
+                      WAARSCHUWING, nieuwe_dia, kop, kaart, tekstblok)
 
 
 # ---------------------------------------------------------------------------
@@ -436,63 +430,6 @@ def maak_plots():
 # ---------------------------------------------------------------------------
 # Dia-bouwstenen
 # ---------------------------------------------------------------------------
-
-def nieuwe_dia(prs):
-    dia = prs.slides.add_slide(prs.slide_layouts[6])
-    achtergrond = dia.shapes.add_shape(MSO_SHAPE.RECTANGLE, 0, 0,
-                                       prs.slide_width, prs.slide_height)
-    achtergrond.fill.solid()
-    achtergrond.fill.fore_color.rgb = BG
-    achtergrond.line.fill.background()
-    achtergrond.shadow.inherit = False
-    return dia
-
-
-def kop(dia, categorie, titel):
-    vak = dia.shapes.add_textbox(Inches(0.8), Inches(0.42), Inches(11.7), Inches(1.1))
-    tf = vak.text_frame
-    tf.word_wrap = True
-
-    p = tf.paragraphs[0]
-    p.text = categorie
-    p.font.size = Pt(10)
-    p.font.bold = True
-    p.font.color.rgb = ACCENT
-
-    p2 = tf.add_paragraph()
-    p2.text = titel
-    p2.font.size = Pt(24)
-    p2.font.bold = True
-    p2.font.color.rgb = PRIMAIR
-    p2.space_before = Pt(4)
-
-
-def kaart(dia, links, boven, breedte, hoogte, kleur=KAART):
-    vorm = dia.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, links, boven, breedte, hoogte)
-    vorm.fill.solid()
-    vorm.fill.fore_color.rgb = kleur
-    vorm.line.color.rgb = LIJN
-    vorm.line.width = Pt(0.75)
-    vorm.shadow.inherit = False
-    vorm.adjustments[0] = 0.03
-    return vorm
-
-
-def tekstblok(dia, links, boven, breedte, hoogte, regels):
-    """regels: lijst van (tekst, puntgrootte, vet, kleur, ruimte_ervoor)."""
-    vak = dia.shapes.add_textbox(links, boven, breedte, hoogte)
-    tf = vak.text_frame
-    tf.word_wrap = True
-    for i, (tekst, grootte, vet, kleur, ruimte) in enumerate(regels):
-        p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
-        p.text = tekst
-        p.font.size = Pt(grootte)
-        p.font.bold = vet
-        p.font.color.rgb = kleur
-        if ruimte:
-            p.space_before = Pt(ruimte)
-    return vak
-
 
 def titeldia(prs):
     dia = prs.slides.add_slide(prs.slide_layouts[6])
