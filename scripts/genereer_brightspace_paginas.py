@@ -219,28 +219,60 @@ WEKEN = [
 # student er iets aan heeft, en ze zijn met de hand niet te onderhouden.
 # ---------------------------------------------------------------------------
 
+# De pagina's staan op zichzelf: de opmaak zit IN het bestand.
+#
+# Ze laadden eerst twee stylesheets uit /shared/HTML-Template-Library/. Dat zijn
+# render-blokkerende bestanden: komt er één niet, dan laat de browser niets zien
+# tot de timeout. In september 2026 liepen bijna alle pagina's vast, in Safari én
+# in Chrome, en dat is precies het beeld dat bij zo'n gedeelde afhankelijkheid
+# hoort -- zeventien pagina's die stuk gaan aan één bestand dat niemand van ons
+# beheert.
+#
+# Wat de oorzaak dáár was is nooit vastgesteld. Het maakt ook niet meer uit: met
+# de opmaak in het bestand kan het niet meer gebeuren. De prijs is dat de pagina's
+# niet millimeter-identiek zijn aan het HvA-template; de kleuren en de maten
+# hieronder komen er wel uit (#25167A is het huisstijlblauw, de lettergroottes en
+# regelafstanden zijn die van main.min.css).
+#
+# Eén ding bewust NIET overgenomen: main.min.css importeert bovenin twee fonts
+# van fonts.googleapis.com. Ook dat is een externe afhankelijkheid, en voor een
+# lespagina niet de moeite waard. Hieronder staan de systeemfonts.
+
+# De accolades staan dubbel omdat KOP door .format() gaat: {{ wordt {.
+STIJL = """\t<style>
+\t*{{box-sizing:border-box}}
+\tbody{{margin:0;background:#fff;color:#000;
+\t\tfont-family:"Open Sans","Segoe UI",system-ui,-apple-system,sans-serif;
+\t\tfont-size:17px;line-height:1.65;-webkit-text-size-adjust:100%}}
+\t.blad{{max-width:52rem;margin:0 auto;padding:1.5rem 1.25rem 3rem}}
+\t.streep{{height:10px;width:272px;background:#25167A;margin-bottom:1.6rem}}
+\th1{{color:#000;font-size:30px;font-weight:700;line-height:1.2;margin:0 0 .6rem}}
+\th2{{color:#25167A;font-size:23px;font-weight:700;line-height:1.3;margin:2rem 0 .5rem}}
+\tp{{margin:.6rem 0}}
+\tul{{padding-left:1.3rem;margin:.6rem 0}}
+\tli{{margin-bottom:.35rem}}
+\ta{{color:#25167A;font-weight:700;text-decoration:underline}}
+\ta:hover,a:focus{{text-decoration:none}}
+\tcode{{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+\t\tfont-size:.92em;background:#F2F2F2;padding:.08em .32em;border-radius:3px}}
+\t.lead{{color:#565A5C}}
+\t@media (min-width:768px){{body{{font-size:19px}}h1{{font-size:40px}}h2{{font-size:28px}}}}
+\t</style>
+"""
+
 KOP = """<!DOCTYPE html>
 <html lang="nl"><head>
 \t<meta charset="utf-8">
-\t<meta http-equiv="x-ua-compatible" content="ie=edge">
 \t<title>{titel}</title>
 \t<meta name="description" content="{omschrijving}">
 \t<meta name="viewport" content="width=device-width, initial-scale=1.0">
-\t<!-- Bootstrap CDN CSS -->
-\t<link rel="stylesheet" href="/shared/HTML-Template-Library/HTML-Template-HvA-2019/HvA_Template/hva_templates_2019/../assets/thirdpartylib/bootstrap-3.3.6/css/bootstrap.min.css">
-\t<!-- Course Styles -->
-\t<link rel="stylesheet" href="/shared/HTML-Template-Library/HTML-Template-HvA-2019/HvA_Template/hva_templates_2019/../assets/css/main.min.css">
-</head><body class="content layout-2" role="document"><div class="container-fluid"><main>
-<div class="row">
-<div class="col-sm-12">
-<div class="decoration"></div>
-</div>
-<div class="col-xs-12 col-sm-offset-1 col-sm-10">
+""" + STIJL + """</head><body>
+<div class="blad">
+<div class="streep"></div>
 """
 
 VOET = """</div>
-</div>
-</main></div></body></html>
+</body></html>
 """
 
 
