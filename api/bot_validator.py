@@ -280,6 +280,30 @@ def _draai_in_apart_proces(code: str, functienaam: str, testgevallen: list[dict]
         return None, "Kon het resultaat van je functie niet uitlezen."
 
 
+# Welke velden uit een testgeval de student te zien krijgt, en in welke volgorde.
+# Niet alles: strategie en bluf_kans zijn zijn eigen invoer, die hoeft hij niet
+# terug te lezen, en hand_met_kleur zegt naast hand weinig extra's.
+_TOON_VELDEN = ("hand", "stack", "ronde", "pot", "inzet_om_te_callen", "bord")
+
+
+def _testuitslag(testgevallen: list, acties: list) -> list:
+    """
+    De testgevallen mét het antwoord van de bot erbij.
+
+    actie_resultaten is een platte lijst acties zonder context: achttien keer
+    "fold" zegt een student niets. Met de situatie ernaast wordt het een tabel
+    waarin je in één blik ziet dat je bot op elke hand hetzelfde doet -- en dat
+    is precies waar het in week 3 misging: een groot deel van de klas leverde de
+    voorbeeldbot in, technisch goedgekeurd, en niemand die het zag.
+    """
+    uitslag = []
+    for geval, actie in zip(testgevallen, acties):
+        rij = {veld: geval[veld] for veld in _TOON_VELDEN if veld in geval}
+        rij["actie"] = actie
+        uitslag.append(rij)
+    return uitslag
+
+
 def _is_constante_bot(acties: list) -> bool:
     """
     True als de bot op ALLE testgevallen precies dezelfde actie teruggeeft.
@@ -305,17 +329,17 @@ def valideer_bot_code(code: str, week: int, strategie: str | None = None, bluf_k
     en geeft daarbij steeds een herkenbare actie terug.
     """
     if week not in VERWACHTE_FUNCTIES:
-        return {"geldig": False, "foutmelding": f"Onbekende week: {week}", "actie_resultaten": None, "constante_bot": False}
+        return {"geldig": False, "foutmelding": f"Onbekende week: {week}", "actie_resultaten": None, "testuitslag": None, "constante_bot": False}
 
     config = VERWACHTE_FUNCTIES[week]
 
     strategie_fout = _valideer_strategie_en_bluf_kans(config, strategie, bluf_kans)
     if strategie_fout:
-        return {"geldig": False, "foutmelding": strategie_fout, "actie_resultaten": None, "constante_bot": False}
+        return {"geldig": False, "foutmelding": strategie_fout, "actie_resultaten": None, "testuitslag": None, "constante_bot": False}
 
     verboden_reden = _bevat_verboden_imports(code)
     if verboden_reden:
-        return {"geldig": False, "foutmelding": verboden_reden, "actie_resultaten": None, "constante_bot": False}
+        return {"geldig": False, "foutmelding": verboden_reden, "actie_resultaten": None, "testuitslag": None, "constante_bot": False}
 
     functienaam = config["functienaam"]
     if not _bevat_functie(code, functienaam):
@@ -336,7 +360,7 @@ def valideer_bot_code(code: str, week: int, strategie: str | None = None, bluf_k
     # Daarom blijft `code` ongewijzigd op kolom 0 staan, los van de rest.
     acties, draaifout = _draai_in_apart_proces(code, functienaam, testgevallen)
     if draaifout:
-        return {"geldig": False, "foutmelding": draaifout, "actie_resultaten": None, "constante_bot": False}
+        return {"geldig": False, "foutmelding": draaifout, "actie_resultaten": None, "testuitslag": None, "constante_bot": False}
 
     if config["heeft_sizing"]:
         toegestane_acties = TOEGESTANE_ACTIES_MET_SIZING
@@ -358,6 +382,7 @@ def valideer_bot_code(code: str, week: int, strategie: str | None = None, bluf_k
                     f" gaf je functie '{actie}' terug — verwacht een van {sorted(toegestane_acties)}."
                 ),
                 "actie_resultaten": acties,
+                "testuitslag": _testuitslag(testgevallen, acties),
                 "constante_bot": False,
             }
 
@@ -365,6 +390,7 @@ def valideer_bot_code(code: str, week: int, strategie: str | None = None, bluf_k
         "geldig": True,
         "foutmelding": None,
         "actie_resultaten": acties,
+        "testuitslag": _testuitslag(testgevallen, acties),
         "constante_bot": _is_constante_bot(acties),
     }
 
