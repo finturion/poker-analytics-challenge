@@ -413,7 +413,7 @@
       een regel die klopt in plaats van een aanname.
     </p>
     <p>
-      <b>Besloten, en daarna heropend:</b> de peer review (Deel 4, 20 min) gaat naar huiswerk. Daarmee komt WC5 op
+      <b>Besloten, heropend, en opnieuw besloten:</b> de peer review (Deel 4, 20 min) gaat uit WC5 weg. Daarmee komt WC5 op
       130 − 20 + 16 = <b>126 minuten</b>, en WC4 op 107. Allebei korter dan nu, met één idee per
       middag.
     </p>
@@ -431,24 +431,49 @@
         deadline. Wie dinsdagavond begint, vindt niets en denkt dat het stuk is — één zin in het
         notebook lost dat op.</li>
     </ul>
-    <p class="meta"><span><b>Nog te beslissen: hoort de peer review er überhaupt zo bij?</b></span></p>
+    <p class="meta"><span><b>Besloten: de peer review verhuist naar de Visual Maandag</b></span></p>
     <p>
-      Het verhuizen naar huiswerk ging ervan uit dat de peer review blijft zoals hij is: je
-      beoordeelt de grafiek van een klasgenoot, gekoppeld aan zijn botinzending. Daar is twijfel
-      over, en die is terecht — de koppeling aan de bot doet weinig. Wat je beoordeelt is een
-      grafiek, en of die goed is heeft niets te maken met hoe de bot eronder speelt.
+      Niet naar huiswerk, maar naar Werkcollege 6 — en <b>los van de botinzending</b>. Dat is waar
+      hij inhoudelijk thuishoort: die hele middag gaat over grafieken lezen en beoordelen. Wat je
+      bij een peer review doet is een grafiek beoordelen, en of die goed is heeft niets te maken
+      met hoe de bot eronder speelt.
     </p>
     <p>
-      <b>Het alternatief:</b> de peer review op de Visual Maandag, los van de botinzending. Dat is
-      waar het thuishoort — daar gaat de hele dag over grafieken lezen en beoordelen, en in WC6
-      Deel 10 zit al een peer-vergelijking. Twee momenten die hetzelfde doen, in twee verschillende
-      weken, is er één te veel.
+      In WC6 staat al een <i>Deel 10 — Peer-vergelijking</i> van 10 minuten. Die twee worden één
+      onderdeel; het is dus niet 20 minuten erbovenop.
+    </p>
+    <div class="tabelwrap">
+      <table>
+        <thead><tr><th>werkcollege</th><th>nu</th><th>volgend jaar</th><th>waardoor</th></tr></thead>
+        <tbody>
+          <tr><td>WC4</td><td class="getal">123 min</td><td class="getal">107 min</td><td>pot odds eruit</td></tr>
+          <tr><td>WC5</td><td class="getal">130 min</td><td class="getal">126 min</td><td>peer review eruit (−20), pot odds erin (+16)</td></tr>
+          <tr><td>WC6</td><td class="getal">159 min</td><td class="getal">169 min</td><td>peer review erin, samengevoegd met Deel 10 (+10)</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      <b>Daarmee wordt WC6 het langste werkcollege van het vak.</b> Dat is de prijs, en het is een
+      bewuste: WC4 en WC5 worden allebei lichter, en de zwaarte verhuist naar een week zonder
+      botdeadline. Moet er toch iets uit, dan is <i>Deel 9 — de winkans-ranglijst</i> (15 min) de
+      eerste kandidaat: dat is de enige pokerinhoud op een middag die verder over visualisatie gaat.
+    </p>
+    <p class="meta"><span><b>Twee dingen die dan gebouwd moeten worden</b></span></p>
+    <p>
+      <b>1. Een inzending zonder bot.</b> De gallery vult zich uit <code>/submit</code>, en dat
+      endpoint eist <code>bot_code</code>. In week 4 levert niemand een bot in. Wil je op de Visual
+      Maandag elkaars grafieken van díé middag beoordelen, dan moet er een manier komen om alleen
+      een grafiek in te sturen. Doe je dat niet, dan beoordelen ze in week 4 de grafieken van hun
+      week-3-inzending — dat werkt met de huidige API, maar dan is de review niet los van de bot en
+      heb je de verhuizing half gedaan.
     </p>
     <p>
-      Wat er dan wél moet worden geregeld: de drie reviews zijn nu een <i>voorwaarde</i> voor een
-      voldoende (<code>MIN_REVIEWS_VOOR_VOLDAAN = 3</code>), en die zit vast aan de week van de
-      inzending. Verhuist de review naar een andere week, dan moet die koppeling mee — anders houdt
-      iemand een onvoldoende voor iets wat hij een week later netjes heeft gedaan.
+      <b>2. De voorwaarde moet mee.</b> Drie reviews zijn een voorwaarde voor een voldoende
+      (<code>MIN_REVIEWS_VOOR_VOLDAAN = 3</code>), en <code>/status</code> en <code>/export</code>
+      rekenen die per week af tegen de inzending van diezelfde week. Verhuist de review naar week 4
+      terwijl de inzending in week 3 staat, dan houdt iemand een onvoldoende voor iets wat hij een
+      week later netjes heeft gedaan. Het is één plek in <code>main.py</code>, maar wel een plek die
+      je moet aanwijzen vóórdat de eerste student erop stuit.
     </p>
     <p>
       Wat je inlevert is een oordeel over andermans werk, en dat is precies het soort opdracht
