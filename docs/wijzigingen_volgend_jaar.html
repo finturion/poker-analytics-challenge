@@ -322,7 +322,43 @@
 <section>
   <div class="sectiekop">
     <h2>Lesmateriaal</h2>
-    <span class="telling">7 punten</span>
+    <span class="telling">8 punten</span>
+  </div>
+
+  <div class="item">
+    <div class="item-kop">
+      <h3>Een groot deel van de klas leverde de voorbeeldbot in</h3>
+      <i class="merk m-gemeten">gemeten</i>
+    </div>
+    <p class="meta"><span><code>Week3_Werkcollege4.ipynb</code> Deel 7 · <code>api/bot_validator.py</code></span><span>92,2% fold · 9 van 27 bots boven de 99%</span></p>
+    <p>
+      In het toernooi van week 3 foldde <b>92,2% van alle beslissingen</b>, en negen van de 27 bots
+      folden 99% of meer. Dat is geen tight strategie, dat is een bot waar niets aan is veranderd.
+      De testbot die alles callt werd eerste.
+    </p>
+    <p>
+      <b>Het is niet dat ze een kapot skelet inleverden.</b> Nagemeten: een bot met de
+      <code>___</code>-gaten er nog in wordt afgekeurd (“Je bot-code crasht: NameError”). Wat ze
+      inleverden was de <i>werkende</i> voorbeeldbot uit het notebook — technisch in orde, en precies
+      daarom komt niemand erachter.
+    </p>
+    <p>
+      <b>De validator ziet het al.</b> Een bot die op alle testgevallen dezelfde actie teruggeeft
+      wordt gemarkeerd als <code>constante_bot</code>; dat veld staat in <code>/export</code> en de
+      student krijgt het als hint terug. Er gebeurt alleen niets mee. Drie dingen die dat kunnen
+      veranderen, oplopend in hardheid:
+    </p>
+    <ul>
+      <li><b>Laten zien in plaats van melden.</b> Bij het inleveren niet alleen “goedgekeurd”, maar
+        de vier testsituaties met wat je bot koos. Wie vier keer <code>fold</code> ziet staan, weet
+        genoeg zonder dat iemand het hoeft te zeggen.</li>
+      <li><b>De voorbeeldbot herkennen.</b> Als de ingeleverde code op de testgevallen exact hetzelfde
+        antwoordt als <code>voorbeeld_ronde_bewust</code>, meld dat dan: “dit is nog de bot uit het
+        notebook.” Geen afkeuring — een spiegel.</li>
+      <li><b>De opbouw zelf.</b> De diepere oorzaak is dat WC4 drie ideeën tegelijk binnenbrengt (zie
+        het punt hieronder). Wie op Deel 6 vastloopt, levert in wat op Deel 3 stond. Eén idee per
+        werkcollege lost dit aan de voorkant op; de twee punten hierboven vangen de rest.</li>
+    </ul>
   </div>
 
   <div class="item">
@@ -341,7 +377,12 @@
     <ul>
       <li><b>WC4 = “hoe vaak win ik?”</b> Spelregels, handsterkte, winkans. Pot odds gaat eruit,
         inclusief Deel 6 (16 min). Wat overblijft is 107 minuten in plaats van 123, en belangrijker:
-        de bot die woensdag wordt ingeleverd heeft precies één beslisregel, en die snapt iedereen.</li>
+        de bot die woensdag wordt ingeleverd heeft precies één beslisregel, en die snapt iedereen.
+        <b>Maar wél één keer winkans mét de flop erbij.</b> Niet als aparte techniek — dezelfde
+        <code>schat_winkans</code>, één keer aangeroepen met drie kaarten op tafel. Dat is de goedkoopste
+        manier om te laten zien dat het getal verandert als er kaarten bij komen, en het maakt het verschil
+        tussen “ik heb A-K” en “ik heb A-K op dit bord” concreet vóór week 5 er een hele week van maakt.
+        De techniek ligt er al: de functie kan het sinds september 2026.</li>
       <li><b>WC5 = “wat kost meedoen?”</b> Daar landt pot odds, op het moment dat studenten hun
         eigen toernooi-uitslag voor zich hebben en zien wat folden ze heeft opgeleverd. De
         donderdag-deadline van 18:00 is dan precies waar de tweede beslisregel in de bot komt.</li>
