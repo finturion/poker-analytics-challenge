@@ -297,19 +297,57 @@ VOET = """</div>
 # Bestanden die op Brightspace anders heten dan in deze repo. De controle
 # onderaan kijkt of het bronbestand bestaat; zonder deze tabel zou hij op zo'n
 # bestand vals alarm slaan. Verandert de naam op Brightspace, dan hier ook.
+# Bestanden die wél op Brightspace staan maar niet in deze repo: de hoorcollege-
+# decks horen bij het vak en niet bij de pokerlijn, en staan in
+# Drive/HvA/IDS/2026-2027_SEM1/. De controle hieronder slaat ze over -- zonder
+# deze lijst zou hij elke keer vals alarm slaan.
+#
+# Let op: dat betekent ook dat niemand hier controleert of ze op Brightspace
+# staan. Upload je een nieuw hoorcollege, zet hem dan ook in Content.
+BUITEN_DEZE_REPO = {
+    "01_Intro to Data Science.pptx",
+    "02_Data Science Proces.pptx",
+    "03_Exploring Manipulating Data.pptx",
+    "02_Dashboard opdracht omschrijving.pptx",
+}
+
 ANDERE_NAAM_OP_BRIGHTSPACE = {
     "Uitleg Powerpoint Week 1 - Werkcollege 1.pptx": "powerpoints/Pokerbot_Upgrade_Week1.pptx",
 }
 
 
-# bestandslink() is weg. Die maakte de /content/enforced/-links die de pagina's
-# lieten vastlopen; zie bestandenblok() hieronder. Wil je links terug, dan via
-# Insert Quicklink in Brightspace en niet met een pad uit dit script.
+# Staan de bestandsnamen als link op de pagina, of alleen als naam?
+#
+# September 2026: de pagina's liepen vast op Brightspace. Het HvA-template eruit
+# halen hielp niet genoeg -- week 4 had één bestandslink en liep al vast, en met
+# een PowerPoint erbij was de pagina niet meer te bewerken. Toen zijn de links
+# eruit gegaan en werkte het.
+#
+# Links zijn wel prettiger, dus ze staan er weer in. Gaat het opnieuw mis, zet
+# deze op False en draai het script opnieuw: dan staan de bestanden er als naam,
+# zonder link, en kan de pagina er niet aan kapotgaan.
+MET_LINKS = True
+
+
+def bestandslink(pad: str, label: str) -> str:
+    """
+    De link, met een pad dat in een href mág staan.
+
+    Spaties horen als %20 in een URL. Het week-1-deck stond daarom met de hand
+    gecodeerd in WEKEN, en de hoorcollege-decks die er later bij kwamen niet --
+    dat levert een href met spaties erin op. Browsers repareren dat meestal
+    stilletjes; erop vertrouwen is een slecht idee op een pagina die toch al
+    vastliep. Coderen doen we hier, één keer, zodat niemand het hoeft te
+    onthouden. quote() laat een bestaande %20 met rust (safe="%/").
+    """
+    from urllib.parse import quote
+    return (f'<a rel="noopener" href="{BASISPAD}/{quote(pad, safe="%/")}" target="_blank">'
+            f'{html.escape(label)}</a>')
 
 
 def bestandenblok(items) -> str:
     """
-    De bestanden als LIJST MET NAMEN, zonder link.
+    De bestanden als lijst: de naam van het bestand, en een link als MET_LINKS aan staat.
 
     Waarom geen link: in september 2026 liepen de pagina's op Brightspace vast,
     en het bleef gebeuren nadat het HvA-template eruit was. Wat overbleef als
@@ -325,7 +363,10 @@ def bestandenblok(items) -> str:
     regels = ["<ul>"]
     for pad, label, toelichting in items:
         naam = html.escape(bestandsnaam_op_brightspace(pad))
-        regel = f"<li><strong>{html.escape(label)}</strong><br><code>{naam}</code>"
+        if MET_LINKS:
+            regel = f"<li>{bestandslink(pad, label)}<br><code>{naam}</code>"
+        else:
+            regel = f"<li><strong>{html.escape(label)}</strong><br><code>{naam}</code>"
         if toelichting:
             regel += f"<br>{toelichting}"
         regels.append(regel + "</li>")
@@ -492,6 +533,8 @@ def controleer(paden: list[str]) -> None:
         # Elke link naar een cursusbestand moet naar een bestand wijzen dat bestaat.
         for pad_in_link in re.findall(rf'{re.escape(BASISPAD)}/([^"]+)', s):
             bestand = pad_in_link.replace("%20", " ")
+            if bestand in BUITEN_DEZE_REPO:
+                continue
             kandidaten = [f"notebooks/{bestand}", f"notebooks/data/{bestand}",
                           f"powerpoints/{bestand}"]
             if bestand in ANDERE_NAAM_OP_BRIGHTSPACE:
