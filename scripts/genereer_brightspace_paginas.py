@@ -91,6 +91,7 @@ WEKEN = [
             # ANDERE_NAAM_OP_BRIGHTSPACE.
             ("Uitleg%20Powerpoint%20Week%201%20-%20Werkcollege%201.pptx",
              "Powerpoint bij Werkcollege 1"),
+            ("Pokerbot_Upgrade_Week1.pptx", "Slides Werkcollege 1 — De eerste deal"),
         ],
         "deadlines": [
             ("woensdag 09:00", "Bot v1 ingeleverd — anders speel je niet mee in het toernooi van woensdag"),
@@ -144,7 +145,9 @@ WEKEN = [
              "Aftrap Groepscase 2 — het Streamlit-dashboard",
              "De volledige rubric staat onder Cases &gt; Rubric voor de cases."),
         ],
-        "powerpoints": [],
+        "powerpoints": [
+            ("Pokerbot_Upgrade_Week3.pptx", "Slides Werkcollege 4 — Bot v2"),
+        ],
         "deadlines": [
             ("woensdag 09:00", "een werkende Bot v2"),
             ("donderdag 18:00", "verbeterde Bot v2, plus: je groep heeft het onderwerp van Case 2 vastgelegd"),
@@ -163,7 +166,9 @@ WEKEN = [
         ],
         "hulpbestanden": [],
         "hoorcollege_volgt": True,
-        "powerpoints": [],
+        "powerpoints": [
+            ("Visual_Maandag_Werkcollege6.pptx", "Slides Werkcollege 6 — Visual Maandag"),
+        ],
         "deadlines": [],
         "let_op": None,
     },

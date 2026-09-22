@@ -4,7 +4,7 @@ Het deck bij Werkcollege 6 (Week 4): Visual Maandag.
     python3 powerpoints/wc6plaatjes.py [uitslag.json]   # eerst de platen
     python3 powerpoints/maak_presentatie_week6.py       # dan het deck
 
-Schrijft powerpoints/Visual_Maandag_Week6.pptx.
+Schrijft powerpoints/Visual_Maandag_Werkcollege6.pptx.
 
 Dit werkcollege gaat over kijken, dus dit deck laat zien in plaats van te
 vertellen. Zeven van de vijftien dia's zijn een plaat met één regel eronder; de
@@ -34,7 +34,10 @@ HIER = os.path.dirname(os.path.abspath(__file__))
 WORTEL = os.path.dirname(HIER)
 NOTEBOOK = os.path.join(WORTEL, "notebooks", "Week4_Werkcollege6.ipynb")
 PLOTMAP = os.path.join(HIER, "plots_week4")
-UITVOER = os.path.join(HIER, "Visual_Maandag_Week6.pptx")
+# Werkcollege 6 valt in WEEK 4. Het bestand heette eerst Visual_Maandag_Week6,
+# en dat leest als "week 6" -- op Brightspace ziet een student alleen de
+# bestandsnaam, en die stond dan in de verkeerde week te suggereren.
+UITVOER = os.path.join(HIER, "Visual_Maandag_Werkcollege6.pptx")
 
 # (categorie, titel, plaatnaam of None, [regels], onderschrift)
 # Een regel is (tekst, grootte, vet, kleur, ruimte_ervoor).
