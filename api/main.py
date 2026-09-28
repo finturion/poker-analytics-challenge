@@ -18,9 +18,11 @@ Doel: nul handmatige nakijkdruk voor de docent.
 - POST /datacamp/snapshot -> docent-only: wekelijkse DataCamp-voortgang wegschrijven
 - GET  /datacamp/overzicht -> docent-only: hele klas langs de roosterdeadlines, incl. achterblijvers
 - GET  /datacamp/stand/{student_id} -> student ziet zijn EIGEN DataCamp-stand + anoniem klasgemiddelde
+- GET  /versie          -> welke commit draait er, en sinds wanneer (openbaar, geen token)
 
 Start lokaal met:  uvicorn main:app --reload
 """
+import os
 import random
 from datetime import datetime, timezone
 
@@ -52,6 +54,52 @@ app = FastAPI(title="Poker Analytics Challenge API")
 @app.on_event("startup")
 def _bij_opstarten():
     db.bootstrap_geheimen_uit_omgeving()
+
+
+# Het moment waarop dit proces begon. Verandert alleen bij een herstart, en een
+# deploy is een herstart -- dus dit is het antwoord op "staat mijn fix er al op?".
+_GESTART = datetime.now(timezone.utc)
+
+
+@app.get("/versie")
+def versie():
+    """
+    Welke commit draait hier, en sinds wanneer.
+
+    Openbaar en zonder token, want anders is hij nutteloos voor precies het geval
+    waarvoor hij bestaat: net gepusht, en je wilt weten of Render het al heeft
+    opgepikt. Hij geeft niets prijs -- de commit-hash staat ook gewoon op GitHub.
+
+    Aanleiding: in september 2026 stond er een fix klaar voor een KeyError bij het
+    inleveren, en er was geen enkele manier om van buitenaf te zien of die al live
+    stond. Een draaiende oude versie antwoordt op elk ander endpoint precies
+    hetzelfde als een draaiende nieuwe.
+
+    RENDER_GIT_COMMIT zet Render zelf klaar. Lokaal is die er niet; dan proberen
+    we git, en anders staat er "onbekend" -- geen foutmelding, want dit endpoint
+    mag nooit de reden zijn dat de API niet start.
+    """
+    commit = os.environ.get("RENDER_GIT_COMMIT") or _commit_uit_git() or "onbekend"
+    draait_al = datetime.now(timezone.utc) - _GESTART
+    return {
+        "commit": commit,
+        "kort": commit[:7] if commit != "onbekend" else commit,
+        "branch": os.environ.get("RENDER_GIT_BRANCH") or "onbekend",
+        "gestart": _GESTART.isoformat(),
+        "draait_al_seconden": int(draait_al.total_seconds()),
+    }
+
+
+def _commit_uit_git():
+    """Alleen voor lokaal draaien. Op Render staat RENDER_GIT_COMMIT al klaar."""
+    import subprocess
+    try:
+        uit = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True,
+                             text=True, timeout=2,
+                             cwd=os.path.dirname(os.path.abspath(__file__)))
+        return uit.stdout.strip() or None
+    except Exception:
+        return None
 
 MIN_REVIEWS_VOOR_VOLDAAN = 3
 GALLERY_STEEKPROEF = 3
