@@ -52,7 +52,10 @@ def lever_in(student_id, token, week, bot_code, chart_info, strategie=None, bluf
     Stuurt bot-code + grafiek-info naar de API. bot_code is de string-inhoud
     van je .py bestand (bv. open("mijn_bot.py").read()).
 
-    strategie: verplicht vanaf Week 3 ("tight", "loose", "balanced" of "aggressive").
+    strategie: optioneel. Sinds september 2026 vraagt geen enkele week erom; het
+        veld blijft bestaan zodat bots die hem in hun handtekening hebben blijven
+        werken. Wil je drempels per speelstijl, zet die constante dan gewoon
+        bovenaan je eigen botbestand.
     bluf_kans: verplicht vanaf Week 5 (een kans tussen 0 en 1).
     locatie: verplicht vanaf Week 5, bv. {"lat": 52.37, "lon": 4.89, "plaatsnaam": "Amsterdam"}.
     """

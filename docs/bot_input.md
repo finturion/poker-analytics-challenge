@@ -19,8 +19,11 @@ hij herkent. Spel je er een verkeerd, dan krijg je hem niet — zonder foutmeldi
 | `tegenstander_acties_deze_hand` | week 3 | wat anderen deden, deze hand | zie hieronder |
 | `bord` | week 5 | de kaarten op tafel, **met kleur** | `['D4', 'C9', 'HT']` |
 | `hand_met_kleur` | week 5 | je eigen twee, **met kleur** | `['SA', 'HK']` |
-| `strategie` | week 5 | je eigen label | `'tight'` |
 | `bluf_kans` | week 5 | je eigen getal, 0 tot 1 | `0.15` |
+
+`strategie` is er in september 2026 uit gehaald: je koos je eigen label en kreeg
+het daarna zelf weer terug, en niets anders las het. Een bot die hem nog in zijn
+handtekening heeft krijgt hem nog steeds, dus er breekt niets.
 
 `hand` blijft in week 5 wat hij was: twee rangen zonder kleur. De kleuren komen
 apart binnen, in `hand_met_kleur`. Dat is met opzet — anders zou elke bot uit

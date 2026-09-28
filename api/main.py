@@ -64,7 +64,11 @@ class Submission(BaseModel):
     week: int = Field(..., description="1, 3 of 5")
     bot_code: str
     chart: dict
-    strategie: str | None = Field(None, description="Verplicht vanaf Week 3: tight, loose, balanced of aggressive")
+    # Sinds september 2026 optioneel en nergens meer voor nodig. Het veld blijft
+    # bestaan zodat oude inzendingen en bots die het in hun handtekening hebben
+    # blijven werken.
+    strategie: str | None = Field(None, description="Optioneel: tight, loose, balanced of aggressive. "
+                                                    "Je bot krijgt hem terug als hij erom vraagt.")
     bluf_kans: float | None = Field(None, description="Verplicht vanaf Week 5: kans tussen 0 en 1")
     locatie: dict | None = Field(
         None, description="Verplicht vanaf Week 5: {'lat': float, 'lon': float, 'plaatsnaam': str}"

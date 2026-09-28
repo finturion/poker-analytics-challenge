@@ -62,7 +62,17 @@ VERWACHTE_FUNCTIES = {
         "heeft_bluf_kans": False, "heeft_sizing": False},
     3: {"functienaam": "kies_actie", "heeft_stack": True, "heeft_strategie": False,
         "heeft_bluf_kans": False, "heeft_sizing": True},
-    5: {"functienaam": "kies_actie", "heeft_stack": True, "heeft_strategie": True,
+    # `strategie` is er in september 2026 uit gehaald. De student koos zijn eigen
+    # label en kreeg het daarna zelf weer terug; niets anders las het. Het stond
+    # niet in het hand-log, niet in de eindstand, niet in /export en niet in de
+    # hub, dus je kon er ook geen vraag mee beantwoorden -- "verslaat tight de
+    # aggressives" was niet te berekenen. Wie een drempel per stijl wil, zet die
+    # constante in zijn eigen bestand; dat doet precies hetzelfde zonder omweg.
+    #
+    # Meegeven mág nog wel: een bot die `strategie` in zijn handtekening heeft
+    # krijgt hem nog steeds (zie poker_adapter). Zo breekt er niets van wie zijn
+    # bot al had geschreven.
+    5: {"functienaam": "kies_actie", "heeft_stack": True, "heeft_strategie": False,
         "heeft_bluf_kans": True, "heeft_sizing": True},
 }
 
@@ -120,12 +130,15 @@ def _valideer_strategie_en_bluf_kans(config: dict, strategie, bluf_kans) -> str 
     zijn inzending, VOORDAT we zijn code uitvoeren. Retourneert een nette
     Nederlandstalige foutmelding, of None als alles klopt.
     """
+    # Geen enkele week eist nog een strategie. Geeft iemand er tóch een mee, dan
+    # controleren we hem wel: een typfout stil doorlaten is erger dan afkeuren.
     if config["heeft_strategie"]:
         if strategie is None:
             return (
                 "Deze week hoort er een 'strategie' bij je inzending, maar die ontbreekt. "
                 f"Kies uit: {', '.join(sorted(TOEGESTANE_STRATEGIEEN))}."
             )
+    if strategie is not None:
         if strategie not in TOEGESTANE_STRATEGIEEN:
             return (
                 f"'{strategie}' is geen geldige strategie. "
@@ -204,9 +217,14 @@ def _bouw_testgevallen(config: dict, strategie, bluf_kans, parameternamen: set[s
             # nooit gevraagd heeft.
             if "hand_met_kleur" in parameternamen:
                 basis["hand_met_kleur"] = _MET_KLEUR[tuple(hand)]
-            if config["heeft_strategie"]:
+            # Op de handtekening, niet op de week. Sinds strategie niet meer
+            # verplicht is, zou "alleen meegeven als de week erom vraagt"
+            # betekenen dat elke bestaande week-5-bot -- die hem positioneel in
+            # zijn handtekening heeft -- een TypeError krijgt en wordt afgekeurd.
+            # Zo krijgt hij hem gewoon, precies zoals bord en hand_met_kleur.
+            if "strategie" in parameternamen:
                 basis["strategie"] = strategie
-            if config["heeft_bluf_kans"]:
+            if config["heeft_bluf_kans"] or "bluf_kans" in parameternamen:
                 basis["bluf_kans"] = bluf_kans
             if parameternamen & _RONDE_PARAMETERS:
                 for scenario in _TEST_RONDE_SCENARIOS:
