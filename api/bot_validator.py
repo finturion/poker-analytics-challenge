@@ -181,11 +181,19 @@ _RONDE_PARAMETERS = {"ronde", "pot", "inzet_om_te_callen", "tegenstander_acties_
 _TEST_RONDE_SCENARIOS = [
     {"ronde": "preflop", "pot": 30, "inzet_om_te_callen": 10, "tegenstander_acties_deze_hand": [],
      "bord": []},
+    # LET OP het veld `ronde` in elke actie. Het toernooi zet dat er altijd bij
+    # (poker_adapter.receive_game_update_message), en Werkcollege 7 leert
+    # studenten juist om daarop te filteren -- de lijst loopt over de hele hand,
+    # dus zonder filter zie je op de river nog de raise van preflop. Toen het
+    # hier ontbrak, crashte precies de bot die het goed deed: KeyError 'ronde',
+    # en een crash is een afgekeurde inzending. De river-actie staat bewust op
+    # "flop", zodat een bot die NIET filtert een ander antwoord geeft dan een
+    # bot die dat wel doet.
     {"ronde": "flop", "pot": 120, "inzet_om_te_callen": 0, "tegenstander_acties_deze_hand": [
-        {"bot_naam": "TestBot", "actie": "call", "bedrag": 20},
+        {"bot_naam": "TestBot", "actie": "call", "bedrag": 20, "ronde": "flop"},
     ], "bord": ["D4", "C9", "HT"]},
     {"ronde": "river", "pot": 400, "inzet_om_te_callen": 200, "tegenstander_acties_deze_hand": [
-        {"bot_naam": "TestBot", "actie": "raise", "bedrag": 200},
+        {"bot_naam": "TestBot", "actie": "raise", "bedrag": 200, "ronde": "flop"},
     ], "bord": ["D4", "C9", "HT", "S3", "C6"]},
 ]
 

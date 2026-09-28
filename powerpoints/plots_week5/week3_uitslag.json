@@ -1,0 +1,256 @@
+{
+  "veldgrootte": 31,
+  "foldaandeel_veld": 85.7,
+  "foldaandeel_27": 91.3,
+  "ultratight": 9,
+  "regels": [
+    {
+      "plek": 1,
+      "naam": "Testbot_CalltAlles",
+      "stack": 1564,
+      "fout": 84,
+      "fold": 0,
+      "simpel": false
+    },
+    {
+      "plek": 2,
+      "naam": "de caller",
+      "stack": 1473,
+      "fout": 72,
+      "fold": 1,
+      "simpel": true
+    },
+    {
+      "plek": 3,
+      "naam": "inzending23_d57",
+      "stack": 1242,
+      "fout": 53,
+      "fold": 76,
+      "simpel": false
+    },
+    {
+      "plek": 4,
+      "naam": "inzending25_d57",
+      "stack": 1239,
+      "fout": 46,
+      "fold": 76,
+      "simpel": false
+    },
+    {
+      "plek": 5,
+      "naam": "inzending24_d57",
+      "stack": 1160,
+      "fout": 46,
+      "fold": 76,
+      "simpel": false
+    },
+    {
+      "plek": 6,
+      "naam": "alleen goeie handen",
+      "stack": 1133,
+      "fout": 83,
+      "fold": 95,
+      "simpel": true
+    },
+    {
+      "plek": 7,
+      "naam": "inzending22_d62",
+      "stack": 1125,
+      "fout": 57,
+      "fold": 90,
+      "simpel": false
+    },
+    {
+      "plek": 8,
+      "naam": "inzending21_d62",
+      "stack": 1083,
+      "fout": 45,
+      "fold": 89,
+      "simpel": false
+    },
+    {
+      "plek": 9,
+      "naam": "inzending16_d70",
+      "stack": 1018,
+      "fout": 46,
+      "fold": 97,
+      "simpel": false
+    },
+    {
+      "plek": 10,
+      "naam": "inzending19_d70",
+      "stack": 986,
+      "fout": 27,
+      "fold": 97,
+      "simpel": false
+    },
+    {
+      "plek": 11,
+      "naam": "inzending15_d70",
+      "stack": 983,
+      "fout": 27,
+      "fold": 97,
+      "simpel": false
+    },
+    {
+      "plek": 12,
+      "naam": "inzending20_d62",
+      "stack": 977,
+      "fout": 37,
+      "fold": 90,
+      "simpel": false
+    },
+    {
+      "plek": 13,
+      "naam": "inzending14_d70",
+      "stack": 968,
+      "fout": 25,
+      "fold": 97,
+      "simpel": false
+    },
+    {
+      "plek": 14,
+      "naam": "inzending17_d70",
+      "stack": 963,
+      "fout": 29,
+      "fold": 97,
+      "simpel": false
+    },
+    {
+      "plek": 15,
+      "naam": "inzending11_d70",
+      "stack": 957,
+      "fout": 34,
+      "fold": 97,
+      "simpel": false
+    },
+    {
+      "plek": 16,
+      "naam": "inzending13_d70",
+      "stack": 955,
+      "fout": 30,
+      "fold": 97,
+      "simpel": false
+    },
+    {
+      "plek": 17,
+      "naam": "inzending12_d70",
+      "stack": 949,
+      "fout": 22,
+      "fold": 97,
+      "simpel": false
+    },
+    {
+      "plek": 18,
+      "naam": "inzending18_d70",
+      "stack": 939,
+      "fout": 19,
+      "fold": 97,
+      "simpel": false
+    },
+    {
+      "plek": 19,
+      "naam": "inzending10_d70",
+      "stack": 937,
+      "fout": 38,
+      "fold": 97,
+      "simpel": false
+    },
+    {
+      "plek": 20,
+      "naam": "inzending06_d82",
+      "stack": 885,
+      "fout": 13,
+      "fold": 99,
+      "simpel": false
+    },
+    {
+      "plek": 21,
+      "naam": "inzending03_d82",
+      "stack": 876,
+      "fout": 11,
+      "fold": 99,
+      "simpel": false
+    },
+    {
+      "plek": 22,
+      "naam": "inzending09_d82",
+      "stack": 871,
+      "fout": 10,
+      "fold": 99,
+      "simpel": false
+    },
+    {
+      "plek": 23,
+      "naam": "de bluffer",
+      "stack": 871,
+      "fout": 121,
+      "fold": 0,
+      "simpel": true
+    },
+    {
+      "plek": 24,
+      "naam": "inzending07_d82",
+      "stack": 868,
+      "fout": 12,
+      "fold": 99,
+      "simpel": false
+    },
+    {
+      "plek": 25,
+      "naam": "inzending00_d82",
+      "stack": 867,
+      "fout": 13,
+      "fold": 99,
+      "simpel": false
+    },
+    {
+      "plek": 26,
+      "naam": "inzending04_d82",
+      "stack": 865,
+      "fout": 21,
+      "fold": 99,
+      "simpel": false
+    },
+    {
+      "plek": 27,
+      "naam": "inzending02_d82",
+      "stack": 865,
+      "fout": 10,
+      "fold": 99,
+      "simpel": false
+    },
+    {
+      "plek": 28,
+      "naam": "inzending05_d82",
+      "stack": 864,
+      "fout": 12,
+      "fold": 99,
+      "simpel": false
+    },
+    {
+      "plek": 29,
+      "naam": "inzending01_d82",
+      "stack": 859,
+      "fout": 13,
+      "fold": 99,
+      "simpel": false
+    },
+    {
+      "plek": 30,
+      "naam": "inzending08_d82",
+      "stack": 851,
+      "fout": 14,
+      "fold": 99,
+      "simpel": false
+    },
+    {
+      "plek": 31,
+      "naam": "het muntje",
+      "stack": 806,
+      "fout": 59,
+      "fold": 33,
+      "simpel": true
+    }
+  ]
+}
