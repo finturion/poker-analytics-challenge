@@ -67,20 +67,24 @@ DIAS = [
        "Vraag bij twee of drie mensen: welke tak heb je weggelaten, en waarom? Dat is een "
        "betere vraag dan 'is het gelukt'."),
 
-    ("1B · HET IJKPUNT", "16,7% — niet 50%", None, [
-        r("Aan een tafel van zes wint ieder 1 op de 6 keer, als iedereen even sterk is.",
-          16, True, PRIMAIR, 0),
-        r("Je eerlijke deel is dus 100 / 6 = 16,7%. Dát is de maat, niet 50.", 16, True, ACCENT, 8),
-        r("de middelste starthand tegen 5 tegenstanders    16,0%", 14, False, PRIMAIR, 18, MONO),
-        r("de beste 10% van de handen                      boven 25,0%", 14, False, PRIMAIR, 4, MONO),
-        r("A-A, de beste hand die bestaat                  50,2%", 14, True, PRIMAIR, 4, MONO),
-        r("Zet je drempel op 50 en je speelt nooit mee. Vorig jaar was 92% van alle "
-          "beslissingen in het toernooi een fold — dit is waarom.", 13, False, WAARSCHUWING, 18),
-    ], "Dit is het getal waar bijna iedereen intuïtief naast zit. Vraag het eerst aan de zaal: "
-       "'wat is een góede winkans?' — je krijgt 60, 70, 80.\n\n"
-       "Het mooie is dat de regel meeschaalt: als er nog maar één tegenstander over is, is je "
-       "eerlijke deel 50%, en dan is dezelfde hand ineens wél een raise. In 1D leren ze het "
-       "aantal tegenstanders uit de actielijst te schatten."),
+    ("1B · DE SCHAAL", "Waar komen je drempels vandaan?", None, [
+        r("schat_winkans(..., tegenstanders=N) verandert je hand niet —", 16, True, PRIMAIR, 0),
+        r("het verandert de schaal waarop je hem afleest.", 16, True, PRIMAIR, 2),
+        r("tegenstanders    gemiddelde hand wint    'goed' begint rond", 13, True, GEDEMPT, 18, MONO),
+        r("      1                  50%                    60%", 14, False, PRIMAIR, 6, MONO),
+        r("      2                  33%                    45%", 14, True, ACCENT, 4, MONO),
+        r("      5                  17%                    25%", 14, False, PRIMAIR, 4, MONO),
+        r("Kies één getal, houd het vast, en kies je drempels op díe schaal. "
+          "De bot in Deel 2 rekent met 2.", 14, True, PRIMAIR, 18),
+        r("Zet je drempel op 50 terwijl je tegen vijf rekent, dan doe je nooit mee — zelfs A-A "
+          "haalt daar 50,2%. Vorig jaar was 92% van alle beslissingen een fold.",
+          13, False, WAARSCHUWING, 12),
+    ], "Vraag het eerst aan de zaal: 'wat is een góede winkans?' Je krijgt 60, 70, 80 — en dat "
+       "klopt alleen als je tegen één iemand speelt.\n\n"
+       "Het punt is niet welk getal ze kiezen, maar dát ze er één kiezen en hun drempels erop "
+       "afstemmen. Wie tegen 5 rekent en een drempel van 50 aanhoudt, heeft een bot die foldt.\n\n"
+       "In 1D staat hoe je het aantal tegenstanders kunt schatten uit de actielijst. Dat mag, "
+       "maar dan moeten de drempels meeschuiven — dat staat er expliciet bij."),
 
     ("EN WAT HIJ NIET WEET", "Drie dingen die er niet in staan", None, [
         r("Welke kaarten de anderen hebben", 16, True, PRIMAIR, 0),
