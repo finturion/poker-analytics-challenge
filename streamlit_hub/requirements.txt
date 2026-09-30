@@ -1,22 +1,30 @@
-# VASTGEZET, en dat is met opzet.
+# VASTGEZET, en let op de ondergrens van pyarrow -- die is er niet voor niets.
 #
-# Hier stond alleen "streamlit", zonder versie. Streamlit Cloud installeert dan
-# bij elke rebuild de nieuwste, en een rebuild gebeurt bij elke push naar deze
-# repo -- ook bij een push die niets met de hub te maken heeft. Op 30 september
-# 2026 sprong hij daardoor van de versie waarmee de app is gebouwd naar 1.64.0,
-# en brak de front-end: elke st.button werd in de browser een rood vakje met
-# "TypeError: Importing a module script failed."
+# Hier stond eerst alleen "streamlit", zonder versie. Streamlit Cloud installeert
+# dan bij elke rebuild de nieuwste, en een rebuild gebeurt bij elke push naar
+# deze repo, ook bij een push die niets met de hub te maken heeft. Op 30 september
+# 2026 sprong hij daardoor van de versie waarmee de app gebouwd is naar 1.64.0.
 #
-# De Python-kant was in orde -- alle 29 gebruikte st.*-functies bestaan nog en
-# accepteren dezelfde argumenten. Het ging mis in de JavaScript die Streamlit
-# zelf meelevert, en daar heb je als app-bouwer geen grip op. Behalve door de
-# versie vast te zetten.
+# De eerste reparatie was streamlit==1.51.0, en dat maakte het erger: 1.51.0 is
+# de laatste versie met `pyarrow<22`, en pyarrow 21 heeft geen wheel voor de
+# Python 3.14 waar Streamlit Cloud op draait. Dus ging pip pyarrow vanaf broncode
+# bouwen, en dat strandde op `command 'cmake' failed: No such file or directory`.
+# De hele installatie faalde daarmee, en de app kwam niet meer op.
 #
-# Wil je updaten: verhoog het nummer hier, draai de app lokaal
+# 1.52.0 laat `pyarrow>=7.0` zonder bovengrens toe, dus daar wordt gewoon een
+# wheel gepakt. Alle 29 st.*-functies die app.py gebruikt zitten er nog in --
+# nagekeken in de wheel zelf, niet gegokt.
+#
+# De ondergrens op pyarrow staat er zodat een toekomstige resolver niet alsnog
+# op 21 of lager uitkomt. Loopt de Python-versie van Streamlit Cloud ooit weer
+# vooruit op pyarrow, dan is dit de eerste regel om naar te kijken.
+#
+# Wil je updaten: verhoog het nummer, draai lokaal
 # (python3 -m streamlit run streamlit_hub/app.py), klik de drie tabbladen door,
 # en push daarna pas. Niet andersom -- studenten en docent gebruiken deze hub
 # tijdens het werkcollege.
-streamlit==1.51.0
+streamlit==1.52.0
+pyarrow>=22
 requests>=2.31,<3
 pandas>=2.2,<3
 plotly>=5.20,<7
