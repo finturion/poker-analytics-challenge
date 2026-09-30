@@ -1,4 +1,22 @@
-streamlit
-requests
-pandas
-plotly
+# VASTGEZET, en dat is met opzet.
+#
+# Hier stond alleen "streamlit", zonder versie. Streamlit Cloud installeert dan
+# bij elke rebuild de nieuwste, en een rebuild gebeurt bij elke push naar deze
+# repo -- ook bij een push die niets met de hub te maken heeft. Op 30 september
+# 2026 sprong hij daardoor van de versie waarmee de app is gebouwd naar 1.64.0,
+# en brak de front-end: elke st.button werd in de browser een rood vakje met
+# "TypeError: Importing a module script failed."
+#
+# De Python-kant was in orde -- alle 29 gebruikte st.*-functies bestaan nog en
+# accepteren dezelfde argumenten. Het ging mis in de JavaScript die Streamlit
+# zelf meelevert, en daar heb je als app-bouwer geen grip op. Behalve door de
+# versie vast te zetten.
+#
+# Wil je updaten: verhoog het nummer hier, draai de app lokaal
+# (python3 -m streamlit run streamlit_hub/app.py), klik de drie tabbladen door,
+# en push daarna pas. Niet andersom -- studenten en docent gebruiken deze hub
+# tijdens het werkcollege.
+streamlit==1.51.0
+requests>=2.31,<3
+pandas>=2.2,<3
+plotly>=5.20,<7
