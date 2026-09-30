@@ -145,7 +145,17 @@ def main():
     with open(doel, "w") as f:
         json.dump(resultaat, f)
 
+    # De uitgebreide log gaat naar een eigen bestand. Eén regel per beslissing in
+    # plaats van één per hand, dus ongeveer 3,5 keer zoveel -- in uitslag_week*.json
+    # erbij zou analyse_toernooi.py elke keer tientallen megabytes moeten inlezen
+    # voor data die het niet gebruikt.
+    uitgebreid = uitkomst.get("uitgebreid_hand_log") or []
+    doel_uitgebreid = os.path.join(HIER, f"uitgebreid_week{args.week}.json")
+    with open(doel_uitgebreid, "w") as f:
+        json.dump({"week": args.week, "ronde": args.ronde, "regels": uitgebreid}, f)
+
     print(f"Klaar in {duur / 60:.1f} minuten. {len(resultaat['hand_log'])} logregels -> {doel}")
+    print(f"{len(uitgebreid)} beslissingen (met bord en ronde) -> {doel_uitgebreid}")
     print("\nNu de analyse en het deck:")
     print(f"   python3 scripts/analyse_toernooi.py {doel}")
     print("   python3 powerpoints/maak_presentatie_wc8.py")

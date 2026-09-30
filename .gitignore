@@ -46,6 +46,7 @@ scripts/toernooi_test.json
 
 # Echte toernooi-uitslagen bevatten studentnummers en horen niet in git.
 scripts/uitslag_week*.json
+scripts/uitgebreid_week*.json
 
 # Ingeleverde studentcode hoort niet in git.
 scripts/bots_week*/
