@@ -43,3 +43,6 @@ mijn_bots/uitkomsten/
 # PowerPoint-vergrendelingsbestanden
 ~$*
 scripts/toernooi_test.json
+
+# Echte toernooi-uitslagen bevatten studentnummers en horen niet in git.
+scripts/uitslag_week*.json
