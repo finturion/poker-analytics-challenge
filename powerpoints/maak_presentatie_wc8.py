@@ -72,20 +72,80 @@ DIAS = [
      "cijfers.json.\n\n"
      "Wie hier net buiten valt: dia 13 laat zien hoe dun dat verschil is."),
 
-    ("DE DATASET", "Wat je vandaag in handen hebt", None, [
-        r(f"{C['bots']} bots  ·  {C['simulaties']} simulaties  ·  "
-          f"{C['regels']:,} regels".replace(",", "."), 20, True, ACCENT, 0),
-        r(f"Daarvan {C['beslissingen']:,} regels waarin een bot écht aan zet kwam."
-          .replace(",", "."), 14, False, PRIMAIR, 10),
-        r("Per regel: welke bot, welke simulatie, welke hand, welke twee kaarten, "
-          "welke actie, en zijn stack daarna.", 14, False, PRIMAIR, 8),
-        r("Die laatste twee samen geven je wat elke hand opleverde — en daarmee kun "
-          "je alles hieronder uitrekenen.", 14, False, PRIMAIR, 8),
-        r("Dit is geen oefendataset. Dit heeft de klas vanmorgen zelf gespeeld.",
-          15, True, WAARSCHUWING, 18),
-    ], "Begin hier, en laat even bezinken hoe groot dit is. Twintigduizend beslissingen van "
-       "dertig bots.\n\nDe sprong die ze vandaag maken: tot nu toe was data iets wat ze kregen. "
-       "Dit hebben ze zelf gegenereerd, door een bot te schrijven."),
+    ("DE RUWE DATA", "Eén regel per bot per hand", "wc8_ruwe_data.png", [],
+     f"Dit is het hele bouwpakket: {C['bots']} bots, {C['simulaties']} simulaties, "
+     f"{C['regels']:,} regels, waarvan {C['beslissingen']:,} met een echte beslissing."
+     .replace(",", ".") + "\n\n"
+     "Acht kolommen, en geen daarvan zegt wat je wilt weten. Er staat geen winst in, geen "
+     "handsoort, geen fold-percentage. Dat moet je allemaal zelf maken — en dat is precies "
+     "het onderwerp van het hoorcollege van deze week.\n\n"
+     "Laat ze even kijken naar de kolom `actie`: dat is de EERSTE actie van die hand, niet "
+     "alle vier de straten. En `aan_zet` vertelt of de bot überhaupt aan de beurt kwam."),
+
+    ("STAND OF STROOM", "Dezelfde bot, dezelfde handen", "wc8_stand_stroom.png", [],
+     "Links de kolom die je krijgt, rechts de kolom die je maakt. Zelfde data, en pas rechts "
+     "zie je wannéér het gebeurde.\n\n"
+     "Dit is letterlijk het laadpaal-voorbeeld uit het hoorcollege: een meterstand is een "
+     "stand, het verbruik is de stroom, en `.diff()` is de brug ertussen. De knik links op "
+     "hand 19 is rechts een balk met een getal erop.\n\n"
+     "Vraag aan de zaal welke van de twee je nodig hebt om te beslissen wat je aan je bot "
+     "verandert. Het antwoord is rechts — de stand vertelt je alleen waar je uitkwam."),
+
+    ("DE DRIE BEWERKINGEN", "Uit het hoorcollege, op jullie toernooi", None, [
+        r("df[\"winst\"]    = df.groupby([\"bot_naam\", \"simulatie\"])[\"stack\"].diff()",
+          13, True, PRIMAIR, 0, MONO),
+        r("de laadpaal — van stand naar stroom", 12, False, GEDEMPT, 3),
+        r("df[\"totaal\"]   = df.groupby(\"bot_naam\")[\"winst\"].cumsum()",
+          13, True, PRIMAIR, 16, MONO),
+        r("het gebouw — van losse gebeurtenissen naar een stand", 12, False, GEDEMPT, 3),
+        r("df[\"tafelgem\"] = df.groupby(\"tafel\")[\"stack\"].transform(\"mean\")",
+          13, True, PRIMAIR, 16, MONO),
+        r("het HR-voorbeeld — het groepsgemiddelde naast elke rij", 12, False, GEDEMPT, 3),
+        r("Drie regels, drie nieuwe kolommen. Geen ervan stond in de data die je kreeg.",
+          15, True, ACCENT, 20),
+        r("En die groupby is geen detail: zonder die trek je de eerste hand van de ene bot "
+          "af van de laatste van de andere, en dan staat er een sprong van duizend chips die "
+          "niemand gespeeld heeft.", 13, True, WAARSCHUWING, 14),
+    ], "Deze drie staan al op je hoorcollege-dia's met de laadpaal, het gebouw en het "
+       "HR-voorbeeld erbij. Hier zijn ze op hun eigen toernooi.\n\n"
+       "Het verschil tussen de eerste twee is waard om even bij stil te staan: diff gaat van "
+       "stand naar stroom, cumsum gaat de andere kant op. transform is de vreemde eend — die "
+       "verandert de lengte niet, hij zet een groepswaarde naast elke rij.\n\n"
+       "De waarschuwing onderaan is de fout die ze echt gaan maken. Laat hem een keer zien "
+       "zonder groupby als je tijd hebt; het is een sprong van duizend chips die er als data "
+       "uitziet."),
+
+    ("VAN KOLOM NAAR INZICHT", "Wat je krijgt, wat je maakt, wat je dan ziet",
+     "wc8_features.png", [],
+     "De hele middag in één plaat. Links wat er in het logboek staat, midden wat je daaruit "
+     "bouwt, rechts wat je er dan mee kunt zien.\n\n"
+     "Let op de kleuren in de middelste kolom. Oranje zijn de drie bewerkingen uit het "
+     "hoorcollege. Grijs is wat je zelf bedenkt — hand_naam bestaat nergens, die heb ik "
+     "verzonnen omdat A-K en K-A dezelfde hand zijn. En blauw is winkans: die haal je niet "
+     "uit de data maar uit een functie, en dat is ook feature engineering.\n\n"
+     "Dat is de boodschap: een feature is niet per se een berekening op je eigen kolommen. "
+     "Iets van buiten erbij halen telt net zo goed."),
+
+    ("ZELF EEN FEATURE BEDENKEN", "Wat zou jij erbij maken?", None, [
+        r("Een goede feature beantwoordt een vraag die in de ruwe kolommen niet te zien is.",
+          16, True, PRIMAIR, 0),
+        r("Drie die ik niet gemaakt heb, en die wel kunnen:", 14, True, ACCENT, 18),
+        r("hoeveelste_hand_van_de_simulatie   speel je anders als je bijna klaar bent?",
+          13, False, PRIMAIR, 8, MONO),
+        r("stack_t.o.v._tafelgemiddelde      ben je de grote of de kleine stapel?",
+          13, False, PRIMAIR, 4, MONO),
+        r("handen_sinds_je_laatste_winst     zit je in een reeks verliezen?",
+          13, False, PRIMAIR, 4, MONO),
+        r("Die laatste is de interessantste: hij bestaat niet in de data, hij gaat over de "
+          "vólgorde. En juist daar is pandas goed in.", 14, False, PRIMAIR, 18),
+        r("Bedenk er één, maak hem, en kijk of hij samenhangt met je winst. Dat is een "
+          "compleet data science-onderzoekje in twintig regels.", 14, True, ACCENT, 12),
+    ], "Sluit het blok hiermee af, en laat ze er echt één bedenken — dat is beter dan een "
+       "vierde voorbeeld van mij.\n\n"
+       "Die derde is de mooiste omdat hij over volgorde gaat: shift() en cumsum() over een "
+       "gesorteerde groep. Ze hebben shift in Werkcollege 6, Deel 7 gehad.\n\n"
+       "En het is een eerlijke opening naar de eindopdracht: dit is precies wat je in een "
+       "echte dataset ook doet. Niemand geeft je de kolom die je nodig hebt."),
 
     ("TERUG NAAR VISUAL MAANDAG", "Vijf dingen die je vandaag meteen nodig hebt", None, [
         r("1.  filteren        dertig bots in één plot is spaghetti", 15, False, PRIMAIR, 0, MONO),

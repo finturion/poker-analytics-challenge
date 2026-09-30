@@ -177,7 +177,82 @@ def plaat_regels():
     return pad
 
 
+
+def plaat_features():
+    """
+    Van ruwe kolom naar inzicht, met de drie bewerkingen uit het hoorcollege.
+
+    Het hoorcollege van deze week gaat over feature engineering: data ombouwen
+    naar nieuwe bruikbare data. Daar staan diff, cumsum en transform al op, met
+    de laadpaal, het gebouw en het HR-voorbeeld ernaast. Deze plaat is dezelfde
+    les op hun eigen toernooi, zodat de brug expliciet is en niet impliciet.
+    """
+    fig, ax = plt.subplots(figsize=(12.8, 6.0), dpi=200)
+    ax.set_xlim(-0.006, 1.006); ax.set_ylim(-0.02, 1.02); ax.axis("off")
+
+    koppen = [(0.005, 0.255, "WAT JE KRIJGT", GEDEMPT),
+              (0.300, 0.400, "WAT JE ZELF MAAKT", ORANJE),
+              (0.745, 0.250, "WAT JE DAN ZIET", GROEN)]
+    for x, b, kop, kleur in koppen:
+        _doos(ax, x, 0.885, b, 0.080, kop, vul=kleur, rand=kleur, kleur=WIT,
+              grootte=10.5, vet=True)
+
+    ruw = ["bot_naam", "simulatie", "hand_nummer", "hand",
+           "actie", "aan_zet", "uitgespeeld", "stack"]
+    _doos(ax, 0.005, 0.135, 0.255, 0.720, "", vul=LICHT, rand=LICHT)
+    for i, kolom in enumerate(ruw):
+        ax.text(0.022, 0.800 - i * 0.082, kolom, ha="left", va="center",
+                color=INKT, fontsize=10, family="monospace")
+    ax.text(0.132, 0.095, "8 kolommen, één regel per hand",
+            ha="center", va="top", color=GEDEMPT, fontsize=9)
+
+    gemaakt = [
+        ("winst", ".groupby(...)[\"stack\"].diff()", "de laadpaal", ORANJE),
+        ("totaal", ".groupby(...)[\"winst\"].cumsum()", "het gebouw", ORANJE),
+        ("fold_pct", ".groupby(\"bot_naam\")[...].mean()", "het HR-voorbeeld", ORANJE),
+        ("hand_naam", "sorteren op rangwaarde", "zelf bedacht", GEDEMPT),
+        ("speelde_mee", "aan_zet & niet uitgespeeld", "een filter", GEDEMPT),
+        ("winkans", "schat_winkans(hand, ...)", "van buiten gehaald", BLAUW),
+    ]
+    for i, (naam, hoe, herkomst, kleur) in enumerate(gemaakt):
+        y = 0.760 - i * 0.118
+        _doos(ax, 0.300, y, 0.400, 0.098, "", vul=WIT, rand="#C9D2CC")
+        ax.text(0.315, y + 0.066, naam, ha="left", va="center", color=INKT,
+                fontsize=10.5, fontweight="bold", family="monospace")
+        ax.text(0.315, y + 0.030, hoe, ha="left", va="center", color=GEDEMPT,
+                fontsize=8.6, family="monospace")
+        ax.text(0.688, y + 0.049, herkomst, ha="right", va="center", color=kleur,
+                fontsize=8.6, style="italic")
+        _pijl(ax, (0.264, y + 0.049), (0.296, y + 0.049))
+
+    ziet = ["de verdeling van de klas", "wie er defensief speelt",
+            "welke handen geld opleveren", "waar jouw geld heen ging",
+            "hoeveel ervan toeval is"]
+    _doos(ax, 0.745, 0.135, 0.250, 0.720, "", vul=LICHT, rand=LICHT)
+    for i, punt in enumerate(ziet):
+        ax.text(0.760, 0.780 - i * 0.135, "·  " + punt, ha="left", va="center",
+                color=INKT, fontsize=9.5)
+    _pijl(ax, (0.704, 0.495), (0.741, 0.495), kleur=GROEN)
+
+    ax.text(0.5, 0.055,
+            "diff, cumsum en transform zijn dezelfde drie bewerkingen als in het hoorcollege "
+            "— nu op jullie eigen toernooi.",
+            ha="center", va="top", color=INKT, fontsize=10.5, fontweight="bold")
+    ax.text(0.5, 0.005,
+            "En let op de groupby: zonder die trek je de eerste hand van de ene bot af van "
+            "de laatste van de andere.",
+            ha="center", va="top", color=ORANJE, fontsize=9.5)
+
+    os.makedirs(PLOTMAP, exist_ok=True)
+    pad = os.path.join(PLOTMAP, "wc8_features.png")
+    fig.savefig(pad, facecolor=WIT, dpi=200, bbox_inches="tight", pad_inches=0.22)
+    plt.close(fig)
+    print("  ", pad)
+    return pad
+
+
 if __name__ == "__main__":
     plaat_routes()
     plaat_regels()
+    plaat_features()
     sys.exit(0)

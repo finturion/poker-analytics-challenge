@@ -451,9 +451,90 @@ def plaat_uitslag(n=12):
     return bewaar(fig, "wc8_uitslag")
 
 
+# ------------------------------------------ 11. de ruwe data, zoals hij is
+def plaat_ruwe_data():
+    """Vijf echte regels uit het logboek, als tabel. Geen grafiek maar een blik."""
+    kolommen = ["bot_naam", "simulatie", "hand_nummer", "hand", "actie",
+                "aan_zet", "uitgespeeld", "stack"]
+    voorbeeld = (hand_log[hand_log["bot_naam"] == JIJ]
+                 .sort_values(["simulatie", "hand_nummer"])
+                 .head(5)[kolommen].copy())
+    voorbeeld["bot_naam"] = voorbeeld["bot_naam"].str.replace("__w5", "", regex=False)
+    voorbeeld["hand"] = voorbeeld["hand"].apply(lambda h: " ".join(h))
+
+    fig, ax = plt.subplots(figsize=(11.6, 3.4))
+    ax.axis("off")
+    tabel = ax.table(cellText=voorbeeld.astype(str).values,
+                     colLabels=kolommen, cellLoc="center", loc="center")
+    tabel.auto_set_font_size(False)
+    tabel.set_fontsize(10)
+    tabel.scale(1, 1.75)
+    for (rij, kol), cel in tabel.get_celld().items():
+        cel.set_edgecolor(WIT)
+        cel.set_linewidth(2)
+        if rij == 0:
+            cel.set_facecolor(GROENRAMP[4]); cel.set_text_props(color=WIT, weight="bold")
+        else:
+            cel.set_facecolor("#F4F6F5" if rij % 2 else "#EAEEEC")
+            cel.set_text_props(color=INKT)
+    ax.set_title("Eén regel per bot per hand — dit is alles wat je krijgt",
+                 color=INKT, fontsize=13, pad=18, loc="left")
+    ax.text(0, -0.12, f"{len(hand_log):,}".replace(",", ".") + " van deze regels, "
+            f"{hand_log['bot_naam'].nunique()} bots, "
+            f"{hand_log['simulatie'].nunique()} simulaties",
+            transform=ax.transAxes, ha="left", va="top", color=GEDEMPT, fontsize=10)
+    return bewaar(fig, "wc8_ruwe_data")
+
+
+# ------------------------------------------- 12. de stand of de stroom
+def plaat_stand_stroom():
+    """Hetzelfde verhaal als het hoorcollege, maar op hun eigen toernooi."""
+    # Niet de simulatie met de grootste uitschieter: één piek van 2000 drukt al
+    # het andere plat en dan laat de rechterhelft juist niets meer zien. Wel die
+    # met de meeste handen waarin écht iets gebeurde -- meer dan een big blind.
+    alles = hand_log[hand_log["bot_naam"] == JIJ]
+    beweging = (alles.assign(raak=alles["winst"].abs() > 20)
+                .groupby("simulatie")["raak"].sum())
+    eigen = alles[alles["simulatie"] == beweging.idxmax()].sort_values("hand_nummer")
+    fig, assen = plt.subplots(1, 2, figsize=(12.0, 4.2), sharex=True)
+
+    assen[0].plot(eigen["hand_nummer"], eigen["stack"], color=GEDEMPT, linewidth=2.2)
+    assen[0].axhline(1000, color=GEDEMPT, linewidth=1, linestyle=(0, (4, 3)))
+    assen[0].set_title("de STAND:  stack", color=INKT, fontsize=12, pad=10, loc="left")
+    assen[0].set_ylabel("chips")
+    assen[0].text(0.02, 0.05, "de kolom die je krijgt", transform=assen[0].transAxes,
+                  color=GEDEMPT, fontsize=9.5)
+
+    winst = eigen["winst"].fillna(0)
+    kleuren = [DIV_HOOG if w >= 0 else DIV_LAAG for w in winst]
+    assen[1].bar(eigen["hand_nummer"], winst, color=kleuren, width=0.75)
+    assen[1].axhline(0, color=INKT, linewidth=1.1)
+    assen[1].set_title("de STROOM:  winst per hand  =  .diff()",
+                       color=INKT, fontsize=12, pad=10, loc="left")
+    assen[1].set_ylabel("chips per hand")
+    # De grootste beweging, positief of negatief: dát is het moment waar de
+    # linkerhelft een knik laat zien en de rechterhelft een getal.
+    ergste = winst.abs().idxmax()
+    assen[1].annotate(f"{winst[ergste]:+.0f} chips in één hand\nhier gebeurde het",
+                      xy=(eigen.loc[ergste, "hand_nummer"], winst[ergste]),
+                      xytext=(0.52, 0.88), textcoords="axes fraction",
+                      color=INKT, fontsize=10, fontweight="bold", linespacing=1.4,
+                      arrowprops=dict(arrowstyle="->", color=GEDEMPT, linewidth=1.4,
+                                      connectionstyle="arc3,rad=-0.25"))
+
+    for ax in assen:
+        ax.set_xlabel("hand")
+        kaal(ax)
+    fig.suptitle("Dezelfde bot, dezelfde handen — en pas rechts zie je wannéér",
+                 color=INKT, fontsize=13, x=0.005, ha="left", y=1.02)
+    return bewaar(fig, "wc8_stand_stroom")
+
+
 def main():
     print("platen:")
     plaat_uitslag()
+    plaat_ruwe_data()
+    plaat_stand_stroom()
     plaat_acties()
     plaat_foldverdeling()
     plaat_fold_vs_eindstand()
