@@ -10,7 +10,7 @@ gecached, zodat een toernooi maar één keer per combinatie hoeft te draaien.
 import database as db
 from bonus_rooster import BONUSWEEK
 from referentiebots import referentiebots_voor
-from poker_adapter import bereken_startstacks, speel_toernooi
+from poker_adapter import speel_toernooi
 from winkans import schat_winkans
 
 # Reservebots vullen de tafel aan als er nog te weinig geldige inzendingen zijn
@@ -126,15 +126,6 @@ def _verzamel_bots_over_weken(hoofdweek, vergelijk_met_week=None):
 STANDAARD_N_SIMULATIES = 5
 N_SIMULATIES_BONUSWEEK = 20
 
-# In welke weken de bots met hun verdiende chips doorspelen naar de volgende ronde.
-#
-# Doorspelen is een bonusweek-mechaniek en geen eigenschap van rondes: het bestaat
-# omdat je woensdag-inzending bepaalt waarmee je donderdag aan tafel gaat, en dat
-# telt alleen daar voor punten. In de andere weken is een tweede ronde gewoon een
-# tweede poging -- je herstelt een fout, of je draait opnieuw omdat er bots bij
-# zijn gekomen -- en dan wil je iedereen weer op 1000 hebben. Anders meet ronde 2
-# vooral ronde 1 nog een keer, en zijn de standen onderling niet te vergelijken.
-WEKEN_MET_DOORSPELEN = (BONUSWEEK,)
 
 
 def n_simulaties_voor(week):
@@ -161,7 +152,7 @@ def cache_sleutel(week, vergelijk_met_week=None, ronde=1, formatief=False):
     vóór deze wijziging is gedraaid gewoon vindbaar blijft.
 
     Een formatieve run krijgt een eigen sleutel naast de echte ronde. Hij is een
-    repetitie van die ronde: hij draait met dezelfde startstacks, maar met de
+    repetitie van die ronde: hij draait met dezelfde startstack, maar met de
     bots van dát moment. Zo kan de donderdagronde de vrijdaguitslag voorspellen
     zonder hem te bezetten of te beïnvloeden.
     """
@@ -193,30 +184,6 @@ def haal_gecacht_resultaat_op(week, vergelijk_met_week=None, ronde=1, formatief=
     return {**resultaat, "gedraaid": True}
 
 
-def _startstacks_uit_vorige_ronde(week, vergelijk_met_week, ronde):
-    """
-    De startstacks voor `ronde`, afgeleid uit de eindstand van de ronde ervoor.
-
-    Retourneert None voor ronde 1 en ook als de vorige ronde niet (meer) in de
-    cache staat -- dan begint iedereen gewoon weer op de standaardstack, wat
-    het oude gedrag is.
-
-    Retourneert ook None in weken die niet doorspelen (zie WEKEN_MET_DOORSPELEN):
-    daar begint elke ronde schoon op 1000.
-
-    Er wordt altijd naar de échte vorige ronde gekeken, nooit naar een
-    formatieve run. Daardoor krijgt de formatieve repetitie van een ronde
-    precies dezelfde startstacks als die ronde zelf, en kan een oefenronde de
-    uitslag die meetelt niet verschuiven.
-    """
-    if ronde <= 1 or week not in WEKEN_MET_DOORSPELEN:
-        return None
-    vorige = db.laad_toernooi_resultaat(cache_sleutel(week, vergelijk_met_week, ronde - 1))
-    if not vorige or not vorige.get("eindstand_per_bot"):
-        return None
-    return bereken_startstacks(vorige["eindstand_per_bot"])
-
-
 def draai_toernooi(
     week,
     vergelijk_met_week=None,
@@ -234,7 +201,7 @@ def draai_toernooi(
     ze elkaar overschrijven: ronde 1 is de woensdag-run, ronde 2 de run later
     in de week. Elke ronde krijgt een eigen cachesleutel én een eigen seed.
 
-    `formatief` draait een repetitie van `ronde`: dezelfde startstacks en
+    `formatief` draait een repetitie van `ronde`: dezelfde startstack en
     dezelfde seed, maar met de bots van dit moment, weggeschreven onder een
     eigen sleutel. Bedoeld voor de donderdagronde in week 5 -- studenten zien
     wat hun aanpassing zou doen, zonder dat het de uitslag raakt die meetelt.
@@ -267,7 +234,7 @@ def draai_toernooi(
             "ronde": int,
             "formatief": bool,               # True = oefenronde, telt niet mee
             "n_simulaties": int,             # over hoeveel simulaties gemiddeld is
-            "startstacks": {...} | None,     # None in ronde 1
+            "startstacks": None,             # elke ronde begint op 1000
             "hand_log": [...],
             "eindstand_per_bot": {...},
         }
@@ -324,7 +291,12 @@ def draai_toernooi(
         }
         return resultaat
 
-    startstacks = _startstacks_uit_vorige_ronde(week, vergelijk_met_week, ronde)
+    # Elke ronde begint schoon op de standaardstack. Eerder speelde de
+    # bonusweek vanaf ronde 2 door met de chips van de ronde ervoor; dat is er
+    # in september 2026 uit gehaald omdat het twee dingen tegelijk mat -- je
+    # woensdagresultaat werkte door in je vrijdagstartpositie, en dan is de
+    # vrijdaguitslag geen schone meting meer van de bot die je vrijdag inlevert.
+    startstacks = None
 
     uitkomst = speel_toernooi(
         bots,

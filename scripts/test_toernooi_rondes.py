@@ -15,7 +15,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(HIER), "api"))
 
 import toernooi_runner
 from bot_validator import valideer_bot_code
-from poker_adapter import STANDAARD_INITIAL_STACK, bereken_startstacks
+from poker_adapter import STANDAARD_INITIAL_STACK
 from toernooi_runner import cache_sleutel, draai_toernooi, haal_gecacht_resultaat_op
 
 geslaagd = 0
@@ -42,21 +42,7 @@ check(
 )
 
 # ---------------------------------------------------------------------------
-# 2. Startstacks: eindstand + 1000
-# ---------------------------------------------------------------------------
-print("\nStartstacks")
-eind = {"tight": 1110.0, "loose": 1083.3, "stub": 700.0}
-stacks = bereken_startstacks(eind)
-check(stacks["tight"] == 1110 + STANDAARD_INITIAL_STACK, "winnaar neemt zijn winst mee")
-check(stacks["stub"] == 700 + STANDAARD_INITIAL_STACK, "verliezer neemt zijn verlies mee")
-check(
-    stacks["tight"] - stacks["stub"] == 410,
-    "het verschil van ronde 1 blijft precies staan",
-)
-check(all(isinstance(v, int) for v in stacks.values()), "stacks zijn hele chips")
-
-# ---------------------------------------------------------------------------
-# 3. Twee rondes achter elkaar, met een neptafel-cache
+# 2. Twee rondes achter elkaar, met een neptafel-cache
 # ---------------------------------------------------------------------------
 print("\nTwee rondes achter elkaar")
 
@@ -87,11 +73,17 @@ toernooi_runner._verzamel_bots_over_weken = lambda week, vergelijk: (
 ronde1 = draai_toernooi(5, n_simulaties=2, n_handen=20, ronde=1)
 ronde2 = draai_toernooi(5, n_simulaties=2, n_handen=20, ronde=2)
 
+# Elke ronde begint schoon op 1000, ook in de bonusweek. Tot september 2026
+# speelde week 5 vanaf ronde 2 door met de chips van de ronde ervoor; dat is
+# eruit gehaald omdat je woensdagresultaat dan doorwerkte in je
+# vrijdagstartpositie, en de vrijdaguitslag dus niet meer alleen de bot mat die
+# je vrijdag had ingeleverd.
 check(ronde1["startstacks"] is None, "ronde 1 start zonder startstacks")
-check(ronde2["startstacks"] is not None, "ronde 2 krijgt startstacks mee")
+check(ronde2["startstacks"] is None, "ronde 2 ook: elke ronde begint schoon")
 check(
-    ronde2["startstacks"] == bereken_startstacks(ronde1["eindstand_per_bot"]),
-    "die startstacks komen uit de eindstand van ronde 1",
+    abs(sum(ronde2["eindstand_per_bot"].values())
+        - STANDAARD_INITIAL_STACK * len(ronde2["eindstand_per_bot"])) < 1e-6,
+    "de chips in ronde 2 tellen op tot 1000 per bot",
 )
 check(
     "5" in nep_cache and "5_ronde2" in nep_cache,
@@ -106,19 +98,17 @@ check(
     "een ronde die nog niet gedraaid is meldt dat netjes",
 )
 
-# --- buiten de bonusweek begint elke ronde schoon ---
-# Doorspelen is de mechaniek van week 5: daar bepaalt je woensdag-inzending
-# waarmee je donderdag aan tafel gaat. In week 3 is een tweede ronde gewoon een
-# tweede poging -- opnieuw draaien omdat er bots bij zijn gekomen, bijvoorbeeld --
-# en dan moet iedereen weer op 1000 staan. Anders meet ronde 2 vooral ronde 1 nog
-# een keer en zijn de twee standen niet met elkaar te vergelijken.
+# --- en dat geldt in elke week, niet alleen in de bonusweek ---
+# Een tweede ronde is een tweede poging: opnieuw draaien omdat er bots bij zijn
+# gekomen, bijvoorbeeld. Dan moet iedereen weer op 1000 staan, anders meet ronde
+# 2 vooral ronde 1 nog een keer en zijn de twee standen niet te vergelijken.
 w3_ronde1 = draai_toernooi(3, n_simulaties=2, n_handen=20, ronde=1)
 w3_ronde2 = draai_toernooi(3, n_simulaties=2, n_handen=20, ronde=2)
 
 check(w3_ronde2["startstacks"] is None, "week 3 ronde 2 krijgt geen startstacks mee")
 check(
-    all(abs(stand - STANDAARD_INITIAL_STACK) < 1e-6
-        for stand in bereken_startstacks(w3_ronde1["eindstand_per_bot"]).values()) is False,
+    any(abs(stand - STANDAARD_INITIAL_STACK) > 1e-6
+        for stand in w3_ronde1["eindstand_per_bot"].values()),
     "en dat is niet omdat de eindstand van ronde 1 toevallig overal 1000 was",
 )
 check(
@@ -131,7 +121,7 @@ check(
     "en ronde 1 van week 3 blijft gewoon naast ronde 2 staan",
 )
 
-chips_in = sum(ronde2["startstacks"].values())
+chips_in = STANDAARD_INITIAL_STACK * len(ronde2["eindstand_per_bot"])
 chips_uit = sum(ronde2["eindstand_per_bot"].values())
 check(
     abs(chips_in - chips_uit) < 1e-6,

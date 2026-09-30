@@ -417,22 +417,6 @@ def _verdeel_in_tafels(bot_namen, rng):
     return tafels
 
 
-def bereken_startstacks(vorige_eindstand, bonus=STANDAARD_INITIAL_STACK):
-    """
-    Zet de eindstand van een vorige ronde om in startstacks voor de volgende.
-
-    Iedereen krijgt `bonus` chips erbij, zodat niemand uitgesloten raakt omdat
-    hij de blinds niet meer kan betalen -- ook een bot die de vorige ronde
-    helemaal is uitgespeeld begint dus weer met een volwaardige stack. Wat je
-    daarboven hebt overgehouden, neem je mee.
-
-    Dat is het hele punt van doorspelen: je woensdag-inzending bepaalt waarmee
-    je donderdag aan tafel gaat, dus een placeholder inleveren kost je echte
-    chips in plaats van niets.
-    """
-    return {naam: int(round(stand)) + bonus for naam, stand in vorige_eindstand.items()}
-
-
 def speel_toernooi(bots, n_simulaties=5, n_handen=STANDAARD_N_HANDEN, seed=0, startstacks=None):
     """
     bots: dict {bot_naam: kies_actie-functie of {"kies_actie", "strategie", "bluf_kans"}}.
@@ -442,10 +426,12 @@ def speel_toernooi(bots, n_simulaties=5, n_handen=STANDAARD_N_HANDEN, seed=0, st
     weet je per bot hoe hij presteert over meerdere tafels en meerdere
     simulaties heen, niet slechts één toevallige zit.
 
-    startstacks: optioneel {bot_naam: chips}, bijvoorbeeld uit
-    bereken_startstacks() van de vorige ronde. Elke simulatie begint met
-    dezelfde startstacks -- de simulaties zijn parallelle werelden, geen
-    opeenvolgende rondes.
+    startstacks: optioneel {bot_naam: chips}. Het toernooi geeft dit niet meer
+    mee -- elke ronde begint schoon op STANDAARD_INITIAL_STACK -- maar de
+    parameter blijft bestaan zodat je zelf een scheve tafel kunt neerzetten,
+    bijvoorbeeld om te testen wat een korte stack met een bot doet. Elke
+    simulatie begint dan met dezelfde startstacks: de simulaties zijn
+    parallelle werelden, geen opeenvolgende rondes.
 
     Retourneert {"hand_log": [...], "eindstand_per_bot": {...}}.
     """

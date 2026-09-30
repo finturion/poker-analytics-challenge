@@ -75,8 +75,10 @@ check(
 )
 check(klassement(ronde1) == ["anna", "bram", "cem", "dana"], "het klassement van ronde 1 staat op winst")
 
-# Ronde 2: dana speelt het beste toernooi, maar staat door de carry-over nog
-# niet bovenaan in absolute chips. Op winst hoort ze eerste te zijn.
+# Ronde 2 met ongelijke startstacks. Zo draait het toernooi sinds september 2026
+# niet meer -- elke ronde begint schoon op 1000 -- maar de rekenregel moet het
+# blijven kunnen: dana speelt hier het beste toernooi en staat toch niet bovenaan
+# in absolute chips. Op winst hoort ze eerste te zijn.
 ronde2 = {
     "eindstand_per_bot": {"anna": 2500, "bram": 2200, "cem": 1800, "dana": 2100},
     "startstacks": {"anna": 2400, "bram": 2100, "cem": 1900, "dana": 1600},

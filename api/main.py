@@ -7,6 +7,7 @@ Doel: nul handmatige nakijkdruk voor de docent.
 - POST /peer-review     -> student beoordeelt 3 anonieme grafieken op Visual Hierarchy
 - GET  /status/{...}    -> voldaan/niet-voldaan (submission technisch ok + 3 reviews gegeven)
 - GET  /export/{week}   -> docent-only voortgangsexport, geen los nakijkwerk nodig
+- GET  /export/{week}/bots -> docent-only: de ingeleverde bot-code, om lokaal mee te draaien
 - GET  /toernooi/{week} -> echt pokertoernooi (PyPokerEngine) tussen alle goedgekeurde bots
 - POST /toernooi/{week}/opnieuw -> docent-only: forceer een nieuwe toernooi-run
 - GET  /toernooi/{week}/resultaat -> docent-only: laatst gecachte uitslag, draait NOOIT zelf een toernooi
@@ -358,12 +359,11 @@ def toernooi(
     Met `ronde` draai je meerdere toernooien in dezelfde week zonder dat ze
     elkaars uitslag overschrijven. Ronde 1 is de woensdag-run.
 
-    Alleen in de bonusweek speelt iedereen vanaf ronde 2 door met de chips uit de
-    vorige ronde + 1000 erbij. In de andere weken begint elke ronde schoon op
-    1000, zodat twee rondes van dezelfde week onderling te vergelijken zijn.
+    Elke ronde begint schoon op 1000, ook in de bonusweek. Zo meet elke ronde
+    alleen de bot die op dat moment is ingeleverd.
 
-    `formatief=true` draait een repetitie van die ronde: dezelfde startstacks,
-    maar met de bots van dit moment, en weggeschreven onder een eigen sleutel.
+    `formatief=true` draait een repetitie van die ronde: met de bots van dit
+    moment, en weggeschreven onder een eigen sleutel.
     Bedoeld voor de oefenronde op donderdag in week 5 -- die telt niet mee voor
     de bonus en verschuift de vrijdaguitslag niet.
 
@@ -478,6 +478,48 @@ def export(week: int, ok: bool = Depends(db.verifieer_docent_token)):
             }
         )
     return overzicht
+
+
+@app.get("/export/{week}/bots")
+def export_bots(week: int, ok: bool = Depends(db.verifieer_docent_token)):
+    """
+    Docent-only: de ingeleverde bot-code van alle studenten van deze week.
+
+    WAAROM DIT BESTAAT, EN WAAROM ALLEEN VOOR DE DOCENT
+    ---------------------------------------------------
+    Studenten kunnen elkaars code met opzet niet opvragen: /bot-test geeft
+    gedrag terug en geen broncode, juist omdat er een bonuspunt aan het toernooi
+    hangt. Die regel blijft. Maar de docent moet er wél bij kunnen -- om na te
+    kijken, om een crash te onderzoeken, en om het toernooi lokaal te draaien.
+
+    Dat laatste is de directe aanleiding. Sinds Werkcollege 7 rekenen bots hun
+    winkans live uit met schat_winkans, en in de bonusweek draaien er twintig
+    simulaties. Een toernooi duurt daardoor tientallen minuten, en dat is langer
+    dan een HTTP-verbinding het volhoudt. Met deze export haal je de bots op en
+    draai je hetzelfde toernooi op je eigen machine -- scripts/draai_toernooi_lokaal.py
+    gebruikt dezelfde seed (week * 10 + ronde), dus de uitslag is niet een
+    benadering maar identiek aan wat de server zou uitrekenen.
+
+    Alleen de nieuwste inzending per student, want dat is ook wat het toernooi
+    speelt. Afgekeurde inzendingen staan er wel bij, met geldig=False, zodat je
+    kunt zien wie er is vastgelopen en waarop.
+    """
+    submissions = db.laad_submissions().get(str(week), {})
+    uit = []
+    for student_id, inzendingen in submissions.items():
+        inzending = db.nieuwste_inzending(inzendingen)
+        if inzending is None:
+            continue
+        uit.append({
+            "student_id": student_id,
+            "bot_code": inzending["bot_code"],
+            "strategie": inzending.get("strategie"),
+            "bluf_kans": inzending.get("bluf_kans"),
+            "geldig": inzending["geldig"],
+            "foutmelding": inzending.get("foutmelding"),
+            "ingeleverd_op": inzending["ingeleverd_op"],
+        })
+    return sorted(uit, key=lambda r: r["student_id"])
 
 
 @app.get("/referentiebots/{week}")

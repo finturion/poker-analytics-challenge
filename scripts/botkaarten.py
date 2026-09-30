@@ -207,11 +207,12 @@ def winst_per_regel(log, startstacks=None):
     over die grenzen heen vergelijken slaat nergens op, want dat zijn andere
     parallelle werelden.
 
-    `startstacks` moet je meegeven vanaf ronde 2. Daar begint niemand op 1000:
-    iedereen speelt door met de chips uit de vorige ronde plus 1000 erbij, en
-    de uitslag bewaart die beginstanden. Reken je dan toch tegen 1000, dan is
-    de eerste hand van elke zitting honderden chips te goed of te kwaad -- en
-    precies dat getal zet je op het kaartje waar je iemand op bevraagt.
+    `startstacks` staat in elke uitslag op None sinds elke ronde schoon op 1000
+    begint. De parameter blijft staan omdat oudere uitslagen -- van vóór
+    september 2026, toen de bonusweek nog doorspeelde -- ze wél bevatten. Reken
+    je daar toch tegen 1000, dan is de eerste hand van elke zitting honderden
+    chips te goed of te kwaad, en precies dat getal zet je op het kaartje waar
+    je iemand op bevraagt.
     """
     startstacks = startstacks or {}
     per_zitting = defaultdict(list)

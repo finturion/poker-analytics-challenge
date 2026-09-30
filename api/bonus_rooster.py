@@ -20,16 +20,16 @@ dus geen punten. Wie niets inlevert speelt niet mee. Dat is de handhaving.
 
 WAAROM OP WINST EN NIET OP EINDSTAND
 ------------------------------------
-Vanaf het tweede toernooi speelt iedereen door met de chips uit het vorige --
-zie poker_adapter.bereken_startstacks(). Je eindstand daar bevat dus al wat je
-in het eerste toernooi verdiende. Zou je op eindstand ranken, dan telde je
-woensdagresultaat twee keer mee en was de tweede 0,5 een echo van de eerste.
-Daarom ranken we op wat je in dát toernooi hebt gewónnen: eindstand minus
-startstack. In het eerste toernooi begint iedereen op 1000, dus daar is dat
-precies hetzelfde als de eindstand.
+Er wordt gerankt op wat je in dát toernooi hebt gewónnen: eindstand minus
+startstack. Sinds september 2026 begint elke ronde schoon op 1000, dus is dat
+getal gelijk aan de eindstand min 1000 en maakt de keuze voor de volgorde niets
+uit.
 
-De carry-over blijft wel echt iets doen: met meer chips kun je meer winnen en
-zet je een korte stack onder druk. Alleen telt hij niet twee keer voor punten.
+Het blijft toch zo staan, om twee redenen. Het is de eerlijke formulering van
+wat de ladder beloont -- niet hoeveel chips je hebt, maar hoeveel je er hebt
+bijgespeeld -- en winst_per_bot() leest de startstacks uit de uitslag, dus als
+er ooit weer met carry-over wordt gedraaid klopt de puntentelling zonder dat
+hier iets aan hoeft.
 """
 
 import itertools
@@ -81,8 +81,10 @@ def winst_per_bot(toernooi):
     """
     Wat elke bot in dít toernooi heeft gewonnen: eindstand minus startstack.
 
-    In het eerste toernooi staan er geen startstacks in de uitslag; daar begon
-    iedereen op STANDAARD_STARTSTACK.
+    Er staan geen startstacks in de uitslag zolang elke ronde schoon op
+    STANDAARD_STARTSTACK begint. Het veld wordt wel gelezen, zodat een uitslag
+    die ze wél heeft (bv. een oude, of een toekomstige carry-over-ronde) nog
+    steeds goed wordt geteld.
     """
     eindstand = toernooi.get("eindstand_per_bot") or {}
     startstacks = toernooi.get("startstacks") or {}
