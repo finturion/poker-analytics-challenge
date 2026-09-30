@@ -12,6 +12,7 @@ Doel: nul handmatige nakijkdruk voor de docent.
 - POST /toernooi/{week}/opnieuw -> docent-only: forceer een nieuwe toernooi-run
 - POST /toernooi/{week}/kopieer -> docent-only: zet een gedraaide ronde onder een ander nummer
 - GET  /toernooi/{week}/resultaat -> docent-only: laatst gecachte uitslag, draait NOOIT zelf een toernooi
+- GET  /toernooi/{week}/uitgebreid -> één regel per beslissing: ronde, bord, pot, inzet
 - GET  /locaties/{week} -> geolocaties van alle bots (vanaf Week 5), met eindstand indien bekend
 - POST /bot-test/{student_id} -> test de bot van een klasgenoot op je eigen situaties (geen code)
 - GET  /referentiebots/{week} -> de vaste meetlat-bots: altijd hun beschrijving, vanaf Week 5 ook hun code
@@ -48,7 +49,7 @@ from referentiebots import OPENBAAR_VANAF_WEEK, broncode as referentie_broncode
 from chart_validator import valideer_chart_json
 from locatie_validator import valideer_locatie
 from toernooi_runner import (cache_sleutel, draai_toernooi, haal_gecacht_resultaat_op,
-                             laatste_gedraaide_ronde)
+                             laatste_gedraaide_ronde, uitgebreid_sleutel)
 
 WEEK_VANAF_LOCATIE_VERPLICHT = 5
 
@@ -515,6 +516,92 @@ def toernooi_kopieren(
         "boodschap": (f"Ronde {van_ronde} staat nu ook onder ronde {naar_ronde}. "
                       f"Controleer de bonus met GET /bonus."),
     }
+
+
+@app.get("/toernooi/{week}/uitgebreid")
+def toernooi_uitgebreid(
+    week: int,
+    student_id: str,
+    ronde: int | None = None,
+    vergelijk_met_week: int | None = None,
+    formatief: bool = False,
+    ok: bool = Depends(db.verifieer_student_token),
+):
+    """
+    Eén regel per BESLISSING, in plaats van één per hand.
+
+    De hand_log uit /toernooi heeft per hand één regel, met de eerste actie van
+    die hand. Alles wat per straat speelt staat er dus niet in: niet de ronde,
+    niet het bord, niet de pot, niet wat callen kostte. Dat is precies de data
+    die je nodig hebt om te vragen waaróm je bot iets deed.
+
+    Per regel: bot_naam, simulatie, tafel, hand_nummer, ronde, hand,
+    hand_met_kleur, bord, stack, pot, inzet_om_te_callen, gekozen,
+    tegenstanders_actief en raises_deze_straat.
+
+    Let op `gekozen`: dat is wat jouw functie teruggaf, vóór de raise-cap en
+    vóór het omzetten naar een actie die de engine toestaat. Staat daar "raise"
+    terwijl de hand_log "call" zegt, dan heeft de cap toegeslagen en niet je
+    eigen logica.
+
+    Je krijgt alleen je EIGEN beslissingen. Dat is geen privacy maar omvang: bij
+    een volle klas zijn het er rond de honderdduizend, en dat is tientallen
+    megabytes. Ze liggen per bot opgeslagen, dus dit verzoek leest ook alleen
+    jouw regels. De docent haalt het hele veld op via
+    /toernooi/{week}/uitgebreid-docent.
+
+    Deze log bestaat pas voor toernooien die zijn gedraaid nadat hij is
+    ingebouwd (30 september 2026). Voor oudere rondes komt er een lege lijst
+    terug, met `beschikbaar: false`.
+    """
+    if ronde is None:
+        ronde = laatste_gedraaide_ronde(week, vergelijk_met_week) or 1
+
+    register = db.laad_toernooi_resultaat(
+        uitgebreid_sleutel(week, vergelijk_met_week, ronde, formatief)) or {}
+    eigen = (db.laad_toernooi_resultaat(
+        uitgebreid_sleutel(week, vergelijk_met_week, ronde, formatief,
+                           student_id)) or {}).get("regels") or []
+
+    return {
+        "week": week,
+        "ronde": ronde,
+        "beschikbaar": bool(register.get("bots")),
+        "n_regels_totaal": register.get("n_regels_totaal", 0),
+        "student_id": student_id,
+        "regels": eigen,
+        "toelichting": ("Alleen je eigen beslissingen. Is beschikbaar false, dan is dit "
+                        "toernooi gedraaid voordat deze log bestond."),
+    }
+
+
+@app.get("/toernooi/{week}/uitgebreid-docent")
+def toernooi_uitgebreid_docent(
+    week: int,
+    ronde: int | None = None,
+    vergelijk_met_week: int | None = None,
+    formatief: bool = False,
+    ok: bool = Depends(db.verifieer_docent_token),
+):
+    """
+    Docent-only: de volledige beslissingenlog van een ronde, van alle bots.
+
+    Groot -- reken op tientallen megabytes bij een volle klas. Bedoeld om lokaal
+    te analyseren, niet om in een notebook te laden. Studenten halen hun eigen
+    regels op via /toernooi/{week}/uitgebreid.
+    """
+    if ronde is None:
+        ronde = laatste_gedraaide_ronde(week, vergelijk_met_week) or 1
+    register = db.laad_toernooi_resultaat(
+        uitgebreid_sleutel(week, vergelijk_met_week, ronde, formatief)) or {}
+    regels = []
+    for bot_naam in register.get("bots") or {}:
+        regels += (db.laad_toernooi_resultaat(
+            uitgebreid_sleutel(week, vergelijk_met_week, ronde, formatief,
+                               bot_naam)) or {}).get("regels") or []
+    return {"week": week, "ronde": ronde, "beschikbaar": bool(regels),
+            "n_regels": len(regels), "bots": register.get("bots") or {},
+            "regels": regels}
 
 @app.get("/locaties/{week}")
 def locaties(

@@ -176,6 +176,12 @@ class StudentBotSpeler(BasePokerPlayer):
         self._acties_deze_hand = []
         self._uuid_naar_naam = {}
         self.hand_log = []
+        # Eén regel per BESLISSING, naast de hand_log die één regel per hand
+        # heeft. Hier staat wel wat de bot op dat moment zag: de straat, het
+        # bord, de pot en wat callen kostte. Precies wat je nodig hebt om
+        # achteraf te vragen "waarom deed hij dit", en wat in de hand_log niet
+        # past omdat die per hand is en niet per beslissing.
+        self.beslissingen = []
 
     def declare_action(self, valid_actions, hole_card, round_state):
         hand = _naar_onze_hand(hole_card)
@@ -205,6 +211,26 @@ class StudentBotSpeler(BasePokerPlayer):
                 self._raises_deze_straat += 1
         if self._eerste_actie_deze_hand is None:
             self._eerste_actie_deze_hand = gekozen
+
+        bord = list(round_state.get("community_card") or [])
+        self.beslissingen.append({
+            "bot_naam": self.bot_naam,
+            "hand_nummer": self._huidige_hand_nummer,
+            "ronde": ronde,
+            "hand": hand,
+            "hand_met_kleur": list(hole_card),
+            "bord": bord,
+            "stack": eigen_stack,
+            "pot": pot,
+            "inzet_om_te_callen": inzet_om_te_callen,
+            # Wat de bot terúggaf, vóór de raise-cap en vóór het omzetten naar
+            # een actie die PyPokerEngine toestaat. Dat onderscheid is het punt:
+            # als je bot "raise" zegt en er staat "call" in de hand_log, dan
+            # heeft de cap toegeslagen en niet zijn eigen logica.
+            "gekozen": gekozen,
+            "tegenstanders_actief": len({a["bot_naam"] for a in self._acties_deze_hand}),
+            "raises_deze_straat": self._raises_deze_straat,
+        })
         return self._naar_geldige_actie(
             gekozen, valid_actions, self._ondersteunt_all_in, self._ondersteunt_grote_raise
         )
@@ -393,11 +419,13 @@ def speel_tafel(bots, tafel_nummer, n_handen=STANDAARD_N_HANDEN, seed=None, star
 
     dealer.start_game(n_handen)
 
-    log = []
+    log, beslissingen = [], []
     for speler in spelers.values():
         for rij in speler.hand_log:
             log.append({**rij, "tafel": tafel_nummer})
-    return log
+        for rij in speler.beslissingen:
+            beslissingen.append({**rij, "tafel": tafel_nummer})
+    return log, beslissingen
 
 
 def _verdeel_in_tafels(bot_namen, rng):
@@ -433,28 +461,39 @@ def speel_toernooi(bots, n_simulaties=5, n_handen=STANDAARD_N_HANDEN, seed=0, st
     simulatie begint dan met dezelfde startstacks: de simulaties zijn
     parallelle werelden, geen opeenvolgende rondes.
 
-    Retourneert {"hand_log": [...], "eindstand_per_bot": {...}}.
+    Retourneert {"hand_log": [...], "eindstand_per_bot": {...},
+    "uitgebreid_hand_log": [...]}.
+
+    De hand_log houdt één regel per hand per bot en verandert niet -- alle
+    notebooks en analyses hangen eraan. De uitgebreid_hand_log staat ernaast met
+    één regel per BESLISSING, inclusief de straat, het bord, de pot en wat
+    callen kostte. Dat past niet in de hand_log, want dat zijn er meerdere per
+    hand.
     """
     if len(bots) < 2:
         raise ValueError("Er zijn minstens 2 bots nodig om een toernooi te spelen.")
 
     rng = random.Random(seed)
     volledig_log = []
+    uitgebreid_log = []
 
     for simulatie_nummer in range(n_simulaties):
         tafels = _verdeel_in_tafels(bots.keys(), rng)
         for tafel_index, namen_aan_tafel in enumerate(tafels):
             bots_aan_tafel = {naam: bots[naam] for naam in namen_aan_tafel}
             tafel_seed = seed * 10_000 + simulatie_nummer * 100 + tafel_index
-            tafel_log = speel_tafel(
+            tafel_log, tafel_beslissingen = speel_tafel(
                 bots_aan_tafel, tafel_index, n_handen=n_handen, seed=tafel_seed,
                 startstacks=startstacks,
             )
             for rij in tafel_log:
                 volledig_log.append({**rij, "simulatie": simulatie_nummer})
+            for rij in tafel_beslissingen:
+                uitgebreid_log.append({**rij, "simulatie": simulatie_nummer})
 
     eindstand_per_bot = _bereken_eindstand(volledig_log)
-    return {"hand_log": volledig_log, "eindstand_per_bot": eindstand_per_bot}
+    return {"hand_log": volledig_log, "eindstand_per_bot": eindstand_per_bot,
+            "uitgebreid_hand_log": uitgebreid_log}
 
 
 def _bereken_eindstand(hand_log):

@@ -139,6 +139,26 @@ def n_simulaties_voor(week):
     return N_SIMULATIES_BONUSWEEK if week == BONUSWEEK else STANDAARD_N_SIMULATIES
 
 
+def uitgebreid_sleutel(week, vergelijk_met_week=None, ronde=1, formatief=False,
+                       bot_naam=None):
+    """
+    Waar de uitgebreide log van die ronde staat: naast de gewone uitslag, niet erin.
+
+    Apart, en dat is met opzet. De uitgebreide log heeft ongeveer 3,5 keer zoveel
+    regels als de hand_log -- één per beslissing in plaats van één per hand -- en
+    komt bij een volle klas op tientallen megabytes. Zat dat in /toernooi, dan
+    kreeg elke student die zijn uitslag ophaalt dat hele pakket over de lijn.
+
+    Hij ligt bovendien per bot uit elkaar. Zonder bot_naam krijg je de sleutel van
+    het register (welke bots er zijn, en hoeveel regels elk), met bot_naam die van
+    één bot. Anders trekt elke student die zijn eigen regels opvraagt de hele
+    klas uit de database -- tientallen megabytes per verzoek, en in een
+    werkcollege vraagt iedereen tegelijk.
+    """
+    basis = cache_sleutel(week, vergelijk_met_week, ronde, formatief) + "_uitgebreid"
+    return f"{basis}_bot_{bot_naam}" if bot_naam is not None else basis
+
+
 def cache_sleutel(week, vergelijk_met_week=None, ronde=1, formatief=False):
     """
     De sleutel waaronder een toernooi-uitkomst wordt bewaard.
@@ -346,4 +366,30 @@ def draai_toernooi(
     }
 
     db.sla_toernooi_resultaat_op(cache_key, resultaat)
+
+    # De uitgebreide log gaat onder eigen sleutels, en dus NIET mee in wat
+    # /toernooi teruggeeft. Per bot een rij, plus een register dat zegt welke
+    # bots er zijn -- zo leest een student alleen zijn eigen regels.
+    _sla_uitgebreid_op(uitkomst.get("uitgebreid_hand_log") or [],
+                       week, vergelijk_met_week, ronde, formatief)
     return resultaat
+
+
+def _sla_uitgebreid_op(regels, week, vergelijk_met_week, ronde, formatief):
+    """Zet de uitgebreide log per bot weg, met een register erbij."""
+    per_bot = {}
+    for regel in regels:
+        per_bot.setdefault(regel["bot_naam"], []).append(regel)
+
+    for bot_naam, eigen in per_bot.items():
+        db.sla_toernooi_resultaat_op(
+            uitgebreid_sleutel(week, vergelijk_met_week, ronde, formatief, bot_naam),
+            {"week": week, "ronde": ronde, "formatief": formatief, "regels": eigen},
+        )
+
+    db.sla_toernooi_resultaat_op(
+        uitgebreid_sleutel(week, vergelijk_met_week, ronde, formatief),
+        {"week": week, "ronde": ronde, "formatief": formatief,
+         "bots": {naam: len(r) for naam, r in sorted(per_bot.items())},
+         "n_regels_totaal": len(regels)},
+    )
