@@ -82,6 +82,10 @@ def lees_tafel(acties):
 
 def kies_actie(hand, stack, strategie, bluf_kans, tegenstander_acties_deze_hand=None):
     winkans = WINKANS.get(hand_sleutel(hand), ONBEKENDE_HAND)
+    # bluf_kans kan None zijn: een inzending zonder bluf_kans (week 3) krijgt hem
+    # toch aangeboden zodra hij in je handtekening staat. Zonder deze regel crasht
+    # de vergelijking hieronder en foldt de engine je stil elke hand.
+    bluf_kans = bluf_kans or 0.0
     raises, meedoeners, laatste_was_raise = lees_tafel(tegenstander_acties_deze_hand)
 
     if stack < KORTE_STACK:

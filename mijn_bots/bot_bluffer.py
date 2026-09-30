@@ -122,6 +122,10 @@ def benodigde_foldkans(pot, risico, aantal_tegenstanders):
 def kies_actie(hand, stack, strategie, bluf_kans, ronde="preflop", pot=0,
                inzet_om_te_callen=0, tegenstander_acties_deze_hand=None):
     winkans = WINKANS.get(hand_sleutel(hand), ONBEKENDE_HAND)
+    # bluf_kans kan None zijn: een inzending zonder bluf_kans (week 3) krijgt hem
+    # toch aangeboden zodra hij in je handtekening staat. Zonder deze regel crasht
+    # de vergelijking hieronder en foldt de engine je stil elke hand.
+    bluf_kans = bluf_kans or 0.0
     pot = pot or 0
     inzet = inzet_om_te_callen or 0
     schuif = STRATEGIE_SCHUIF.get(strategie, 0.0)
