@@ -10,6 +10,7 @@ Doel: nul handmatige nakijkdruk voor de docent.
 - GET  /export/{week}/bots -> docent-only: de ingeleverde bot-code, om lokaal mee te draaien
 - GET  /toernooi/{week} -> echt pokertoernooi (PyPokerEngine) tussen alle goedgekeurde bots
 - POST /toernooi/{week}/opnieuw -> docent-only: forceer een nieuwe toernooi-run
+- POST /toernooi/{week}/kopieer -> docent-only: zet een gedraaide ronde onder een ander nummer
 - GET  /toernooi/{week}/resultaat -> docent-only: laatst gecachte uitslag, draait NOOIT zelf een toernooi
 - GET  /locaties/{week} -> geolocaties van alle bots (vanaf Week 5), met eindstand indien bekend
 - POST /bot-test/{student_id} -> test de bot van een klasgenoot op je eigen situaties (geen code)
@@ -446,6 +447,74 @@ def toernooi_resultaat_ophalen(
         week, vergelijk_met_week=vergelijk_met_week, ronde=ronde, formatief=formatief
     )
 
+
+
+@app.post("/toernooi/{week}/kopieer")
+def toernooi_kopieren(
+    week: int,
+    van_ronde: int,
+    naar_ronde: int,
+    overschrijven: bool = False,
+    ok: bool = Depends(db.verifieer_docent_token),
+):
+    """
+    Docent-only: zet een al gedraaide ronde onder een ander rondenummer.
+
+    WAAROM DIT BESTAAT
+    ------------------
+    De bonus telt alleen de rondes uit bonus_rooster.GESCOORDE_RONDES -- ronde 1
+    (de woensdagbot) en ronde 2 (de definitieve bot). Wordt een toernooi per
+    ongeluk onder een ander nummer gedraaid, dan staat er een complete uitslag in
+    de cache die voor de bonus niet meetelt: iedereen op 0,0, ook de winnaar.
+
+    Dat overkwam week 5 op 30 september 2026, onder ronde 5. Opnieuw draaien zou
+    een ANDERE uitslag geven -- de seed is week * 10 + ronde -- en die was al met
+    de klas besproken. Vandaar deze route: dezelfde uitslag, onder het nummer dat
+    telt.
+
+    Het toernooi wordt niet opnieuw gespeeld. Het `ronde`-veld in de uitslag gaat
+    mee naar het nieuwe nummer, zodat niets erover in tegenspraak is.
+
+    Bestaat de doelronde al, dan gebeurt er niets tenzij je `overschrijven=true`
+    meegeeft. Dat is met opzet onhandig: aan een gescoorde ronde hangen
+    bonuspunten, en die overschrijf je niet per ongeluk met een query-parameter.
+    """
+    if van_ronde == naar_ronde:
+        raise HTTPException(status_code=400, detail="van_ronde en naar_ronde zijn gelijk.")
+
+    bron_sleutel = cache_sleutel(week, ronde=van_ronde)
+    bron = db.laad_toernooi_resultaat(bron_sleutel)
+    if not bron:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Week {week} ronde {van_ronde} is nog niet gedraaid; er valt niets te kopiëren.",
+        )
+
+    doel_sleutel = cache_sleutel(week, ronde=naar_ronde)
+    bestaand = db.laad_toernooi_resultaat(doel_sleutel)
+    if bestaand and not overschrijven:
+        raise HTTPException(
+            status_code=409,
+            detail=(f"Week {week} ronde {naar_ronde} bestaat al met "
+                    f"{len(bestaand.get('eindstand_per_bot') or {})} bots. "
+                    f"Geef overschrijven=true mee als je hem echt wilt vervangen."),
+        )
+
+    kopie = dict(bron)
+    kopie["ronde"] = naar_ronde
+    kopie["gekopieerd_van_ronde"] = van_ronde
+    db.sla_toernooi_resultaat_op(doel_sleutel, kopie)
+
+    return {
+        "week": week,
+        "van_ronde": van_ronde,
+        "naar_ronde": naar_ronde,
+        "overschreven": bool(bestaand),
+        "n_bots": len(kopie.get("eindstand_per_bot") or {}),
+        "n_deelnemers": len(kopie.get("namen_deelnemers") or []),
+        "boodschap": (f"Ronde {van_ronde} staat nu ook onder ronde {naar_ronde}. "
+                      f"Controleer de bonus met GET /bonus."),
+    }
 
 @app.get("/locaties/{week}")
 def locaties(
