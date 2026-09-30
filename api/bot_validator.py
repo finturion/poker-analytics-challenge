@@ -427,6 +427,38 @@ def valideer_bot_code(code: str, week: int, strategie: str | None = None, bluf_k
 # lezen. Elke aanroep start ook een apart proces, dus het kost rekentijd.
 MAX_TESTGEVALLEN_PEER = 20
 
+# PyPokerEngine schrijft Tien als "T"; `hand` gebruikt overal "10" (zie Week 1).
+_NAAR_ENGINE_RANG = {"10": "T"}
+
+# Waarmee een ontbrekend veld in een testgeval wordt aangevuld.
+#
+# Waarom dit moet. Een bot uit Werkcollege 7 vraagt hand, hand_met_kleur, bord,
+# stack, ronde, pot, inzet_om_te_callen, bluf_kans en tegenstander_acties --
+# allemaal zonder default, want het toernooi vult ze altijd. Wie dan een
+# testgeval instuurt met alleen hand/stack/ronde, kreeg
+# "TypeError: kies_actie() missing 4 required positional arguments" terug, en
+# dat is geen fout van de bot maar van het testgeval. Precies de bot die het
+# werkcollege volgt viel om.
+#
+# Deze waarden zijn dezelfde als in _hulpfuncties_week5.vraag_eigen_bot(),
+# waarmee de student zijn EIGEN bot aanroept in Werkcollege 8. Dat is geen
+# toeval maar de eis: staan ze niet gelijk, dan vergelijkt hij twee bots op twee
+# verschillende situaties. scripts/test_botvergelijking.py bewaakt dat.
+_STANDAARD_TESTGEVAL = {
+    "stack": 1000,
+    "ronde": "preflop",
+    "pot": 30,
+    "inzet_om_te_callen": 10,
+    "bord": [],
+    "tegenstander_acties_deze_hand": [],
+}
+
+
+def _hand_met_kleur_uit(hand):
+    """Zonder kleuren meegestuurd: schoppen en harten, net als vraag_eigen_bot()."""
+    return [kleur + _NAAR_ENGINE_RANG.get(str(rang), str(rang))
+            for kleur, rang in zip(["S", "H"], hand)]
+
 
 def speel_testgevallen(code: str, week: int, testgevallen: list[dict],
                        strategie=None, bluf_kans=None) -> dict:
@@ -438,9 +470,13 @@ def speel_testgevallen(code: str, week: int, testgevallen: list[dict],
     gedrag, geen broncode. Dat is bewust: er hangt een bonuspunt aan het
     toernooi, en een endpoint dat andermans bot uitdeelt maakt dat kopieerbaar.
 
-    Retourneert {"acties": [...], "foutmelding": None} of andersom. Ontbrekende
-    parameters worden weggelaten: net als in het echte spel krijgt een bot
-    alleen wat hij zelf in zijn signatuur heeft gezet.
+    Retourneert {"acties": [...], "foutmelding": None} of andersom.
+
+    Een bot krijgt alleen de parameters die hij zelf in zijn signatuur heeft
+    gezet, net als in het echte spel. Vraagt hij er een die niet in het testgeval
+    staat, dan wordt die aangevuld uit _STANDAARD_TESTGEVAL -- anders zou een bot
+    die het werkcollege netjes volgt omvallen op een testgeval dat alleen `hand`
+    en `stack` noemt.
     """
     if week not in VERWACHTE_FUNCTIES:
         return {"acties": None, "foutmelding": f"Onbekende week: {week}"}
@@ -468,7 +504,12 @@ def speel_testgevallen(code: str, week: int, testgevallen: list[dict],
     for testgeval in testgevallen:
         if "hand" not in testgeval:
             return {"acties": None, "foutmelding": "Elk testgeval heeft minstens een 'hand' nodig."}
-        samen = {**testgeval, **{k: v for k, v in vast.items() if v is not None}}
+        samen = {**_STANDAARD_TESTGEVAL, **testgeval,
+                 **{k: v for k, v in vast.items() if v is not None}}
+        # Kleuren alleen afleiden als de aanvrager ze niet zelf meestuurde: wie
+        # een flush wil testen, moet zijn eigen kaarten kunnen kiezen.
+        if "hand_met_kleur" not in testgeval:
+            samen["hand_met_kleur"] = _hand_met_kleur_uit(testgeval["hand"])
         opgeschoond.append({k: v for k, v in samen.items() if k in toegestaan})
 
     acties, fout = _draai_in_apart_proces(code, functienaam, opgeschoond)
