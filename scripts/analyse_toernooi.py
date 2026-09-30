@@ -146,7 +146,7 @@ def plaat_foldverdeling():
             fontsize=11, fontweight="bold", va="top", ha="left")
     ax.set_xlabel("percentage van de beslissingen dat een fold was")
     ax.set_ylabel("aantal bots")
-    ax.set_title("Hoe tight speelt de klas?", color=INKT, fontsize=12.5, pad=12, loc="left")
+    ax.set_title("Hoe defensief speelt de klas?", color=INKT, fontsize=12.5, pad=12, loc="left")
     kaal(ax)
     cijfers["fold_mediaan"] = round(float(mediaan), 1)
     cijfers["fold_jij"] = round(float(mijn), 1)
@@ -173,7 +173,7 @@ def plaat_fold_vs_eindstand():
             linestyle=(0, (5, 4)), zorder=2)
     ax.set_xlabel("fold-percentage")
     ax.set_ylabel("eindstand (chips)")
-    ax.set_title(f"Is tight spelen beter?   correlatie r = {r:+.2f}",
+    ax.set_title(f"Is defensief spelen beter?   correlatie r = {r:+.2f}",
                  color=INKT, fontsize=12.5, pad=12, loc="left")
     ax.legend(frameon=False, fontsize=10, loc="upper left")
     kaal(ax)

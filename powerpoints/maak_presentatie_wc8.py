@@ -107,14 +107,14 @@ DIAS = [
      "Laat ze zichzelf opzoeken — dat is de opdracht in 3.2. Wie boven de 80% zit doet "
      "nauwelijks mee; wie onder de 20% zit betaalt overal aan mee."),
 
-    ("DE VERRASSING", f"Tight spelen wérkt hier   ·   r = {met_teken(C['correlatie_fold_eindstand'])}",
+    ("DE VERRASSING", f"Defensief spelen wérkt hier   ·   r = {met_teken(C['correlatie_fold_eindstand'])}",
      "wc8_fold_vs_eindstand.png", [],
      f"Dit is de statistiek die ik er zelf bij heb gezocht, en de uitkomst verraste me: een "
      f"correlatie van {met_teken(C['correlatie_fold_eindstand'])} tussen fold-percentage en "
-     "eindstand. In dít veld deden de tightere bots het beter.\n\n"
+     "eindstand. In dít veld deden de defensievere bots het beter.\n\n"
      "Belangrijk om erbij te zeggen: dat is geen algemene pokerwaarheid. Het zegt iets over "
      "dit veld — er zitten een paar bots in die alles callen, en die verliezen langzaam hun "
-     "chips aan iedereen. Tegen een tafel vol tighte bots zou de lijn andersom kunnen lopen.\n\n"
+     "chips aan iedereen. Tegen een tafel vol defensieve bots zou de lijn andersom kunnen lopen.\n\n"
      "Goede vraag voor de zaal: is dit oorzaak of gevolg?"),
 
     ("3.3 · GEDRAG LEZEN", "De drempels van de klas, zonder één regel code te zien",
@@ -194,6 +194,18 @@ DIAS = [
      "een regel per beslissing zou het logboek vijf keer zo groot maken.\n\n"
      "Wie dáár iets over wil weten, moet zijn bot het zelf laten opschrijven. Dat is de "
      "volgende dia."),
+
+    ("HOE VERZIN JE ZO'N VRAAG?", "Je leest hem af van je eigen bot", "wc8_regels.png", [],
+     "Dit is de dia waar ik de meeste waarde van verwacht, want 'bedenk een analyse' is een "
+     "opdracht waar de meesten op vastlopen.\n\n"
+     "Het punt: je verzint niets. Je hebt in Werkcollege 7 vijf regels geschreven, en in elke "
+     "regel staat een getal dat je op gevoel hebt gekozen — 150, STERK, MEEDOEN, ZWAK. Elk van "
+     "die getallen is een hypothese. Stel over elk dezelfde twee vragen: hoe vaak vuurt deze "
+     "regel, en wat levert hij op als hij vuurt?\n\n"
+     "Loop ze samen langs en laat ze bij hun eigen bot kijken. Wie een regel heeft die nooit "
+     "vuurt, heeft dode code — en dat is op zichzelf al een bevinding.\n\n"
+     "De kleur rechts zegt waar het antwoord vandaan komt, en sluit aan op de vorige dia: "
+     "blauw is het logboek, oranje moet je zelf laten opschrijven."),
 
     ("SPOOR 2", "Laat je bot opschrijven wat hij doet", None, [
         r("Drie regels erbij, en je hebt data die niemand anders heeft:", 15, True, PRIMAIR, 0),

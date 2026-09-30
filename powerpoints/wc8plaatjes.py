@@ -111,6 +111,73 @@ def plaat_routes():
     return pad
 
 
+def plaat_regels():
+    """
+    Van je eigen vijf regels naar vijf onderzoeksvragen.
+
+    Dit is het antwoord op "hoe verzin ik zo'n analyse": je verzint hem niet, je
+    leest hem af van je eigen code. Elke regel die je in Werkcollege 7 hebt
+    geschreven bevat een getal dat je op gevoel hebt gekozen, en over elk van die
+    getallen kun je dezelfde twee vragen stellen -- hoe vaak vuurt deze regel, en
+    wat levert hij op als hij vuurt.
+    """
+    fig, ax = plt.subplots(figsize=(12.8, 6.4), dpi=200)
+    ax.set_xlim(-0.006, 1.006); ax.set_ylim(-0.02, 1.02); ax.axis("off")
+
+    ax.text(0.5, 0.995,
+            "Elke regel in je bot bevat een getal dat je op gevoel koos.",
+            ha="center", va="top", color=INKT, fontsize=13, fontweight="bold")
+    ax.text(0.5, 0.945,
+            "Stel over elk van die getallen dezelfde twee vragen:  "
+            "hoe vaak vuurt deze regel, en wat levert hij op?",
+            ha="center", va="top", color=ORANJE, fontsize=11, fontweight="bold")
+
+    koppen = [(0.005, 0.300, "JOUW REGEL"),
+              (0.325, 0.375, "DE VRAAG DIE JE EROVER STELT"),
+              (0.715, 0.280, "WAAR HET ANTWOORD VANDAAN KOMT")]
+    for x, b, kop in koppen:
+        ax.text(x + 0.010, 0.898, kop, ha="left", va="center", color=GEDEMPT,
+                fontsize=9, fontweight="bold")
+
+    rijen = [
+        ("1 · korte stack\nstack < 150 → all_in / fold",
+         "Hoe vaak zakte je onder die grens,\nen wat leverde all_in daar op?",
+         "logboek", BLAUW),
+        ("2 · de tafel las mee\niemand raiste → fold onder STERK",
+         "Hoe vaak hield deze regel je tegen,\nen had hij achteraf gelijk?",
+         "zelf loggen", ORANJE),
+        ("3 · de prijs\nwinkans < pot odds → fold",
+         "Hoe vaak was meedoen te duur?\nEn foldde je handen die wonnen?",
+         "zelf loggen", ORANJE),
+        ("4 · bluffen\nwinkans < ZWAK → soms raise",
+         "Vuurt je bluf-regel überhaupt,\nen leveren die handen iets op?",
+         "logboek + zelf loggen", ORANJE),
+        ("5 · het vangnet\nSTERK / MEEDOEN",
+         "Klopt je drempel, gegeven de\nwinkans die je per hand kunt uitrekenen?",
+         "logboek", BLAUW),
+    ]
+
+    y0, hoogte, ruimte = 0.722, 0.130, 0.019
+    for i, (regel, vraag, route, kleur) in enumerate(rijen):
+        y = y0 - i * (hoogte + ruimte)
+        _doos(ax, 0.005, y, 0.300, hoogte, regel, vul=LICHT, rand=LICHT, grootte=9)
+        _doos(ax, 0.325, y, 0.375, hoogte, vraag, vul=WIT, rand="#C9D2CC", grootte=9.2)
+        _doos(ax, 0.715, y, 0.280, hoogte, route, vul=kleur, rand=kleur,
+              kleur=WIT, grootte=10, vet=True)
+
+    ax.text(0.5, 0.020,
+            "Je verzint een analyse dus niet — je leest hem af van je eigen code.",
+            ha="center", va="bottom", color=INKT, fontsize=11, fontweight="bold")
+
+    os.makedirs(PLOTMAP, exist_ok=True)
+    pad = os.path.join(PLOTMAP, "wc8_regels.png")
+    fig.savefig(pad, facecolor=WIT, dpi=200, bbox_inches="tight", pad_inches=0.22)
+    plt.close(fig)
+    print("  ", pad)
+    return pad
+
+
 if __name__ == "__main__":
     plaat_routes()
+    plaat_regels()
     sys.exit(0)
