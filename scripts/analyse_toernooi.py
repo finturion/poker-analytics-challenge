@@ -65,6 +65,13 @@ plt.rcParams.update({
 })
 
 
+def kort(naam):
+    """Botnaam zoals hij op een dia hoort. Het achtervoegsel __w5 zit er alleen
+    in als het toernooi twee weken vergelijkt; anders is de naam al het
+    studentnummer."""
+    return naam.split("__")[0]
+
+
 def bewaar(fig, naam):
     pad = os.path.join(PLOTMAP, naam + ".png")
     fig.savefig(pad, facecolor=WIT, dpi=200, bbox_inches="tight", pad_inches=0.22)
@@ -90,22 +97,47 @@ def hand_naam(hand):
 
 # ---------------------------------------------------------------- data
 resultaat = json.load(open(BRON))
-JIJ = "500100001__w5"          # de bot die we als "jij" aanwijzen
+# Welke bot we als "jouw bot" aanwijzen op de dia's. Meegeven kan:
+#     python3 scripts/analyse_toernooi.py uitslag.json 500859283
+# Zonder argument pakken we een student uit het midden van de uitslag -- niet de
+# winnaar, want dan lijkt elke grafiek een succesverhaal, en niet de laatste.
+# Referentie- en testbots vallen af: die horen niemand toe.
+_STUDENTEN = [naam for naam in resultaat["eindstand_per_bot"]
+              if naam not in set(resultaat.get("referentiebots") or [])
+              and naam not in set(resultaat.get("testbots") or [])]
+_OP_VOLGORDE = sorted(_STUDENTEN, key=lambda n: -resultaat["eindstand_per_bot"][n])
+JIJ = sys.argv[2] if len(sys.argv) > 2 else _OP_VOLGORDE[len(_OP_VOLGORDE) // 2]
+if JIJ not in resultaat["eindstand_per_bot"]:
+    sys.exit(f"{JIJ} staat niet in deze uitslag. Keuze uit: {', '.join(_OP_VOLGORDE[:8])} ...")
 
 hand_log = pd.DataFrame(resultaat["hand_log"])
 hand_log = hand_log.sort_values(["bot_naam", "simulatie", "hand_nummer"])
 hand_log["winst"] = hand_log.groupby(["bot_naam", "simulatie"])["stack"].diff()
 hand_log["hand_naam"] = hand_log["hand"].apply(hand_naam)
-speelde_mee = hand_log[hand_log["aan_zet"] & ~hand_log["uitgespeeld"]].copy()
+# Twee filters, en het tweede is makkelijk te vergeten.
+#
+# 1. Alleen de handen waarin een bot aan de beurt kwam en nog chips had; anders
+#    tel je lege regels mee van bots die al uitgespeeld waren.
+# 2. Alleen de STUDENTEN. Aan tafel zitten ook vijf referentiebots en een
+#    testbot -- die beinvloeden de chips, maar het zijn geen klasgenoten.
+#    Dat is niet vrijblijvend: met hen erbij komt de correlatie tussen
+#    fold-percentage en eindstand op +0,27 uit, zonder hen op -0,15. De
+#    Testbot_CalltAlles foldt namelijk nooit en Referentie_Allrounder bijna
+#    altijd, en met 6 van de 28 bots trekken ze de lijn recht. bonus_rooster
+#    maakt dezelfde scheiding, via namen_deelnemers.
+KLAS = set(resultaat.get("namen_deelnemers") or resultaat["eindstand_per_bot"])
+speelde_mee = hand_log[hand_log["aan_zet"] & ~hand_log["uitgespeeld"]
+                       & hand_log["bot_naam"].isin(KLAS)].copy()
 
 VOLGORDE = ["fold", "call", "raise", "grote_raise", "all_in"]
 aanwezig = [a for a in VOLGORDE if a in set(speelde_mee["actie"])]
 
-print(f"{hand_log['bot_naam'].nunique()} bots, "
+print(f"{hand_log['bot_naam'].nunique()} bots ({len(KLAS)} studenten), "
       f"{hand_log['simulatie'].nunique()} simulaties, "
       f"{len(hand_log)} regels, {len(speelde_mee)} beslissingen")
 
-cijfers = {"bots": int(hand_log["bot_naam"].nunique()),
+cijfers = {"bots": int(len(KLAS)),
+           "bots_aan_tafel": int(hand_log["bot_naam"].nunique()),
            "simulaties": int(hand_log["simulatie"].nunique()),
            "regels": len(hand_log), "beslissingen": len(speelde_mee)}
 
@@ -263,7 +295,7 @@ def platen_handmatrix():
 
 # ------------------------------------------------- 6. spreiding per bot
 def plaat_spreiding():
-    per_sim = (hand_log.sort_values("hand_nummer")
+    per_sim = (hand_log[hand_log["bot_naam"].isin(KLAS)].sort_values("hand_nummer")
                .groupby(["bot_naam", "simulatie"], as_index=False)
                .last()[["bot_naam", "simulatie", "stack"]]
                .rename(columns={"stack": "eindstand"}))
@@ -282,7 +314,7 @@ def plaat_spreiding():
         vak.set_facecolor(ORANJE if toon[i] == JIJ else BLAUW)
         vak.set_alpha(0.75); vak.set_edgecolor(WIT); vak.set_linewidth(1.5)
     ax.axhline(1000, color=GEDEMPT, linewidth=1, linestyle=(0, (4, 3)))
-    ax.set_xticklabels([b.replace("__w5", "") + ("  (jij)" if b == JIJ else "")
+    ax.set_xticklabels([kort(b) + ("  (jij)" if b == JIJ else "")
                         for b in toon], fontsize=9, rotation=20, ha="right")
     ax.set_ylabel("eindstand per simulatie (chips)")
     ax.set_title(f"Hoe stevig is een plek in de top-5?",
@@ -409,7 +441,7 @@ def plaat_uitslag(n=12):
     op_volgorde = sorted(verdeling.items(), key=lambda kv: (kv[1]["plek"], kv[0]))[:n]
 
     fig, ax = plt.subplots(figsize=(9.6, 5.4))
-    namen = [naam.replace("__w5", "") for naam, _ in op_volgorde]
+    namen = [kort(naam) for naam, _ in op_volgorde]
     waarden = [winst[naam] for naam, _ in op_volgorde]
     # de prijsplekken donker, de rest gedempt: de kleur zegt "hier hangt geld aan"
     kleuren = [GROENRAMP[4] if i < 2 else (GROENRAMP[3] if i < 5 else "#CBD5D0")
@@ -442,12 +474,15 @@ def plaat_uitslag(n=12):
     ax.set_xticks([])
 
     cijfers["bonus"] = [
-        {"plek": info["plek"], "student": naam.replace("__w5", ""),
+        {"plek": info["plek"], "student": kort(naam),
          "eindstand": int(resultaat["eindstand_per_bot"][naam]),
          "winst": int(winst[naam]), "punten": info["punten"]}
         for naam, info in sorted(verdeling.items(), key=lambda kv: (kv[1]["plek"], kv[0]))[:5]]
-    cijfers["uitgekeerd"] = round(sum(i["punten"] for i in verdeling.values()), 2)
-    cijfers["max_bonus"] = MAX_BONUS
+    # Let op het verschil: dit is wat er in DEZE ronde is uitgekeerd (altijd 1,5 --
+    # de ladder 0,5 t/m 0,1), terwijl MAX_BONUS het plafond per student over de
+    # hele week is (twee tellende toernooien, dus hoogstens 0,5 + 0,5).
+    cijfers["uitgekeerd_deze_ronde"] = round(sum(i["punten"] for i in verdeling.values()), 2)
+    cijfers["max_bonus_per_student"] = MAX_BONUS
     return bewaar(fig, "wc8_uitslag")
 
 
@@ -459,7 +494,7 @@ def plaat_ruwe_data():
     voorbeeld = (hand_log[hand_log["bot_naam"] == JIJ]
                  .sort_values(["simulatie", "hand_nummer"])
                  .head(5)[kolommen].copy())
-    voorbeeld["bot_naam"] = voorbeeld["bot_naam"].str.replace("__w5", "", regex=False)
+    voorbeeld["bot_naam"] = voorbeeld["bot_naam"].apply(kort)
     voorbeeld["hand"] = voorbeeld["hand"].apply(lambda h: " ".join(h))
 
     fig, ax = plt.subplots(figsize=(11.6, 3.4))

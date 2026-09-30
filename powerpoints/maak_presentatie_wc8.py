@@ -48,6 +48,25 @@ def getal(waarde, decimalen=0):
         if decimalen == 0 else f"{waarde:.{decimalen}f}".replace(".", ",")
 
 
+def verband(waarde):
+    """
+    Wat de correlatie tussen fold-percentage en eindstand deze ronde zegt.
+
+    Bewust niet hardgecodeerd. In mijn testveld kwam er +0,45 uit en leek
+    defensief spelen duidelijk beter; op de echte klas is het -0,15 en is er
+    vrijwel geen verband. Een dia die de richting vastzet, liegt zodra de data
+    verandert.
+    """
+    if waarde >= 0.25:
+        return ("Defensief spelen wérkt hier",
+                "de defensievere bots eindigden hoger")
+    if waarde <= -0.25:
+        return ("Agressief spelen wérkt hier",
+                "de bots die vaker meededen eindigden hoger")
+    return ("Er is nauwelijks verband",
+            "hoe vaak je foldt zegt weinig over waar je eindigt")
+
+
 def r(tekst, grootte=14, vet=False, kleur=PRIMAIR, ruimte=8, lettertype=None):
     return (tekst, grootte, vet, kleur, ruimte, lettertype)
 
@@ -180,15 +199,19 @@ DIAS = [
      "Laat ze zichzelf opzoeken — dat is de opdracht in 3.2. Wie boven de 80% zit doet "
      "nauwelijks mee; wie onder de 20% zit betaalt overal aan mee."),
 
-    ("DE VERRASSING", f"Defensief spelen wérkt hier   ·   r = {met_teken(C['correlatie_fold_eindstand'])}",
+    ("HET VERBAND", f"{verband(C['correlatie_fold_eindstand'])[0]}   ·   "
+     f"r = {met_teken(C['correlatie_fold_eindstand'])}",
      "wc8_fold_vs_eindstand.png", [],
-     f"Dit is de statistiek die ik er zelf bij heb gezocht, en de uitkomst verraste me: een "
-     f"correlatie van {met_teken(C['correlatie_fold_eindstand'])} tussen fold-percentage en "
-     "eindstand. In dít veld deden de defensievere bots het beter.\n\n"
-     "Belangrijk om erbij te zeggen: dat is geen algemene pokerwaarheid. Het zegt iets over "
-     "dit veld — er zitten een paar bots in die alles callen, en die verliezen langzaam hun "
-     "chips aan iedereen. Tegen een tafel vol defensieve bots zou de lijn andersom kunnen lopen.\n\n"
-     "Goede vraag voor de zaal: is dit oorzaak of gevolg?"),
+     f"Elke punt is een bot: hoe vaak hij foldde tegen waar hij eindigde. De correlatie is "
+     f"{met_teken(C['correlatie_fold_eindstand'])} — {verband(C['correlatie_fold_eindstand'])[1]}.\n\n"
+     "Belangrijk: hier staan alleen de studenten in, niet de vijf referentiebots en de "
+     "testbot. Die spelen wel mee aan tafel en beïnvloeden de chips, maar het zijn geen "
+     "klasgenoten — en ze vertekenen dit beeld flink. Met hen erbij kwam dezelfde berekening "
+     "op +0,27 uit in plaats van -0,15, puur omdat de testbot nooit foldt en één referentiebot "
+     "bijna altijd.\n\n"
+     "Goede vraag voor de zaal, ongeacht welke kant de lijn op wijst: is dit oorzaak of "
+     "gevolg? Een bot die vaker meedoet wint niet vanzelf meer — misschien zijn het gewoon de "
+     "betere bots die het zich kunnen veroorloven om vaker mee te doen."),
 
     ("3.3 · GEDRAG LEZEN", "De drempels van de klas, zonder één regel code te zien",
      "wc8_matrix_fold.png", [],

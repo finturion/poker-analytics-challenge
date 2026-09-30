@@ -1,111 +1,112 @@
 {
- "bots": 30,
+ "bots": 22,
+ "bots_aan_tafel": 28,
  "simulaties": 20,
- "regels": 24000,
- "beslissingen": 20912,
+ "regels": 28000,
+ "beslissingen": 18189,
  "bonus": [
   {
    "plek": 1,
-   "student": "500100011",
-   "eindstand": 1689,
-   "winst": 689,
+   "student": "500859283",
+   "eindstand": 1835,
+   "winst": 835,
    "punten": 0.5
   },
   {
    "plek": 2,
-   "student": "500100002",
-   "eindstand": 1665,
-   "winst": 665,
+   "student": "500961952",
+   "eindstand": 1538,
+   "winst": 538,
    "punten": 0.4
   },
   {
    "plek": 3,
-   "student": "500100007",
-   "eindstand": 1475,
-   "winst": 475,
+   "student": "501010649",
+   "eindstand": 1482,
+   "winst": 482,
    "punten": 0.3
   },
   {
    "plek": 4,
-   "student": "500100001",
-   "eindstand": 1335,
-   "winst": 335,
+   "student": "500908369",
+   "eindstand": 1348,
+   "winst": 348,
    "punten": 0.2
   },
   {
    "plek": 5,
-   "student": "500100006",
+   "student": "500959250",
    "eindstand": 1236,
    "winst": 236,
    "punten": 0.1
   }
  ],
- "uitgekeerd": 1.5,
- "max_bonus": 1.0,
+ "uitgekeerd_deze_ronde": 1.5,
+ "max_bonus_per_student": 1.0,
  "verdeling": {
-  "fold": 65.9,
-  "call": 21.0,
-  "raise": 12.0,
-  "grote_raise": 1.1,
-  "all_in": 0.0
+  "fold": 67.6,
+  "call": 17.6,
+  "raise": 12.1,
+  "grote_raise": 2.5,
+  "all_in": 0.2
  },
  "fold_mediaan": 72.3,
- "fold_jij": 75.6,
- "correlatie_fold_eindstand": 0.45,
+ "fold_jij": 74.0,
+ "correlatie_fold_eindstand": -0.15,
  "handen_totaal": 91,
  "handen_genoeg": 91,
  "weggegooid_maar_winstgevend": {
-  "2-2": {
-   "keren": 97,
-   "fold_pct": 0.64,
-   "gem_winst": 33.19
-  },
-  "Q-9": {
-   "keren": 245,
-   "fold_pct": 0.59,
-   "gem_winst": 16.31
-  },
-  "K-7": {
-   "keren": 283,
-   "fold_pct": 0.56,
-   "gem_winst": 13.6
-  },
-  "K-3": {
-   "keren": 223,
-   "fold_pct": 0.63,
-   "gem_winst": 11.77
+  "10-9": {
+   "keren": 230,
+   "fold_pct": 0.6,
+   "gem_winst": 22.49
   },
   "K-8": {
-   "keren": 271,
-   "fold_pct": 0.53,
-   "gem_winst": 8.41
+   "keren": 259,
+   "fold_pct": 0.56,
+   "gem_winst": 17.81
   },
-  "7-6": {
-   "keren": 263,
-   "fold_pct": 0.78,
-   "gem_winst": 7.38
+  "6-6": {
+   "keren": 90,
+   "fold_pct": 0.51,
+   "gem_winst": 14.27
+  },
+  "A-8": {
+   "keren": 200,
+   "fold_pct": 0.52,
+   "gem_winst": 13.59
+  },
+  "K-7": {
+   "keren": 221,
+   "fold_pct": 0.61,
+   "gem_winst": 13.49
+  },
+  "A-4": {
+   "keren": 210,
+   "fold_pct": 0.63,
+   "gem_winst": 12.6
   }
  },
  "top2": {
-  "500100011__w5": {
-   "mean": 1690.0,
-   "std": 1067.0
+  "500859283": {
+   "mean": 1835.0,
+   "std": 1345.0
   },
-  "500100002__w5": {
-   "mean": 1666.0,
-   "std": 1013.0
+  "500961952": {
+   "mean": 1538.0,
+   "std": 1574.0
   }
  },
- "eigen_beste": 3520,
+ "eigen_beste": 3810,
  "eigen_slechtste": 0,
  "duurste_hand": {
-  "hand": "K-10",
-  "totaal": -1010,
-  "keren": 10
+  "hand": "A-5",
+  "totaal": -1500,
+  "keren": 14
  },
  "beste_hand": {
   "hand": "A-K",
-  "totaal": 2000,
-  "keren": 9
+  "totaal": 2050,
+  "keren": 12
  }
 }
