@@ -74,6 +74,24 @@ DIAS = [
        "dertig bots.\n\nDe sprong die ze vandaag maken: tot nu toe was data iets wat ze kregen. "
        "Dit hebben ze zelf gegenereerd, door een bot te schrijven."),
 
+    ("TERUG NAAR VISUAL MAANDAG", "Vijf dingen die je vandaag meteen nodig hebt", None, [
+        r("1.  filteren        dertig bots in één plot is spaghetti", 15, False, PRIMAIR, 0, MONO),
+        r("2.  uitlichten      jouw bot in kleur, de rest grijs", 15, False, PRIMAIR, 6, MONO),
+        r("3.  actietitel      beweer iets, benoem niet alleen", 15, True, ACCENT, 6, MONO),
+        r("4.  annoteren       waar gebeurt het? zet er een streep bij", 15, False, PRIMAIR, 6, MONO),
+        r("5.  contrast-check  leest je kleur ook voor de rest van de klas?", 15, False, PRIMAIR, 6, MONO),
+        r("Alles wat hierna komt is daarop gebouwd. De kleurschalen lopen van blauw naar "
+          "groen en niet van rood naar groen, omdat rood en groen voor een deel van je "
+          "klasgenoten bijna dezelfde kleur zijn.", 13, False, GEDEMPT, 20),
+        r("Dat is geen detail. Dat is Werkcollege 6, Deel 6 — nu op jullie eigen data.",
+          14, True, PRIMAIR, 12),
+    ], "Kort ophalen, niet opnieuw uitleggen. Ze hebben dit vorige week gedaan; het punt is dat "
+       "ze zien dat het nu ergens voor dient.\n\n"
+       "De kleurkeuze mag je hardop verantwoorden: ik heb het groen-rood van onze eigen "
+       "huisstijl door een kleurenblindheidstest gehaald en het zakte — de twee liggen voor "
+       "protanopie te dicht bij elkaar. Vandaar blauw. Dat is precies het soort controle dat "
+       "zij in Deel 6 hebben geleerd."),
+
     ("3.2 · DE KLAS", f"Twee op de drie beslissingen is een fold", "wc8_acties.png", [],
      f"Fold {verdeling.get('fold', 0)}%, call {verdeling.get('call', 0)}%, "
      f"raise {verdeling.get('raise', 0)}%.\n\n"
@@ -128,7 +146,37 @@ DIAS = [
        "bot, en dan meet je de bot en niet de hand. Dat heet selectie-effect, en het is de "
        "reden dat je het op donderdag toetst in plaats van het te geloven."),
 
-    ("3.5 · HOEVEEL IS TOEVAL?", "Dezelfde bot, twintig keer gespeeld", "wc8_spreiding.png", [],
+    ("JOUW EIGEN SPEL", "Dezelfde bot, twintig keer een ander verhaal",
+     "wc8_stackverloop.png", [],
+     f"Hier staat Visual Maandag in één plaat: twintig grijze lijnen, twee uitgelicht, en een "
+     f"titel die iets beweert.\n\n"
+     f"Deze bot eindigde in zijn beste simulatie op {getal(C['eigen_beste'])} chips en in zijn "
+     f"slechtste op {getal(C['eigen_slechtste'])}. Zelfde code, zelfde drempels, andere kaarten.\n\n"
+     "Laat ze dit zelf maken voor hun eigen bot — het is één groupby en een plot, en het is de "
+     "meest persoonlijke grafiek van de middag."),
+
+    ("JOUW ACTIES", "Levert jouw raise meer op dan die van de klas?",
+     "wc8_jij_tegenover_klas.png", [],
+     "Dit is de grafiek die het dichtst bij 'wat moet ik veranderen' komt. Per actiesoort: wat "
+     "leverde die jou op, en wat leverde die de rest op?\n\n"
+     "Let op de n= achter elk getal, en maak daar een punt van. In dit voorbeeld verliest de "
+     "grote raise 84 chips per hand terwijl de klas er 175 mee wint — maar over zeven handen. "
+     "Dat is geen conclusie, dat is een aanwijzing waar je verder moet kijken.\n\n"
+     "Wie hier een echt verschil ziet bij een actie die hij vaak doet, heeft zijn verandering "
+     "voor Deel 4 gevonden."),
+
+    ("WAAR GING JE GELD HEEN?", "Niet het gemiddelde, maar het totaal",
+     "wc8_totale_bijdrage.png", [],
+     f"Een gemiddelde verstopt hoe vaak iets voorkwam. Hier staat de optelsom: welke handen "
+     f"hebben jou over het hele toernooi het meeste gekost, en welke het meeste opgeleverd.\n\n"
+     f"In dit voorbeeld is {C['duurste_hand']['hand']} de duurste hand "
+     f"({getal(C['duurste_hand']['totaal'])} chips over {C['duurste_hand']['keren']} handen) en "
+     f"{C['beste_hand']['hand']} de beste (+{getal(C['beste_hand']['totaal'])} over "
+     f"{C['beste_hand']['keren']}).\n\n"
+     "De vraag die ze zichzelf moeten stellen: speel ik die duurste hand eigenlijk wel bewust, "
+     "of valt hij per ongeluk binnen een van mijn drempels?"),
+
+    ("3.5 · HOEVEEL IS TOEVAL?", "Hoe stevig is een plek in de top-5?", "wc8_spreiding.png", [],
      f"De beste bot haalde gemiddeld {getal(list(C['top2'].values())[0]['mean'])} chips, met een "
      f"standaarddeviatie van {getal(list(C['top2'].values())[0]['std'])}. De nummer twee zit op "
      f"{getal(list(C['top2'].values())[1]['mean'])}.\n\n"

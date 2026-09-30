@@ -35,8 +35,16 @@ GEDEMPT = "#5A646B"
 LIJN = "#DCE1E6"
 WIT = "#FFFFFF"
 BLAUW, ORANJE, AQUA = "#2a78d6", "#eb6834", "#1baf7a"
-GROENRAMP = ["#d8e6df", "#a9c9ba", "#6fa68e", "#3a7a61", "#1B4D3E"]
-ROOD, GROEN = "#B3261E", "#1B4D3E"
+
+# Sequentieel (oplopende schaal, bv. fold -> all_in): van lichtblauw naar
+# donkergroen. Lichtheid daalt monotoon, dat is de eis voor een sequentiële ramp.
+BLAUWGROEN = ["#d7e6f2", "#a8cfdc", "#6fb8ae", "#3a8f7a", "#1B5E4A"]
+
+# Diverging (winst heeft een richting): blauw en groen om een grijs midden.
+# Rood is hier weg op verzoek -- en blauw <-> groen is bovendien de sterkere
+# combinatie: CVD Delta-E 23,1 (protan), tegen 9,1 voor geel <-> groen.
+DIV_LAAG, DIV_MIDDEN, DIV_HOOG = "#2a78d6", "#F0F2F3", "#1B5E4A"
+GROENRAMP = BLAUWGROEN
 
 RANGEN = ["A", "K", "Q", "J", "10", "9", "8", "7", "6", "5", "4", "3", "2"]
 RANGORDE = {r: i for i, r in enumerate(reversed(RANGEN))}
@@ -191,7 +199,8 @@ def plaat_matrix(waarden, titel, ondertitel, naam, diverging, eenheid):
         # andere vakjes dan wit worden. Op het 92e percentiel schalen houdt het
         # midden leesbaar; wat daarboven ligt loopt tegen het uiteinde aan.
         grens = float(np.nanpercentile(np.abs(m), 92))
-        cmap = LinearSegmentedColormap.from_list("winst", [ROOD, "#F2F4F3", GROEN])
+        cmap = LinearSegmentedColormap.from_list(
+            "winst", [DIV_LAAG, DIV_MIDDEN, DIV_HOOG])
         norm = TwoSlopeNorm(vmin=-grens, vcenter=0, vmax=grens)
     else:
         cmap = LinearSegmentedColormap.from_list("fold", GROENRAMP)
@@ -232,7 +241,7 @@ def platen_handmatrix():
 
     plaat_matrix(genoeg["gem_winst"].to_dict(),
                  "En met welke handen werd er geld verdiend?",
-                 "gemiddelde winst per hand in chips  ·  groen is winst, rood is verlies",
+                 "gemiddelde winst per hand in chips  ·  groen is winst, blauw is verlies",
                  "wc8_matrix_winst", diverging=True, eenheid="gemiddelde winst (chips)")
 
     # het interessante snijpunt: vaak gefold maar wel winstgevend
@@ -267,13 +276,113 @@ def plaat_spreiding():
     ax.set_xticklabels([b.replace("__w5", "") + ("  (jij)" if b == JIJ else "")
                         for b in toon], fontsize=9, rotation=20, ha="right")
     ax.set_ylabel("eindstand per simulatie (chips)")
-    ax.set_title(f"Dezelfde bot, {cijfers['simulaties']} keer gespeeld",
+    ax.set_title(f"Hoe stevig is een plek in de top-5?",
                  color=INKT, fontsize=12.5, pad=12, loc="left")
     kaal(ax)
     spreiding = per_sim.groupby("bot_naam")["eindstand"].agg(["mean", "std"])
     besten = spreiding.sort_values("mean", ascending=False).head(2)
     cijfers["top2"] = besten.round(0).to_dict("index")
     return bewaar(fig, "wc8_spreiding")
+
+
+# ------------------------------------- 7. jouw stack door de simulaties heen
+def plaat_stackverloop():
+    """Spaghetti + uitlichten, precies zoals Werkcollege 6 Deel 1 t/m 3."""
+    eigen = hand_log[hand_log["bot_naam"] == JIJ]
+    fig, ax = plt.subplots(figsize=(9.2, 4.4))
+    for sim, deel in eigen.groupby("simulatie"):
+        ax.plot(deel["hand_nummer"], deel["stack"], color=GEDEMPT,
+                linewidth=1.0, alpha=0.35, zorder=2)
+    # de twee uitersten uitlichten: dat is de boodschap
+    laatste = eigen.sort_values("hand_nummer").groupby("simulatie").last()["stack"]
+    for sim, kleur, label in ((laatste.idxmax(), AQUA, "beste simulatie"),
+                              (laatste.idxmin(), BLAUW, "slechtste simulatie")):
+        deel = eigen[eigen["simulatie"] == sim].sort_values("hand_nummer")
+        ax.plot(deel["hand_nummer"], deel["stack"], color=kleur, linewidth=2.5,
+                zorder=4, label=f"{label} ({int(laatste[sim])} chips)")
+    ax.axhline(1000, color=GEDEMPT, linewidth=1, linestyle=(0, (4, 3)), zorder=1)
+    ax.set_xlabel("hand")
+    ax.set_ylabel("stack (chips)")
+    ax.set_title("Dezelfde bot, dezelfde regels — twintig keer een ander verhaal",
+                 color=INKT, fontsize=12.5, pad=12, loc="left")
+    ax.legend(frameon=False, fontsize=10, loc="upper left")
+    kaal(ax)
+    cijfers["eigen_beste"] = int(laatste.max())
+    cijfers["eigen_slechtste"] = int(laatste.min())
+    return bewaar(fig, "wc8_stackverloop")
+
+
+# ------------------------------ 8. jouw acties tegenover die van de klas
+def plaat_jij_tegenover_klas():
+    eigen = speelde_mee[speelde_mee["bot_naam"] == JIJ]
+    rest = speelde_mee[speelde_mee["bot_naam"] != JIJ]
+    acties = [a for a in VOLGORDE if a in set(eigen["actie"]) | set(rest["actie"])]
+    mijn = eigen.groupby("actie")["winst"].mean().reindex(acties)
+    hun = rest.groupby("actie")["winst"].mean().reindex(acties)
+    aantal = eigen.groupby("actie")["winst"].size().reindex(acties).fillna(0)
+
+    fig, ax = plt.subplots(figsize=(9.2, 4.4))
+    y = np.arange(len(acties))
+    ax.barh(y + 0.19, hun.values, height=0.36, color=GEDEMPT, alpha=0.55,
+            label="de rest van de klas")
+    ax.barh(y - 0.19, mijn.values, height=0.36, color=ORANJE, label="jouw bot")
+    for i, (waarde, n) in enumerate(zip(mijn.values, aantal.values)):
+        if np.isnan(waarde):
+            continue
+        kant = "left" if waarde >= 0 else "right"
+        ax.text(waarde + (6 if waarde >= 0 else -6), i - 0.19,
+                f"{waarde:+.0f}  (n={int(n)})", va="center", ha=kant,
+                color=INKT, fontsize=9.5, fontweight="bold")
+    ax.axvline(0, color=INKT, linewidth=1.2)
+    ax.set_yticks(y)
+    ax.set_yticklabels([a.replace("_", " ") for a in acties], fontsize=11)
+    ax.invert_yaxis()
+    ax.set_xlabel("gemiddelde winst per hand (chips)")
+    ax.set_title("Levert jouw raise meer op dan die van de klas?",
+                 color=INKT, fontsize=12.5, pad=26, loc="left")
+    # De legenda boven de as, anders loopt hij over de onderste balken heen.
+    ax.legend(frameon=False, fontsize=10, ncol=2, loc="lower right",
+              bbox_to_anchor=(1.0, 1.005))
+    kaal(ax, y=False)
+    # ruimte voor de labels aan beide uiteinden
+    alles = [v for v in list(mijn.values) + list(hun.values) if not np.isnan(v)]
+    marge = (max(alles) - min(min(alles), 0)) * 0.28
+    ax.set_xlim(min(min(alles), 0) - marge, max(alles) + marge)
+    return bewaar(fig, "wc8_jij_tegenover_klas")
+
+
+# ------------------------- 9. waar ging je geld heen? totale bijdrage per hand
+def plaat_totale_bijdrage():
+    """Niet het gemiddelde maar het TOTAAL: een hand die vaak voorkomt telt zwaarder."""
+    eigen = speelde_mee[speelde_mee["bot_naam"] == JIJ]
+    totaal = eigen.groupby("hand_naam")["winst"].agg(["sum", "size"])
+    totaal = totaal[totaal["size"] >= 3].sort_values("sum")
+    uitersten = pd.concat([totaal.head(7), totaal.tail(7)])
+
+    fig, ax = plt.subplots(figsize=(9.2, 5.0))
+    kleuren = [BLAUW if v < 0 else DIV_HOOG for v in uitersten["sum"]]
+    ax.barh(range(len(uitersten)), uitersten["sum"].values, color=kleuren, height=0.66)
+    for i, (waarde, n) in enumerate(zip(uitersten["sum"], uitersten["size"])):
+        kant = "left" if waarde >= 0 else "right"
+        ax.text(waarde + (30 if waarde >= 0 else -30), i, f"{waarde:+,.0f}".replace(",", "."),
+                va="center", ha=kant, color=INKT, fontsize=9.5, fontweight="bold")
+    ax.axvline(0, color=INKT, linewidth=1.2)
+    ax.set_yticks(range(len(uitersten)))
+    ax.set_yticklabels([f"{h}  ({int(n)}x)" for h, n in
+                        zip(uitersten.index, uitersten["size"])], fontsize=9.5)
+    ax.set_xlabel("totale winst of verlies over het hele toernooi (chips)")
+    ax.set_title("Waar ging jouw geld heen? De zeven duurste en zeven beste handen",
+                 color=INKT, fontsize=12.5, pad=12, loc="left")
+    kaal(ax, y=False)
+    marge = abs(uitersten["sum"]).max() * 0.22
+    ax.set_xlim(uitersten["sum"].min() - marge, uitersten["sum"].max() + marge)
+    cijfers["duurste_hand"] = {
+        "hand": uitersten.index[0], "totaal": int(uitersten["sum"].iloc[0]),
+        "keren": int(uitersten["size"].iloc[0])}
+    cijfers["beste_hand"] = {
+        "hand": uitersten.index[-1], "totaal": int(uitersten["sum"].iloc[-1]),
+        "keren": int(uitersten["size"].iloc[-1])}
+    return bewaar(fig, "wc8_totale_bijdrage")
 
 
 def main():
@@ -283,6 +392,9 @@ def main():
     plaat_fold_vs_eindstand()
     platen_handmatrix()
     plaat_spreiding()
+    plaat_stackverloop()
+    plaat_jij_tegenover_klas()
+    plaat_totale_bijdrage()
     with open(os.path.join(PLOTMAP, "cijfers.json"), "w") as f:
         json.dump(cijfers, f, indent=1, ensure_ascii=False)
     print("\ncijfers:")

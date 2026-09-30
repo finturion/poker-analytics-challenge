@@ -56,5 +56,17 @@
    "mean": 1666.0,
    "std": 1013.0
   }
+ },
+ "eigen_beste": 3520,
+ "eigen_slechtste": 0,
+ "duurste_hand": {
+  "hand": "K-10",
+  "totaal": -1010,
+  "keren": 10
+ },
+ "beste_hand": {
+  "hand": "A-K",
+  "totaal": 2000,
+  "keren": 9
  }
 }
