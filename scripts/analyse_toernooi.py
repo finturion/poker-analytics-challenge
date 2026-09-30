@@ -24,10 +24,19 @@ import numpy as np
 import pandas as pd
 from matplotlib.colors import LinearSegmentedColormap, TwoSlopeNorm
 
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "api"))
+from bonus_rooster import MAX_BONUS, puntenverdeling, winst_per_bot
+
 HIER = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(HIER)
 PLOTMAP = os.path.join(REPO, "powerpoints", "plots_wc8")
 BRON = sys.argv[1] if len(sys.argv) > 1 else os.path.join(HIER, "toernooi_test.json")
+
+# Draait dit op het nagebootste toernooi, dan staan er verzonnen studentnummers
+# in. Die mogen nooit per ongeluk als echte uitslag op een dia belanden, dus
+# zetten we er een waarschuwing in het plaatje zelf -- die reist mee, ook als
+# iemand alleen de png doorstuurt.
+IS_TESTDATA = os.path.basename(BRON) == "toernooi_test.json"
 os.makedirs(PLOTMAP, exist_ok=True)
 
 INKT = "#121E31"
@@ -385,8 +394,66 @@ def plaat_totale_bijdrage():
     return bewaar(fig, "wc8_totale_bijdrage")
 
 
+# --------------------------------------------- 10. de uitslag en de bonus
+def plaat_uitslag(n=12):
+    """
+    Het klassement met de bonuspunten erbij.
+
+    De puntenverdeling komt uit bonus_rooster.puntenverdeling() -- dezelfde
+    functie die de API gebruikt -- en niet uit een eigen sommetje hier. Zo kan
+    de dia niet afwijken van wat een student op zijn eigen bonuspagina ziet,
+    inclusief de regel voor gedeelde plekken.
+    """
+    verdeling = puntenverdeling(resultaat)
+    winst = winst_per_bot(resultaat)
+    op_volgorde = sorted(verdeling.items(), key=lambda kv: (kv[1]["plek"], kv[0]))[:n]
+
+    fig, ax = plt.subplots(figsize=(9.6, 5.4))
+    namen = [naam.replace("__w5", "") for naam, _ in op_volgorde]
+    waarden = [winst[naam] for naam, _ in op_volgorde]
+    # de prijsplekken donker, de rest gedempt: de kleur zegt "hier hangt geld aan"
+    kleuren = [GROENRAMP[4] if i < 2 else (GROENRAMP[3] if i < 5 else "#CBD5D0")
+               for i in range(len(op_volgorde))]
+    ax.barh(range(len(op_volgorde)), waarden, color=kleuren, height=0.66)
+
+    for i, (naam, info) in enumerate(op_volgorde):
+        if info["punten"]:
+            tekst = f"+{info['punten']:.1f}".replace(".", ",") + " punt"
+            gedeeld = "  (gedeeld)" if info["gedeeld_met"] else ""
+            ax.text(waarden[i] + max(waarden) * 0.02, i, tekst + gedeeld,
+                    va="center", ha="left", color=INKT, fontsize=10.5, fontweight="bold")
+
+    ax.set_yticks(range(len(op_volgorde)))
+    ax.set_yticklabels([f"{info['plek']:>2}.  {naam}"
+                        for naam, info in zip(namen, [i for _, i in op_volgorde])],
+                       fontsize=10)
+    ax.invert_yaxis()
+    ax.set_xlim(0, max(waarden) * 1.30)
+    ax.set_xlabel("gewonnen chips in dit toernooi")
+    pad_boven = 30 if IS_TESTDATA else 12
+    ax.set_title(f"De eerste vijf pakken een bonuspunt   ·   top {n} van "
+                 f"{len(verdeling)} bots", color=INKT, fontsize=12.5,
+                 pad=pad_boven, loc="left")
+    if IS_TESTDATA:
+        ax.text(0, 1.035, "VOORBEELDUITSLAG — verzonnen studentnummers uit een testtoernooi, "
+                          "niet de echte klas", transform=ax.transAxes, ha="left", va="bottom",
+                color=ORANJE, fontsize=10, fontweight="bold")
+    kaal(ax, y=False)
+    ax.set_xticks([])
+
+    cijfers["bonus"] = [
+        {"plek": info["plek"], "student": naam.replace("__w5", ""),
+         "eindstand": int(resultaat["eindstand_per_bot"][naam]),
+         "winst": int(winst[naam]), "punten": info["punten"]}
+        for naam, info in sorted(verdeling.items(), key=lambda kv: (kv[1]["plek"], kv[0]))[:5]]
+    cijfers["uitgekeerd"] = round(sum(i["punten"] for i in verdeling.values()), 2)
+    cijfers["max_bonus"] = MAX_BONUS
+    return bewaar(fig, "wc8_uitslag")
+
+
 def main():
     print("platen:")
+    plaat_uitslag()
     plaat_acties()
     plaat_foldverdeling()
     plaat_fold_vs_eindstand()

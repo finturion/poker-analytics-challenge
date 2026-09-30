@@ -3,6 +3,45 @@
  "simulaties": 20,
  "regels": 24000,
  "beslissingen": 20912,
+ "bonus": [
+  {
+   "plek": 1,
+   "student": "500100011",
+   "eindstand": 1689,
+   "winst": 689,
+   "punten": 0.5
+  },
+  {
+   "plek": 2,
+   "student": "500100002",
+   "eindstand": 1665,
+   "winst": 665,
+   "punten": 0.4
+  },
+  {
+   "plek": 3,
+   "student": "500100007",
+   "eindstand": 1475,
+   "winst": 475,
+   "punten": 0.3
+  },
+  {
+   "plek": 4,
+   "student": "500100001",
+   "eindstand": 1335,
+   "winst": 335,
+   "punten": 0.2
+  },
+  {
+   "plek": 5,
+   "student": "500100006",
+   "eindstand": 1236,
+   "winst": 236,
+   "punten": 0.1
+  }
+ ],
+ "uitgekeerd": 1.5,
+ "max_bonus": 1.0,
  "verdeling": {
   "fold": 65.9,
   "call": 21.0,

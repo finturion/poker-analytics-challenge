@@ -59,6 +59,19 @@ kansregels = [r(f"{naam:7} {v['keren']:>4}x gespeeld    {v['fold_pct'] * 100:>2.
               for naam, v in list(kansen.items())[:5]]
 
 DIAS = [
+    ("DE UITSLAG", "Wie pakt er een bonuspunt?", "wc8_uitslag.png", [],
+     "Hiermee open je, want dit is wat iedereen wil weten.\n\n"
+     "De ladder: 0,5 - 0,4 - 0,3 - 0,2 - 0,1 voor de eerste vijf, en verder niets. Twee "
+     "toernooien die meetellen, dus maximaal 1,0 bonuspunt over de hele week. Eindigen twee "
+     "bots op exact dezelfde winst, dan delen ze de plekken en krijgen ze allebei het "
+     "gemiddelde van die punten — anders bepaalt een toevallige volgorde wie de hogere plek "
+     "krijgt, en daar hang je geen bonuspunt aan op.\n\n"
+     "LET OP: zolang de oranje regel er staat zijn dit verzonnen studentnummers uit een "
+     "testtoernooi. Draai scripts/analyse_toernooi.py op de echte export en de dia klopt "
+     "vanzelf — inclusief deze sprekersnotitie, want die getallen komen uit hetzelfde "
+     "cijfers.json.\n\n"
+     "Wie hier net buiten valt: dia 13 laat zien hoe dun dat verschil is."),
+
     ("DE DATASET", "Wat je vandaag in handen hebt", None, [
         r(f"{C['bots']} bots  ·  {C['simulaties']} simulaties  ·  "
           f"{C['regels']:,} regels".replace(",", "."), 20, True, ACCENT, 0),
