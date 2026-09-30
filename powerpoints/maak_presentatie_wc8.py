@@ -185,6 +185,60 @@ DIAS = [
      "Daarom loopt de bonus over twee toernooien, en daarom is 'ik ben gezakt van plek 3 naar "
      "plek 9' geen bewijs dat je bot slechter is geworden."),
 
+    ("EN DAARNA", "Waar kun je nog naar kijken?", "wc8_routes.png", [],
+     "Dit is het antwoord op 'ik ben klaar, wat nu'. Drie sporen, en het middelste is het "
+     "belangrijkste en het minst voor de hand liggende.\n\n"
+     "Neem even de tijd voor die rode regel onderin. Het logboek heeft ÉÉN regel per hand, "
+     "met alleen de eerste actie van die hand. Alles wat per ronde, per pot of per "
+     "tegenstander speelt staat er dus niet in. Dat is geen omissie maar een ontwerpkeuze: "
+     "een regel per beslissing zou het logboek vijf keer zo groot maken.\n\n"
+     "Wie dáár iets over wil weten, moet zijn bot het zelf laten opschrijven. Dat is de "
+     "volgende dia."),
+
+    ("SPOOR 2", "Laat je bot opschrijven wat hij doet", None, [
+        r("Drie regels erbij, en je hebt data die niemand anders heeft:", 15, True, PRIMAIR, 0),
+        r("BESLISSINGEN = []", 13, False, PRIMAIR, 14, MONO),
+        r("", 13, False, PRIMAIR, 2, MONO),
+        r("def kies_actie(hand, ..., ronde, pot, inzet_om_te_callen, ...):", 13, False, GEDEMPT, 2, MONO),
+        r("    winkans = schat_winkans(...)", 13, False, GEDEMPT, 2, MONO),
+        r("    ...", 13, False, GEDEMPT, 2, MONO),
+        r("    BESLISSINGEN.append({\"ronde\": ronde, \"winkans\": winkans,", 13, True, ACCENT, 2, MONO),
+        r("                         \"pot\": pot, \"regel\": \"bluf\", \"actie\": actie})", 13, True, ACCENT, 2, MONO),
+        r("    return actie", 13, False, GEDEMPT, 2, MONO),
+        r("Daarna speel_duel() draaien en pd.DataFrame(BESLISSINGEN) analyseren. Nu kun je "
+          "wél zien wat je winkans per straat was, hoe vaak je bluf-regel vuurde, en welke "
+          "van je vijf regels de beslissing nam.", 13, False, PRIMAIR, 16),
+        r("Let op: dit doe je LOKAAL. In je inzending hoort geen logboek — daar telt alleen "
+          "wat kies_actie teruggeeft.", 13, True, WAARSCHUWING, 10),
+    ], "Dit is de meest waardevolle dia van het hele slot, en de makkelijkste om over te slaan.\n\n"
+       "Het idee is simpel: je bot weet op het moment van beslissen alles — de ronde, de pot, "
+       "zijn winkans, welke regel er vuurde. Die kennis gooit hij nu weg. Eén append per "
+       "beslissing en je houdt hem vast.\n\n"
+       "Koppel het aan de vijf-regelstructuur uit Werkcollege 7: door 'regel' mee te loggen "
+       "kun je achteraf per regel uitrekenen wat hij opleverde. Dan weet je welke van je vijf "
+       "regels het werk doet en welke er alleen maar staat."),
+
+    ("SPOOR 3", "Meer weten over je hand — dat kan gewoon", None, [
+        r("schat_winkans(hand_met_kleur, bord=bord, tegenstanders=n)", 14, True, ACCENT, 0, MONO),
+        r("De winkans verandert enorm met het bord en met het aantal tegenstanders. "
+          "Dezelfde A-K: 38,5% preflop, 75,5% na de ene flop, 22,3% na de andere.",
+          13, False, PRIMAIR, 6),
+        r("beschrijf_hand(hand_met_kleur, bord)", 14, True, ACCENT, 18, MONO),
+        r("Geeft terug wat je wérkelijk hebt: 'one pair', 'three of a kind', 'flush'. "
+          "Daarmee kun je regels schrijven op handsóórt in plaats van op een percentage.",
+          13, False, PRIMAIR, 6),
+        r("vergelijk_handen(jouw_hand, andere_hand, bord)", 14, True, ACCENT, 18, MONO),
+        r("Wie wint deze showdown? Zelfde evaluatie als het toernooi, dus inclusief kickers.",
+          13, False, PRIMAIR, 6),
+        r("Alle drie staan in _hulpfuncties_week3.py. Je kent ze uit Werkcollege 5, en "
+          "in week 5 heeft bijna niemand ze nog gebruikt.", 13, True, GEDEMPT, 18),
+    ], "Sluit hiermee af als er tijd over is. Het punt: ze denken dat ze alleen een percentage "
+       "hebben, terwijl beschrijf_hand() ze de handsóórt geeft.\n\n"
+       "Een regel als 'bij three of a kind of beter ga ik door, wat de winkans ook zegt' is "
+       "voor sommigen begrijpelijker dan drempels, en het is een volwaardige strategie.\n\n"
+       "vergelijk_handen is vooral nuttig om te begrijpen waarom je een hand verloor die je "
+       "dacht te winnen — kickers."),
+
     ("EN NU JIJ", "Verander één ding, en schrijf op waarom", None, [
         r("Eén ding. Niet drie.", 18, True, ACCENT, 0),
         r("Verander je er drie tegelijk en je bot wordt beter, dan weet je donderdag nog "
