@@ -27,7 +27,8 @@ import os
 import random
 from datetime import datetime, timezone
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 import database as db
@@ -45,11 +46,39 @@ from referentiebots import beschrijvingen as referentie_beschrijvingen
 from referentiebots import OPENBAAR_VANAF_WEEK, broncode as referentie_broncode
 from chart_validator import valideer_chart_json
 from locatie_validator import valideer_locatie
-from toernooi_runner import cache_sleutel, draai_toernooi, haal_gecacht_resultaat_op
+from toernooi_runner import (cache_sleutel, draai_toernooi, haal_gecacht_resultaat_op,
+                             laatste_gedraaide_ronde)
 
 WEEK_VANAF_LOCATIE_VERPLICHT = 5
 
 app = FastAPI(title="Poker Analytics Challenge API")
+
+
+
+@app.exception_handler(Exception)
+def alles_wat_misgaat_blijft_json(verzoek: Request, fout: Exception):
+    """
+    Een onverwachte fout mag nooit als kale tekst terugkomen.
+
+    Studenten roepen deze API aan met requests.get(...).json(). Kwam er dan
+    "Internal Server Error" als text/plain uit, dan kregen ze een JSONDecodeError
+    diep uit de json-module -- een foutmelding die niets zegt over wat er echt
+    misging en waar ze zelf niets mee kunnen. Dat gebeurde op 30 september 2026
+    op /toernooi/5, en het kostte meer tijd om te vinden dan de oorzaak waard was.
+
+    Nu komt er altijd JSON terug, met het type fout erin zodat de docent er iets
+    aan heeft. Geen traceback: die hoort in de serverlog, niet in een notebook.
+    """
+    import traceback
+    traceback.print_exc()
+    return JSONResponse(
+        status_code=500,
+        content={
+            "detail": "Er ging iets mis op de server. Probeer het zo nog eens; "
+                      "blijft het gebeuren, meld het bij je docent.",
+            "soort": type(fout).__name__,
+        },
+    )
 
 
 @app.on_event("startup")
@@ -342,7 +371,7 @@ def toernooi(
     week: int,
     student_id: str,
     vergelijk_met_week: int | None = None,
-    ronde: int = 1,
+    ronde: int | None = None,
     formatief: bool = False,
     ok: bool = Depends(db.verifieer_student_token),
 ):
@@ -367,8 +396,17 @@ def toernooi(
     Bedoeld voor de oefenronde op donderdag in week 5 -- die telt niet mee voor
     de bonus en verschuift de vrijdaguitslag niet.
 
+    Laat je `ronde` weg, dan krijg je de LAATST GEDRAAIDE ronde van deze week
+    terug, en pas als er nog helemaal niets is gedraaid begint er een nieuwe
+    ronde 1. Dat stond eerst hard op 1, en dat pakte slecht uit: draaide de
+    docent zijn toernooi onder een ander rondenummer, dan startte élke student
+    die zijn notebook uitvoerde een eigen run van twintig minuten op een lege
+    ronde 1 -- en kreeg daar een timeout voor terug.
+
     hand_log kun je direct in een DataFrame zetten: pd.DataFrame(response.json()["hand_log"])
     """
+    if ronde is None:
+        ronde = laatste_gedraaide_ronde(week, vergelijk_met_week) or 1
     return draai_toernooi(week, vergelijk_met_week=vergelijk_met_week, ronde=ronde, formatief=formatief)
 
 
@@ -413,7 +451,7 @@ def toernooi_resultaat_ophalen(
 def locaties(
     week: int,
     student_id: str,
-    ronde: int = 1,
+    ronde: int | None = None,
     ok: bool = Depends(db.verifieer_student_token),
 ):
     """
@@ -430,6 +468,11 @@ def locaties(
     """
     week_key = str(week)
     submissions = db.laad_submissions().get(week_key, {})
+    # Zonder rondenummer: de laatst gedraaide ronde, net als bij /toernooi.
+    # Stond hier hard op 1, en dan bleef de kaart grijs zodra de docent onder een
+    # ander rondenummer had gedraaid -- terwijl de eindstanden gewoon bestonden.
+    if ronde is None:
+        ronde = laatste_gedraaide_ronde(week) or 1
     resultaat_sleutel = cache_sleutel(week, ronde=ronde)
     eindstand_per_bot = (db.laad_toernooi_resultaat(resultaat_sleutel) or {}).get("eindstand_per_bot", {})
 

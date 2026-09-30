@@ -184,6 +184,29 @@ def haal_gecacht_resultaat_op(week, vergelijk_met_week=None, ronde=1, formatief=
     return {**resultaat, "gedraaid": True}
 
 
+
+# Hoe ver we zoeken naar een gedraaide ronde. Ruim genomen: de docent kan een
+# ronde overslaan of een hoog nummer kiezen, en dan moet /toernooi hem nog
+# vinden. Het kost een paar cache-lookups, geen toernooi.
+MAX_RONDE = 20
+
+
+def laatste_gedraaide_ronde(week, vergelijk_met_week=None):
+    """
+    Het hoogste rondenummer van deze week waarvoor een uitslag in de cache staat,
+    of None als er nog niets is gedraaid.
+
+    Hiermee kan /toernooi/{week} zonder rondenummer teruggeven wat er al ligt, in
+    plaats van ronde 1 te draaien. Dat scheelt niet alleen wachttijd: zonder dit
+    start ELKE student die zijn notebook draait een eigen toernooi van twintig
+    minuten zodra ronde 1 toevallig leeg is.
+    """
+    for nr in range(MAX_RONDE, 0, -1):
+        if db.laad_toernooi_resultaat(cache_sleutel(week, vergelijk_met_week, nr)):
+            return nr
+    return None
+
+
 def draai_toernooi(
     week,
     vergelijk_met_week=None,

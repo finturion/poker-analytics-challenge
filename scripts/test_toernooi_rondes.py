@@ -210,12 +210,31 @@ for week in (1, 3, 5):
 import inspect
 import main
 
+# Sinds 30 september 2026 staan beide standaard op None, wat betekent: pak de
+# laatst gedraaide ronde. Dat is geen cosmetische keuze. Draaide de docent zijn
+# toernooi onder een ander rondenummer -- bijvoorbeeld ronde 5 -- dan startte
+# elke student die zijn notebook uitvoerde een nieuw toernooi op de lege ronde 1
+# en kreeg daar een timeout voor, terwijl de uitslag gewoon klaarstond. En de
+# kaart in Werkcollege 8 bleef grijs om dezelfde reden.
 params = inspect.signature(main.locaties).parameters
 check("ronde" in params, "/locaties kent een ronde-parameter")
-check(params["ronde"].default == 1, "en die staat standaard op 1, zodat WC8 ongewijzigd blijft")
+check(params["ronde"].default is None, "/locaties pakt standaard de laatste gedraaide ronde")
 check(
-    inspect.signature(main.toernooi).parameters["ronde"].default == 1,
+    inspect.signature(main.toernooi).parameters["ronde"].default is None,
     "/toernooi staat op dezelfde standaard",
+)
+# In de neptafel-cache hierboven staan voor week 5 de rondes 1 en 2, en voor
+# week 3 hetzelfde. laatste_gedraaide_ronde hoort dus de HOOGSTE te vinden, en
+# voor een week waarin niets is gedraaid None terug te geven.
+check(
+    toernooi_runner.laatste_gedraaide_ronde(5) == 2,
+    "laatste_gedraaide_ronde vindt de hoogste ronde die er is",
+    f"kreeg {toernooi_runner.laatste_gedraaide_ronde(5)}",
+)
+check(
+    toernooi_runner.laatste_gedraaide_ronde(1) is None,
+    "en None voor een week die nooit gedraaid heeft",
+    f"kreeg {toernooi_runner.laatste_gedraaide_ronde(1)}",
 )
 
 print(f"\n{geslaagd} checks geslaagd.")
