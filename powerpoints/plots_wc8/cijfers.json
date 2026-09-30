@@ -1,0 +1,60 @@
+{
+ "bots": 30,
+ "simulaties": 20,
+ "regels": 24000,
+ "beslissingen": 20912,
+ "verdeling": {
+  "fold": 65.9,
+  "call": 21.0,
+  "raise": 12.0,
+  "grote_raise": 1.1,
+  "all_in": 0.0
+ },
+ "fold_mediaan": 72.3,
+ "fold_jij": 75.6,
+ "correlatie_fold_eindstand": 0.45,
+ "handen_totaal": 91,
+ "handen_genoeg": 91,
+ "weggegooid_maar_winstgevend": {
+  "2-2": {
+   "keren": 97,
+   "fold_pct": 0.64,
+   "gem_winst": 33.19
+  },
+  "Q-9": {
+   "keren": 245,
+   "fold_pct": 0.59,
+   "gem_winst": 16.31
+  },
+  "K-7": {
+   "keren": 283,
+   "fold_pct": 0.56,
+   "gem_winst": 13.6
+  },
+  "K-3": {
+   "keren": 223,
+   "fold_pct": 0.63,
+   "gem_winst": 11.77
+  },
+  "K-8": {
+   "keren": 271,
+   "fold_pct": 0.53,
+   "gem_winst": 8.41
+  },
+  "7-6": {
+   "keren": 263,
+   "fold_pct": 0.78,
+   "gem_winst": 7.38
+  }
+ },
+ "top2": {
+  "500100011__w5": {
+   "mean": 1690.0,
+   "std": 1067.0
+  },
+  "500100002__w5": {
+   "mean": 1666.0,
+   "std": 1013.0
+  }
+ }
+}
