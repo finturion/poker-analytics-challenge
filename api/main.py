@@ -518,6 +518,126 @@ def toernooi_kopieren(
     }
 
 
+
+class ToernooiUpload(BaseModel):
+    """Een uitslag die lokaal is gedraaid en naar de server gaat."""
+    resultaat: dict
+
+
+class UitgebreidUpload(BaseModel):
+    """Een deel van de uitgebreide log: complete bots, niet halve."""
+    bots: dict[str, list[dict]]
+
+
+@app.post("/toernooi/{week}/upload")
+def toernooi_uploaden(
+    week: int,
+    lading: ToernooiUpload,
+    ronde: int = 1,
+    overschrijven: bool = False,
+    ok: bool = Depends(db.verifieer_docent_token),
+):
+    """
+    Docent-only: zet een lokaal gedraaide uitslag op de server.
+
+    WAAROM DIT BESTAAT
+    ------------------
+    Een toernooi met een volle klas duurt op Render te lang voor één verzoek. Het
+    draait daar in de achtergrond, en als dat misgaat -- of als je het gewoon
+    liever zelf draait, met de code die je voor je hebt -- dan sta je met een
+    complete uitslag op je eigen schijf die de studenten niet kunnen zien.
+
+    Deze route zet die uitslag onder de normale cache-sleutel, zodat /toernooi,
+    /bonus en de hub hem precies zo zien als een uitslag die de server zelf heeft
+    gedraaid. Dat mag, want het toernooi is deterministisch: dezelfde bots met
+    seed week * 10 + ronde geven lokaal exact dezelfde uitkomst.
+
+    De uitgebreide log gaat NIET mee -- die is tientallen megabytes. Stuur hem
+    daarna in stukken naar /toernooi/{week}/upload/uitgebreid.
+
+    Bestaat de ronde al, dan gebeurt er niets tenzij je `overschrijven=true`
+    meegeeft; aan een gescoorde ronde hangen bonuspunten.
+    """
+    resultaat = dict(lading.resultaat)
+    ontbreekt = [v for v in ("eindstand_per_bot", "namen_deelnemers", "hand_log")
+                 if v not in resultaat]
+    if ontbreekt:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Dit ziet er niet uit als een toernooi-uitslag; mist: {', '.join(ontbreekt)}.",
+        )
+
+    sleutel = cache_sleutel(week, ronde=ronde)
+    bestaand = db.laad_toernooi_resultaat(sleutel)
+    if bestaand and not overschrijven:
+        raise HTTPException(
+            status_code=409,
+            detail=(f"Week {week} ronde {ronde} bestaat al met "
+                    f"{len(bestaand.get('eindstand_per_bot') or {})} bots. "
+                    f"Geef overschrijven=true mee als je hem echt wilt vervangen."),
+        )
+
+    # Het rondenummer in de uitslag moet kloppen met waar hij komt te staan,
+    # anders spreekt de data zichzelf tegen zodra iemand hem ophaalt.
+    resultaat["week"] = week
+    resultaat["ronde"] = ronde
+    resultaat["lokaal_gedraaid"] = True
+    resultaat.pop("uitgebreid_hand_log", None)
+    db.sla_toernooi_resultaat_op(sleutel, resultaat)
+
+    # Een oude uitgebreide log hoort niet bij deze nieuwe uitslag.
+    db.sla_toernooi_resultaat_op(
+        uitgebreid_sleutel(week, None, ronde, False),
+        {"week": week, "ronde": ronde, "formatief": False, "bots": {}, "n_regels_totaal": 0},
+    )
+
+    return {
+        "week": week, "ronde": ronde, "overschreven": bool(bestaand),
+        "n_bots": len(resultaat.get("eindstand_per_bot") or {}),
+        "n_deelnemers": len(resultaat.get("namen_deelnemers") or []),
+        "n_handregels": len(resultaat.get("hand_log") or []),
+        "boodschap": (f"Week {week} ronde {ronde} staat op de server. Stuur de "
+                      f"uitgebreide log na met /toernooi/{week}/upload/uitgebreid."),
+    }
+
+
+@app.post("/toernooi/{week}/upload/uitgebreid")
+def uitgebreid_uploaden(
+    week: int,
+    lading: UitgebreidUpload,
+    ronde: int = 1,
+    ok: bool = Depends(db.verifieer_docent_token),
+):
+    """
+    Docent-only: een stuk van de uitgebreide log erbij zetten.
+
+    Stuur complete bots per verzoek, niet halve: elke bot is één rij in de
+    database en wordt in zijn geheel vervangen. De hele log in één verzoek is
+    tientallen megabytes, vandaar dat het in stukken gaat. Het register wordt bij
+    elk stuk bijgewerkt, dus je mag zo vaak sturen als je wil.
+    """
+    register_sleutel = uitgebreid_sleutel(week, None, ronde, False)
+    register = db.laad_toernooi_resultaat(register_sleutel) or {
+        "week": week, "ronde": ronde, "formatief": False, "bots": {}}
+    bots = dict(register.get("bots") or {})
+
+    for bot_naam, regels in lading.bots.items():
+        db.sla_toernooi_resultaat_op(
+            uitgebreid_sleutel(week, None, ronde, False, bot_naam),
+            {"week": week, "ronde": ronde, "formatief": False, "regels": regels},
+        )
+        bots[bot_naam] = len(regels)
+
+    register["bots"] = dict(sorted(bots.items()))
+    register["n_regels_totaal"] = sum(bots.values())
+    db.sla_toernooi_resultaat_op(register_sleutel, register)
+
+    return {"week": week, "ronde": ronde,
+            "toegevoegd": sorted(lading.bots),
+            "n_bots_totaal": len(bots),
+            "n_regels_totaal": register["n_regels_totaal"]}
+
+
 @app.get("/toernooi/{week}/uitgebreid")
 def toernooi_uitgebreid(
     week: int,

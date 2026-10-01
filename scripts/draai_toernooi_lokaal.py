@@ -20,12 +20,12 @@ Lokaal heb je die grens niet. En omdat de seed van het toernooi vastligt op
 week * 10 + ronde is dit geen benadering: met dezelfde bots en dezelfde
 instellingen komt er exact dezelfde uitslag uit als de server zou berekenen.
 
-WAT DIT SCRIPT NIET DOET
-------------------------
-De uitslag terugzetten in de API. Studenten halen hun toernooi op via
-/toernooi/5, en die leest de servercache. Wil je dat zij dezelfde uitslag zien,
-dan moet de server hem alsnog zelf draaien -- of er moet een upload-endpoint
-komen. Voor het werkcollege en het deck heb je genoeg aan het JSON-bestand.
+DE UITSLAG NAAR DE STUDENTEN
+----------------------------
+Met --upload gaat hij na afloop naar de server, onder de normale cache-sleutel.
+Studenten zien hem dan via /toernooi/{week} precies zoals een uitslag die de
+server zelf heeft gedraaid, en de uitgebreide log komt er in stukken achteraan.
+Zonder --upload blijft alles lokaal; voor het deck is dat genoeg.
 
 Elke ronde begint schoon op 1000, ook in de bonusweek -- net als op de server.
 Twee rondes van dezelfde week zijn daardoor onderling te vergelijken.
@@ -64,6 +64,49 @@ def laad_kies_actie(code):
     return (functie, None) if callable(functie) else (None, "geen kies_actie() gevonden")
 
 
+
+# Eén verzoek met de hele uitgebreide log is tientallen megabytes. Per groepje
+# bots blijft elk verzoek rond de paar megabyte, en een bot gaat altijd in zijn
+# geheel mee -- de server vervangt hem per bot.
+BOTS_PER_VERZOEK = 5
+
+
+def stuur_naar_server(resultaat, uitgebreid, week, ronde, token, overschrijven):
+    """Zet de uitslag en de uitgebreide log op de server, voor de studenten."""
+    kop = {"Authorization": f"Bearer {token}"}
+    print("\nNaar de server:")
+
+    antwoord = requests.post(
+        f"{API_URL}/toernooi/{week}/upload",
+        params={"ronde": ronde, "overschrijven": str(overschrijven).lower()},
+        json={"resultaat": resultaat}, headers=kop, timeout=300)
+    if antwoord.status_code == 409:
+        print(f"   GESTOPT: {antwoord.json().get('detail')}")
+        print("   Weet je het zeker? Draai hetzelfde commando met --overschrijven.")
+        return
+    antwoord.raise_for_status()
+    uit = antwoord.json()
+    print(f"   uitslag geplaatst: {uit['n_bots']} bots, {uit['n_handregels']} handregels")
+
+    per_bot = {}
+    for regel in uitgebreid:
+        per_bot.setdefault(regel["bot_naam"], []).append(regel)
+
+    namen = sorted(per_bot)
+    for i in range(0, len(namen), BOTS_PER_VERZOEK):
+        groep = namen[i:i + BOTS_PER_VERZOEK]
+        antwoord = requests.post(
+            f"{API_URL}/toernooi/{week}/upload/uitgebreid",
+            params={"ronde": ronde},
+            json={"bots": {n: per_bot[n] for n in groep}}, headers=kop, timeout=300)
+        antwoord.raise_for_status()
+        uit = antwoord.json()
+        print(f"   uitgebreide log: {uit['n_bots_totaal']}/{len(namen)} bots, "
+              f"{uit['n_regels_totaal']} regels")
+
+    print(f"   klaar -- studenten zien week {week} ronde {ronde} nu via /toernooi/{week}")
+
+
 def haal_bots_op(week, token):
     antwoord = requests.get(f"{API_URL}/export/{week}/bots",
                             headers={"Authorization": f"Bearer {token}"}, timeout=90)
@@ -78,13 +121,18 @@ def main():
     p.add_argument("--week", type=int, default=5)
     p.add_argument("--ronde", type=int, default=1)
     p.add_argument("--handen", type=int, default=STANDAARD_N_HANDEN)
+    p.add_argument("--upload", action="store_true",
+                   help="zet de uitslag na afloop op de server, voor de studenten")
+    p.add_argument("--overschrijven", action="store_true",
+                   help="met --upload: een bestaande ronde echt vervangen")
     p.add_argument("--simulaties", type=int, default=None,
                    help="standaard: wat de server voor deze week gebruikt")
     args = p.parse_args()
 
     token = os.environ.get("POKER_DOCENT_TOKEN") or getpass.getpass("Docent-token: ")
     inzendingen = haal_bots_op(args.week, token)
-    del token
+    if not args.upload:
+        del token
 
     botmap = os.path.join(HIER, f"bots_week{args.week}")
     os.makedirs(botmap, exist_ok=True)
@@ -156,6 +204,12 @@ def main():
 
     print(f"Klaar in {duur / 60:.1f} minuten. {len(resultaat['hand_log'])} logregels -> {doel}")
     print(f"{len(uitgebreid)} beslissingen (met bord en ronde) -> {doel_uitgebreid}")
+
+    if args.upload:
+        stuur_naar_server(resultaat, uitgebreid, args.week, args.ronde,
+                          token, args.overschrijven)
+        del token
+
     print("\nNu de analyse en het deck:")
     print(f"   python3 scripts/analyse_toernooi.py {doel}")
     print("   python3 powerpoints/maak_presentatie_wc8.py")
