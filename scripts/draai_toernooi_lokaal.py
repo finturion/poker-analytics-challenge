@@ -71,6 +71,30 @@ def laad_kies_actie(code):
 BOTS_PER_VERZOEK = 5
 
 
+
+def verstuur_bewaarde_uitslag(args, token):
+    """De uitslag die al op schijf staat alsnog versturen."""
+    doel = os.path.join(HIER, f"uitslag_week{args.week}.json")
+    doel_uitgebreid = os.path.join(HIER, f"uitgebreid_week{args.week}.json")
+    if not os.path.exists(doel):
+        print(f"Geen bewaarde uitslag gevonden: {doel}")
+        print("Draai eerst zonder --alleen-upload.")
+        return 1
+
+    with open(doel) as f:
+        resultaat = json.load(f)
+    uitgebreid = []
+    if os.path.exists(doel_uitgebreid):
+        with open(doel_uitgebreid) as f:
+            uitgebreid = json.load(f).get("regels") or []
+
+    print(f"{len(resultaat['hand_log'])} handregels en {len(uitgebreid)} beslissingen "
+          f"uit {os.path.basename(doel)}")
+    stuur_naar_server(resultaat, uitgebreid, args.week, args.ronde,
+                      token, args.overschrijven)
+    return 0
+
+
 def stuur_naar_server(resultaat, uitgebreid, week, ronde, token, overschrijven):
     """Zet de uitslag en de uitgebreide log op de server, voor de studenten."""
     kop = {"Authorization": f"Bearer {token}"}
@@ -123,6 +147,8 @@ def main():
     p.add_argument("--handen", type=int, default=STANDAARD_N_HANDEN)
     p.add_argument("--upload", action="store_true",
                    help="zet de uitslag na afloop op de server, voor de studenten")
+    p.add_argument("--alleen-upload", action="store_true", dest="alleen_upload",
+                   help="niets draaien, alleen de al bewaarde uitslag versturen")
     p.add_argument("--overschrijven", action="store_true",
                    help="met --upload: een bestaande ronde echt vervangen")
     p.add_argument("--simulaties", type=int, default=None,
@@ -130,6 +156,12 @@ def main():
     args = p.parse_args()
 
     token = os.environ.get("POKER_DOCENT_TOKEN") or getpass.getpass("Docent-token: ")
+
+    if args.alleen_upload:
+        # De uitslag staat al op schijf. Dit is het pad voor als het rekenen wél
+        # lukte maar het versturen niet -- dan hoef je geen twaalf minuten opnieuw.
+        return verstuur_bewaarde_uitslag(args, token)
+
     inzendingen = haal_bots_op(args.week, token)
     if not args.upload:
         del token
