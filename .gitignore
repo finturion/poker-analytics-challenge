@@ -51,6 +51,9 @@ scripts/bonus_week*.json
 # De pagina voor Brightspace is de uitslag mét namen; het script dat hem maakt
 # hoort wel in git, de uitkomst niet.
 scripts/uitslag_week*.html
+# Hetzelfde voor de documenten per bot: die staan vol studentnummers en de
+# cijfers van één student.
+scripts/botdocumenten/
 
 # Ingeleverde studentcode hoort niet in git.
 scripts/bots_week*/

@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pokerbot in semester 2</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,400;7..72,600;7..72,700&family=Public+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root{
+    --vilt:#1B4D3E; --vilt-licht:#2E7A5F; --inkt:#121E31;
+    --papier:#F7F8F6; --vlak:#FFFFFF; --vlak-zacht:#EEF2EF;
+    --gedempt:#59636B; --lijn:#DCE3DE; --rood:#B3261E; --oker:#8A6A12;
+    --schaal-xs:.735rem; --schaal-s:.83rem; --schaal-m:.955rem;
+    --schaal-l:1.16rem; --schaal-xl:1.55rem; --schaal-xxl:2.35rem;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --vilt:#5FB894; --vilt-licht:#7FD3B0; --inkt:#E6EDE9;
+      --papier:#10171A; --vlak:#161F23; --vlak-zacht:#1C282B;
+      --gedempt:#9AA8A4; --lijn:#2A3A3B; --rood:#F08A80; --oker:#D8B25A;
+    }
+  }
+  :root[data-theme="dark"]{
+    --vilt:#5FB894; --vilt-licht:#7FD3B0; --inkt:#E6EDE9;
+    --papier:#10171A; --vlak:#161F23; --vlak-zacht:#1C282B;
+    --gedempt:#9AA8A4; --lijn:#2A3A3B; --rood:#F08A80; --oker:#D8B25A;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--papier); color:var(--inkt);
+    font-family:"Public Sans","Segoe UI",system-ui,-apple-system,sans-serif;
+    font-size:var(--schaal-m); line-height:1.62; -webkit-font-smoothing:antialiased;
+  }
+  .blad{max-width:53rem;margin:0 auto;padding:3.4rem 1.5rem 6rem}
+  h1,h2,h3{font-family:Literata,Georgia,serif;text-wrap:balance;margin:0}
+  h1{font-size:var(--schaal-xxl);font-weight:700;line-height:1.16;letter-spacing:-.015em}
+  h2{font-size:var(--schaal-xl);font-weight:600;line-height:1.25}
+  h3{font-size:var(--schaal-l);font-weight:600;line-height:1.35}
+  code{
+    font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+    font-size:.89em;background:var(--vlak-zacht);padding:.08em .34em;border-radius:3px;
+  }
+  header{border-bottom:2px solid var(--vilt);padding-bottom:1.9rem;margin-bottom:2.6rem}
+  .stempel{
+    font-family:"IBM Plex Mono",monospace;font-size:var(--schaal-xs);
+    text-transform:uppercase;letter-spacing:.12em;color:var(--vilt);
+    font-weight:500;display:block;margin-bottom:.9rem;
+  }
+  header p.lead{font-size:1.07rem;color:var(--gedempt);max-width:44rem;margin:1.1rem 0 0;line-height:1.66}
+  .merk{
+    font-family:"IBM Plex Mono",monospace;font-size:var(--schaal-xs);
+    text-transform:uppercase;letter-spacing:.07em;font-weight:500;
+    padding:.14em .5em;border-radius:2px;white-space:nowrap;
+  }
+  .m-blokkeert{background:var(--rood);color:var(--papier)}
+  .m-klaar{background:var(--vilt);color:var(--papier)}
+  .m-bouwen{background:var(--vlak-zacht);color:var(--vilt);box-shadow:inset 0 0 0 1px var(--lijn)}
+  .m-keuze{background:transparent;color:var(--oker);box-shadow:inset 0 0 0 1px var(--oker)}
+  section{margin-top:3.4rem}
+  .sectiekop{
+    display:flex;align-items:baseline;justify-content:space-between;gap:1rem;
+    border-bottom:1px solid var(--lijn);padding-bottom:.6rem;
+  }
+  .sectiekop .telling{
+    font-family:"IBM Plex Mono",monospace;font-size:var(--schaal-s);
+    color:var(--gedempt);font-variant-numeric:tabular-nums;white-space:nowrap;
+  }
+  .sectie-intro{color:var(--gedempt);margin:.85rem 0 0;max-width:44rem}
+  .item{padding:1.7rem 0;border-bottom:1px solid var(--lijn)}
+  .item:last-child{border-bottom:none}
+  .item-kop{display:flex;align-items:flex-start;gap:.75rem;flex-wrap:wrap}
+  .item-kop h3{flex:1 1 20rem;min-width:0}
+  .meta{
+    font-family:"IBM Plex Mono",monospace;font-size:var(--schaal-xs);color:var(--gedempt);
+    margin:.5rem 0 0;display:flex;flex-wrap:wrap;gap:.3rem .9rem;
+  }
+  .meta b{font-weight:500;color:var(--inkt)}
+  .item p{margin:.8rem 0 0;max-width:44rem}
+  .kader{
+    margin:.95rem 0 0;padding:.85rem 1rem;background:var(--vlak);
+    border-left:3px solid var(--vilt);border-radius:0 3px 3px 0;
+    font-size:var(--schaal-s);max-width:44rem;
+  }
+  .kader .titel{
+    font-family:"IBM Plex Mono",monospace;font-size:var(--schaal-xs);
+    text-transform:uppercase;letter-spacing:.08em;color:var(--vilt);
+    font-weight:500;display:block;margin-bottom:.35rem;
+  }
+  .kader p{margin:0;max-width:none}
+  .kader p + p{margin-top:.4rem}
+  ul{margin:.8rem 0 0;padding-left:1.15rem;max-width:44rem}
+  li{margin-bottom:.5rem}
+  .tabelwrap{overflow-x:auto;margin:.95rem 0 0;max-width:44rem}
+  table{border-collapse:collapse;width:100%;font-size:var(--schaal-s)}
+  th,td{text-align:left;padding:.42rem .8rem .42rem 0;border-bottom:1px solid var(--lijn);vertical-align:top}
+  th{
+    font-family:"IBM Plex Mono",monospace;font-size:var(--schaal-xs);
+    text-transform:uppercase;letter-spacing:.06em;color:var(--gedempt);font-weight:500;
+  }
+  td.getal{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;white-space:nowrap}
+  footer{margin-top:3.4rem;padding-top:1.4rem;border-top:1px solid var(--lijn);font-size:var(--schaal-s);color:var(--gedempt)}
+  a{color:var(--vilt);text-decoration-thickness:1px;text-underline-offset:2px}
+  @media (max-width:640px){.blad{padding:2.3rem 1.1rem 4rem}h1{font-size:1.75rem}}
+</style>
+</head>
+<body>
+<div class="blad">
+
+<header>
+  <span class="stempel">Introduction to Data Science · 2026–2027 semester 2</span>
+  <h1>De Pokerbot Challenge opnieuw opzetten</h1>
+  <p class="lead">
+    Wat er uit <i>Wat er volgend jaar anders moet</i> in semester 2 terechtkomt, en in welke
+    volgorde. Het punt dat alle andere blokkeerde — de API kende geen cohorten, dus een tweede
+    lichting landde bovenop de data van de eerste — is op 3 oktober gebouwd en staat bovenaan
+    als eerste afgevinkte.
+  </p>
+</header>
+
+<section>
+  <div class="sectiekop">
+    <h2>Het punt dat de rest blokkeerde</h2>
+    <span class="telling">1 punt</span>
+  </div>
+
+  <div class="item">
+    <div class="item-kop">
+      <h3>De API kende geen cohorten — nu wel</h3>
+      <i class="merk m-klaar">gebouwd</i>
+    </div>
+    <p class="meta"><span><code>POKER_COHORT</code></span><span><code>api/database.py</code></span><span>3 oktober 2026</span></p>
+    <p>
+      Alles was alleen op <b>week</b> gesleuteld. Inzendingen stonden als
+      <code>{week: {student_id: [...]}}</code>, de galerij en de reviews net zo, en een
+      toernooi-uitslag onder de sleutel <code>"3"</code> of <code>"5_ronde2"</code>. Nergens een
+      veld dat zei welke lichting het betrof. Week 3 van een tweede groep zou dus bovenop week 3
+      van de eerste landen — en dat merk je niet aan een foutmelding, maar aan een ranglijst met
+      vreemde namen erin.
+    </p>
+    <p>
+      <code>POKER_COHORT</code> zet nu een voorvoegsel voor elke sleutel. Het zit in
+      <code>_laad</code> en <code>_sla_op</code>, het enige punt waar alle opslag doorheen gaat,
+      dus het ergens vergeten kan niet.
+    </p>
+    <div class="kader">
+      <span class="titel">Goedkoper dan hier eerst stond</span>
+      <p>De eerste schatting was dat de bestaande data zou moeten meeverhuizen naar een eerste
+      cohort. Dat hoeft niet: <b>niet gezet betekent geen voorvoegsel</b>, dus semester 1 houdt
+      precies de sleutels die het had en de draaiende deployment merkt er niets van. Geen
+      migratie, en dus ook niets wat daarbij mis kan gaan.</p>
+      <p>Een voorvoegsel met een schuine streep of <code>..</code> erin wordt bij het opstarten
+      geweigerd — het wordt onderdeel van een bestandsnaam, en dan stop je liever meteen dan dat
+      je stilletjes ergens anders schrijft.</p>
+    </div>
+    <p>
+      <b>Een tweede lichting opzetten</b> is nu één handeling: maak in het Render-dashboard een
+      tweede web service vanuit dezelfde repo, wijs hem naar <em>dezelfde</em> database, en zet
+      daar <code>POKER_COHORT=2027-sem2</code>. Eén database, twee services, gescheiden data.
+      Zet er wel een eigen <code>POKER_TOKENS_JSON</code> bij, want die overschrijft bij elke
+      opstart de opgeslagen tokens. <code>GET /versie</code> zegt welk cohort een deployment
+      bedient.
+    </p>
+    <p>
+      <code>scripts/test_cohorten.py</code> bewijst het: twee lichtingen zien elkaar niet, de
+      eerste blijft intact, en een derde begint schoon.
+    </p>
+  </div>
+</section>
+
+<section>
+  <div class="sectiekop">
+    <h2>Dit staat er al en gaat mee</h2>
+    <span class="telling">5 punten</span>
+  </div>
+  <p class="sectie-intro">
+    In blok 1 gebouwd en in gebruik. Hier hoeft niets meer aan; ze staan erbij zodat je weet wat
+    je niet opnieuw hoeft te bedenken.
+  </p>
+
+  <div class="item">
+    <div class="item-kop">
+      <h3>De uitgebreide log met bord en ronde</h3>
+      <i class="merk m-klaar">klaar</i>
+    </div>
+    <p class="meta"><span><code>/toernooi/{week}/uitgebreid</code></span><span>Werkcollege 8, deel 3.6</span></p>
+    <p>
+      Eén regel per beslissing in plaats van per hand, met <code>ronde</code>, <code>bord</code>,
+      <code>pot</code> en <code>inzet_om_te_callen</code>. Per bot opgeslagen, dus een student
+      leest alleen zijn eigen regels. Vanaf semester 2 vanzelf aanwezig voor elk toernooi.
+    </p>
+  </div>
+
+  <div class="item">
+    <div class="item-kop">
+      <h3>Een toernooi lokaal draaien en uploaden</h3>
+      <i class="merk m-klaar">klaar</i>
+    </div>
+    <p class="meta"><span><code>scripts/draai_toernooi_lokaal.py --upload</code></span></p>
+    <p>
+      Render trekt een volle klas niet binnen één verzoek. Lokaal duurt het zestien tot achttien
+      minuten, en de uitslag gaat daarna onder de normale sleutel naar de server — studenten zien
+      hem alsof de server hem zelf draaide. Dat mag, want het toernooi is deterministisch.
+      <code>--zonder-referentiebots</code> en <code>--reparaties</code> zitten er ook in.
+    </p>
+  </div>
+
+  <div class="item">
+    <div class="item-kop">
+      <h3>Een hand kunnen naspelen</h3>
+      <i class="merk m-klaar">klaar</i>
+    </div>
+    <p class="meta"><span><code>scripts/laat_hand_zien.py</code></span><span><code>powerpoints/wc8_handen.py</code></span></p>
+    <p>
+      Straat voor straat, met het bord en de zetten in volgorde. Bruikbaar in het college én bij
+      de overhoring: <i>dit is jouw hand, leg uit waarom je bot hier raisete.</i> De volgorde
+      binnen een straat is gereconstrueerd uit de pot; dat staat op de plaat zelf vermeld.
+    </p>
+  </div>
+
+  <div class="item">
+    <div class="item-kop">
+      <h3>Een uitslagpagina voor Brightspace</h3>
+      <i class="merk m-klaar">klaar</i>
+    </div>
+    <p class="meta"><span><code>scripts/maak_uitslag_html.py</code></span><span>alles inline</span></p>
+    <p>
+      Top vijf per toernooi plus wie bonus heeft, zonder externe CSS of scripts omdat Brightspace
+      die eruit filtert. De volledige ranglijst staat er bewust niet op.
+    </p>
+  </div>
+
+  <div class="item">
+    <div class="item-kop">
+      <h3>Elke ronde begint op 1000</h3>
+      <i class="merk m-klaar">klaar</i>
+    </div>
+    <p class="meta"><span>doorspeelregel verwijderd</span></p>
+    <p>
+      Twee rondes van dezelfde week zijn daardoor onderling vergelijkbaar. Dat was in blok 1 niet
+      zo en maakte een tweede ronde betekenisloos.
+    </p>
+  </div>
+</section>
+
+<section>
+  <div class="sectiekop">
+    <h2>Vóór het blok beslissen</h2>
+    <span class="telling">4 punten</span>
+  </div>
+  <p class="sectie-intro">
+    Dingen die je in week 1 niet meer wilt uitzoeken, omdat ze de opzet van de weken erna bepalen.
+  </p>
+
+  <div class="item">
+    <div class="item-kop">
+      <h3>Peer review verhuist naar de hub — en de feedback moet terugkomen</h3>
+      <i class="merk m-bouwen">bouwen</i>
+    </div>
+    <p class="meta"><span>één middag werk</span><span>de hub doet het beoordelen al</span></p>
+    <p>
+      In blok 1 is het beoordelen van grafieken er helemaal bij ingeschoten. De reden staat in de
+      notebooks: daar heet het &ldquo;via de API&rdquo;, en dan moet een student met de hand een
+      dict van zes velden typen en een base64-string decoderen om de grafiek te kunnen zien.
+      De Streamlit-hub rendert hem gewoon, geeft schuifjes en eist toelichtingen. Dat deel is dus
+      een omruil, geen bouwklus.
+    </p>
+    <p>
+      Het échte werk is het tweede stuk: <b>een review komt nooit terug bij degene die hem
+      krijgt.</b> Reviews worden alleen geteld om te bepalen of iemand er drie heeft gegeven.
+      Zonder een route die je je eigen ontvangen reviews teruggeeft, en een tab in de hub die ze
+      toont, blijft het een aanwezigheidsvinkje.
+    </p>
+    <p>
+      <b>Doe dit vóór week 1.</b> Als het er staat, kun je in het werkcollege zeggen &ldquo;kijk
+      wat er over jouw grafiek is gezegd&rdquo; — en dán is het een opdracht die zichzelf verkoopt.
+    </p>
+  </div>
+
+  <div class="item">
+    <div class="item-kop">
+      <h3>De referentiebots opnieuw ijken, en uit de gescoorde toernooien halen</h3>
+      <i class="merk m-bouwen">bouwen</i>
+    </div>
+    <p class="meta"><span>hun niveaubeschrijvingen kloppen niet</span><span>gemeten op drie echte toernooien</span></p>
+    <div class="tabelwrap">
+      <table>
+        <thead><tr><th>bot</th><th>niveau zegt</th><th>eindronde</th><th>plek van 27</th></tr></thead>
+        <tbody>
+          <tr><td>Inzetgrootte</td><td class="getal">3</td><td class="getal">1871</td><td class="getal">1e</td></tr>
+          <tr><td>Allrounder</td><td class="getal">2</td><td class="getal">978</td><td class="getal">17e</td></tr>
+          <tr><td>Tafellezer</td><td class="getal">1</td><td class="getal">781</td><td class="getal">23e</td></tr>
+          <tr><td>Bluffer</td><td class="getal">3</td><td class="getal">734</td><td class="getal">24e</td></tr>
+          <tr><td>PotOdds</td><td class="getal">1</td><td class="getal">697</td><td class="getal">25e</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      Vier van de vijf eindigen onder de mediaanstudent. Hun beschrijving belooft een stretchdoel
+      en levert de zwakste helft van de klas. En Inzetgrootte deed 1095, 1128 en 1871 over drie
+      toernooien met dezelfde code — dat is geen meetlat maar een loterij.
+    </p>
+    <p>
+      <b>Twee dingen.</b> De niveaus opnieuw vaststellen op echte cijfers. En ze buiten elk
+      toernooi houden waar bonuspunten aan hangen: ze bezetten zes van de 33 stoelen, en de
+      testbot die alles callt deelt structureel zevenhonderd chips uit aan wie naast hem zit.
+      In oefenrondes zijn ze juist nuttig, want daar kost een vertekening niets.
+    </p>
+  </div>
+
+  <div class="item">
+    <div class="item-kop">
+      <h3>Werkcollege 4 opsplitsen: één idee per middag</h3>
+      <i class="merk m-keuze">keuze</i>
+    </div>
+    <p class="meta"><span>besloten in sep 2026, nog niet uitgevoerd</span><span>WC4 123 → 107 min</span></p>
+    <p>
+      Handsterkte, winkans én pot odds komen nu in één middag binnen, en daarna moet er woensdag
+      een bot staan. Wie op Deel 6 vastloopt levert in wat op Deel 3 stond — in blok 1 was
+      <b>92% van alle beslissingen fold</b>, en dat is geen strategie maar een onafgemaakte bot.
+      Pot odds gaat naar WC5, waar studenten hun eigen uitslag voor zich hebben.
+    </p>
+    <p>
+      Semester 2 is het moment om dit te doen: het is een herindeling van bestaand materiaal, en
+      die doe je tussen twee lichtingen in, niet halverwege.
+    </p>
+  </div>
+
+  <div class="item">
+    <div class="item-kop">
+      <h3>Het DataCamp-rooster en het maandag/woensdag-raadsel</h3>
+      <i class="merk m-keuze">keuze</i>
+    </div>
+    <p class="meta"><span><code>api/datacamp_rooster.py</code></span><span>twee losse punten, zelfde moment</span></p>
+    <p>
+      Seaborn afstemmen met de VA-kant en <i>Working with Categorical Data</i> een plek geven of
+      schrappen — de voorstellen staan al in de commentaren van dat bestand. En uitzoeken welke
+      van de twee klopt: de notebooks zetten WC1, 4 en 7 op maandag, het weekrooster kent alleen
+      woensdag 13:40–15:20. Allebei beslissen vóór het blok, niet erin.
+    </p>
+  </div>
+</section>
+
+<section>
+  <div class="sectiekop">
+    <h2>Tijdens het blok, op een vast moment</h2>
+    <span class="telling">3 punten</span>
+  </div>
+
+  <div class="item">
+    <div class="item-kop">
+      <h3>Laten zien wat je bot koos, bij het inleveren</h3>
+      <i class="merk m-bouwen">bouwen</i>
+    </div>
+    <p class="meta"><span>week 3, bij de eerste deadline</span><span>de validator weet het al</span></p>
+    <p>
+      Een bot die op elk testgeval hetzelfde antwoordt wordt al gemarkeerd als
+      <code>constante_bot</code>, en daar gebeurt niets mee. Toon bij het inleveren de vier
+      testsituaties met wat de bot koos. Wie vier keer <code>fold</code> ziet staan weet genoeg
+      zonder dat iemand het hoeft te zeggen.
+    </p>
+  </div>
+
+  <div class="item">
+    <div class="item-kop">
+      <h3>De bonus uitbetalen na een overhoring</h3>
+      <i class="merk m-keuze">keuze</i>
+    </div>
+    <p class="meta"><span>de week ná de bonusweek</span><span>in blok 1 gedaan</span></p>
+    <p>
+      Punten worden uitgekeerd als je ze kunt verantwoorden. De snit is iedereen die punten
+      scoort — in blok 1 waren dat er acht. <code>scripts/botkaarten.py</code> levert het kaartje
+      en <code>laat_hand_zien.py --bot</code> de hand om over door te vragen.
+    </p>
+  </div>
+
+  <div class="item">
+    <div class="item-kop">
+      <h3>Een codemoment in de casepresentaties</h3>
+      <i class="merk m-keuze">keuze</i>
+    </div>
+    <p class="meta"><span>raakt 30% van het cijfer</span><span>2 uur per case</span></p>
+    <p>
+      Verleng de zitting met vijf minuten: dashboard op het scherm, editor ernaast, jij noemt een
+      naam die niemand vooraf weet en pakt één regel uit hún code. Dit staat los van de pokerlijn
+      maar hoort in dezelfde planning, want het valt op dezelfde momenten.
+    </p>
+  </div>
+</section>
+
+<footer>
+  Opgesteld 3 oktober 2026, bij de afronding van blok 1. De gemeten cijfers komen uit de drie
+  gedraaide toernooien van week 5 en uit
+  <a href="https://claude.ai/artifact/VHxz3JTPug9qEvCFXnnqbG">Wat er volgend jaar anders moet</a>,
+  waar per punt staat hoe het is vastgesteld. Bron van deze pagina:
+  <code>Poker_Analytics_2026/docs/pokerbot_in_sem2.html</code>.
+</footer>
+
+</div>
+</body>
+</html>
