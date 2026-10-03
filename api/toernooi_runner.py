@@ -7,6 +7,8 @@ een student zijn nieuwe bot letterlijk tegen zijn eigen oude bot en die van
 klasgenoten ziet spelen. Resultaten worden per (week, vergelijk_met_week)
 gecached, zodat een toernooi maar één keer per combinatie hoeft te draaien.
 """
+from datetime import datetime, timezone
+
 import database as db
 from bonus_rooster import BONUSWEEK
 from referentiebots import referentiebots_voor
@@ -213,18 +215,32 @@ MAX_RONDE = 20
 
 def laatste_gedraaide_ronde(week, vergelijk_met_week=None):
     """
-    Het hoogste rondenummer van deze week waarvoor een uitslag in de cache staat,
-    of None als er nog niets is gedraaid.
+    De ronde van deze week die het laatst is gedraaid, of None als er nog niets is.
+
+    Op tijdstip, met het hoogste rondenummer als terugval voor uitslagen van voor
+    er een tijdstempel werd bewaard.
 
     Hiermee kan /toernooi/{week} zonder rondenummer teruggeven wat er al ligt, in
     plaats van ronde 1 te draaien. Dat scheelt niet alleen wachttijd: zonder dit
     start ELKE student die zijn notebook draait een eigen toernooi van twintig
     minuten zodra ronde 1 toevallig leeg is.
     """
+    gevonden = []
     for nr in range(MAX_RONDE, 0, -1):
-        if db.laad_toernooi_resultaat(cache_sleutel(week, vergelijk_met_week, nr)):
-            return nr
-    return None
+        uitslag = db.laad_toernooi_resultaat(cache_sleutel(week, vergelijk_met_week, nr))
+        if uitslag:
+            gevonden.append((uitslag.get("gedraaid_op"), nr))
+    if not gevonden:
+        return None
+
+    # Op tijdstip, niet op nummer. Een oefenronde krijgt bewust een hoog nummer
+    # zodat hij buiten GESCOORDE_RONDES valt -- draai je daarna de eindronde
+    # (ronde 2), dan is dat het laatste toernooi maar niet het hoogste nummer.
+    # Op nummer sorteren zou studenten de oefenronde blijven voorschotelen.
+    met_tijd = [(t, nr) for t, nr in gevonden if t]
+    if met_tijd:
+        return max(met_tijd)[1]
+    return max(nr for _, nr in gevonden)
 
 
 def draai_toernooi(
@@ -365,6 +381,7 @@ def draai_toernooi(
         "eindstand_per_bot": uitkomst["eindstand_per_bot"],
     }
 
+    resultaat["gedraaid_op"] = datetime.now(timezone.utc).isoformat()
     db.sla_toernooi_resultaat_op(cache_key, resultaat)
 
     # De uitgebreide log gaat onder eigen sleutels, en dus NIET mee in wat

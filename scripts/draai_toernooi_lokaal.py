@@ -6,7 +6,10 @@ Haalt de ingeleverde bots op en draait het toernooi op je eigen machine.
     python3 scripts/draai_toernooi_lokaal.py --week 5 --ronde 1
 
 Vraagt om je docent-token (wordt niet getoond en niet bewaard), schrijft de
-bots naar scripts/bots_week{N}/ en de uitslag naar scripts/uitslag_week{N}.json.
+bots naar scripts/bots_week{N}/ en de uitslag naar
+scripts/uitslag_week{N}_ronde{R}.json. Het rondenummer hoort in die naam: anders
+overschrijft de eindronde de oefenronde, en dat merk je pas als je de vorige
+wilt terugzien.
 
 WAAROM LOKAAL
 -------------
@@ -74,8 +77,8 @@ BOTS_PER_VERZOEK = 5
 
 def verstuur_bewaarde_uitslag(args, token):
     """De uitslag die al op schijf staat alsnog versturen."""
-    doel = os.path.join(HIER, f"uitslag_week{args.week}.json")
-    doel_uitgebreid = os.path.join(HIER, f"uitgebreid_week{args.week}.json")
+    doel = os.path.join(HIER, f"uitslag_week{args.week}_ronde{args.ronde}.json")
+    doel_uitgebreid = os.path.join(HIER, f"uitgebreid_week{args.week}_ronde{args.ronde}.json")
     if not os.path.exists(doel):
         print(f"Geen bewaarde uitslag gevonden: {doel}")
         print("Draai eerst zonder --alleen-upload.")
@@ -221,7 +224,7 @@ def main():
         "hand_log": uitkomst["hand_log"],
         "eindstand_per_bot": uitkomst["eindstand_per_bot"],
     }
-    doel = os.path.join(HIER, f"uitslag_week{args.week}.json")
+    doel = os.path.join(HIER, f"uitslag_week{args.week}_ronde{args.ronde}.json")
     with open(doel, "w") as f:
         json.dump(resultaat, f)
 
@@ -230,7 +233,7 @@ def main():
     # erbij zou analyse_toernooi.py elke keer tientallen megabytes moeten inlezen
     # voor data die het niet gebruikt.
     uitgebreid = uitkomst.get("uitgebreid_hand_log") or []
-    doel_uitgebreid = os.path.join(HIER, f"uitgebreid_week{args.week}.json")
+    doel_uitgebreid = os.path.join(HIER, f"uitgebreid_week{args.week}_ronde{args.ronde}.json")
     with open(doel_uitgebreid, "w") as f:
         json.dump({"week": args.week, "ronde": args.ronde, "regels": uitgebreid}, f)
 

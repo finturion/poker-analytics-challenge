@@ -582,6 +582,9 @@ def toernooi_uploaden(
     resultaat["week"] = week
     resultaat["ronde"] = ronde
     resultaat["lokaal_gedraaid"] = True
+    # Zonder dit zou /toernooi zonder rondenummer op nummer kiezen, en dan
+    # overschaduwt een oefenronde met een hoog nummer de eindronde.
+    resultaat["gedraaid_op"] = datetime.now(timezone.utc).isoformat()
     resultaat.pop("uitgebreid_hand_log", None)
     db.sla_toernooi_resultaat_op(sleutel, resultaat)
 
