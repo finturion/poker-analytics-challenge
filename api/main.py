@@ -119,6 +119,9 @@ def versie():
         "branch": os.environ.get("RENDER_GIT_BRANCH") or "onbekend",
         "gestart": _GESTART.isoformat(),
         "draait_al_seconden": int(draait_al.total_seconds()),
+        # Welke lichting deze deployment bedient. Leeg is de eerste: die heeft
+        # geen voorvoegsel, zodat bestaande data niet hoefde te verhuizen.
+        "cohort": db.COHORT or "(geen -- eerste lichting)",
     }
 
 

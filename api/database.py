@@ -30,6 +30,42 @@ DOCENT_TOKEN_FILE = "docent_token.json"
 TOERNOOI_RESULTATEN_FILE = "toernooi_resultaten_db.json"
 DATACAMP_FILE = "datacamp_db.json"
 
+# ---------------------------------------------------------------------------
+# Cohorten
+# ---------------------------------------------------------------------------
+# Alle opslag is alleen op WEEK gesleuteld: inzendingen staan als
+# {week: {student_id: [...]}}, een toernooi onder "3" of "5_ronde2". Draaien er
+# twee lichtingen op dezelfde database, dan landt week 3 van de tweede bovenop
+# week 3 van de eerste.
+#
+# POKER_COHORT zet een voorvoegsel voor elke sleutel. Is hij leeg of niet gezet,
+# dan blijven de sleutels precies wat ze waren -- de eerste lichting hoeft dus
+# NIET te verhuizen, en een bestaande deployment merkt hier niets van. Een
+# tweede lichting krijgt zijn eigen voorvoegsel en ziet de eerste niet, ook niet
+# als ze dezelfde database delen.
+#
+# Het voorvoegsel zit in _laad en _sla_op, het enige punt waar alle opslag
+# doorheen gaat. Vergeten kan dus niet.
+_COHORT_PATROON = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,62}$")
+
+COHORT = (os.environ.get("POKER_COHORT") or "").strip()
+if COHORT and not _COHORT_PATROON.match(COHORT):
+    # Het voorvoegsel wordt onderdeel van een databasesleutel en van een
+    # bestandsnaam. Een schuine streep of ".." erin zou buiten de bedoelde plek
+    # kunnen schrijven, dus liever meteen stoppen dan stilletjes ergens anders
+    # terechtkomen.
+    raise RuntimeError(
+        f"POKER_COHORT={COHORT!r} mag alleen letters, cijfers, punt, streepje en "
+        f"liggend streepje bevatten, en moet met een letter of cijfer beginnen."
+    )
+
+
+def _met_cohort(sleutel: str) -> str:
+    """De sleutel zoals hij in de opslag staat. Zonder cohort verandert er niets."""
+    return f"{COHORT}/{sleutel}" if COHORT else sleutel
+
+
+
 security_bearer = HTTPBearer()
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
@@ -58,7 +94,8 @@ if DATABASE_URL:
 
     def _laad(sleutel: str) -> dict:
         with _connectie() as conn:
-            rij = conn.execute("SELECT value FROM kv_store WHERE key = %s", (sleutel,)).fetchone()
+            rij = conn.execute("SELECT value FROM kv_store WHERE key = %s",
+                               (_met_cohort(sleutel),)).fetchone()
             return rij[0] if rij else {}
 
     def _sla_op(sleutel: str, data: dict):
@@ -68,19 +105,25 @@ if DATABASE_URL:
                 INSERT INTO kv_store (key, value) VALUES (%s, %s)
                 ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
                 """,
-                (sleutel, json.dumps(data)),
+                (_met_cohort(sleutel), json.dumps(data)),
             )
 
 else:
 
     def _laad(sleutel: str) -> dict:
-        if os.path.exists(sleutel):
-            with open(sleutel, "r") as f:
+        pad = _met_cohort(sleutel)
+        if os.path.exists(pad):
+            with open(pad, "r") as f:
                 return json.load(f)
         return {}
 
     def _sla_op(sleutel: str, data: dict):
-        with open(sleutel, "w") as f:
+        pad = _met_cohort(sleutel)
+        # Met een cohort is het voorvoegsel een submap; die bestaat nog niet.
+        map_naam = os.path.dirname(pad)
+        if map_naam:
+            os.makedirs(map_naam, exist_ok=True)
+        with open(pad, "w") as f:
             json.dump(data, f, indent=2)
 
 

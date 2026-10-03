@@ -29,3 +29,20 @@ services:
         fromDatabase:
           name: poker-analytics-db
           property: connectionString
+      # POKER_COHORT scheidt twee lichtingen die dezelfde database delen.
+      #
+      # Alle opslag is alleen op WEEK gesleuteld, dus zonder dit landt week 3
+      # van een nieuwe lichting bovenop week 3 van de vorige -- inzendingen,
+      # galerij, reviews en de toernooi-uitslag. Met een cohort krijgt elke
+      # sleutel een voorvoegsel en zien de twee elkaar niet.
+      #
+      # NIET gezet = de eerste lichting (2026-2027 semester 1). Die heeft geen
+      # voorvoegsel, zodat haar data niet hoefde te verhuizen. Laat dat zo.
+      #
+      # Een tweede lichting erbij: maak in het Render-dashboard een tweede web
+      # service vanuit dezelfde repo, wijs hem naar DEZELFDE database, en zet
+      # daar POKER_COHORT op bijvoorbeeld 2027-sem2. Eén database, twee
+      # services, gescheiden data. Zet er ook een eigen POKER_TOKENS_JSON bij,
+      # want die overschrijft bij elke opstart de opgeslagen tokens.
+      #
+      # Welk cohort een deployment bedient zie je aan GET /versie.
