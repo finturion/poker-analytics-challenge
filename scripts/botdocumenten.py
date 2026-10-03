@@ -38,6 +38,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.colors import LinearSegmentedColormap, TwoSlopeNorm
 
 HIER = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HIER)
@@ -378,6 +379,105 @@ def plaat_per_ronde(beslissingen, klastrechter):
     kaal(ax)
     ax.set_ylim(0, max(max(mijn), max(hun)) * 1.24)
     return als_uri(fig)
+
+
+# De handmatrix, net als in analyse_toernooi.py: hoogste kaart op de rij, laagste
+# op de kolom, alleen de bovenste driehoek gevuld. A-K en K-A zijn dezelfde hand.
+MATRIX_RANGEN = ["A", "K", "Q", "J", "10", "9", "8", "7", "6", "5", "4", "3", "2"]
+DIV_LAAG, DIV_MIDDEN, DIV_HOOG = "#2a78d6", "#F0F2F3", "#1B5E4A"
+ACTIERAMP = ["#d7e6f2", "#a8cfdc", "#6fb8ae", "#3a8f7a", "#1B5E4A"]
+
+
+def _matrix_van(waarden):
+    m = np.full((13, 13), np.nan)
+    for naam, waarde in waarden.items():
+        hoog, laag = naam.split("-")
+        if hoog not in MATRIX_RANGEN or laag not in MATRIX_RANGEN:
+            continue
+        i, j = MATRIX_RANGEN.index(hoog), MATRIX_RANGEN.index(laag)
+        m[min(i, j), max(i, j)] = waarde
+    return m
+
+
+def _heatmap(m, titel, ondertitel, eenheid, cmap, norm, labelformaat,
+             lichtgrens=None):
+    """Eén handmatrix. lichtgrens: boven deze waarde wordt het celletje wit gezet."""
+    fig, ax = plt.subplots(figsize=(7.6, 6.5))
+    cmap.set_bad("#F7F8F8")
+    beeld = ax.imshow(np.ma.masked_invalid(m), cmap=cmap, norm=norm, aspect="equal")
+    for i in range(13):
+        for j in range(13):
+            if np.isnan(m[i, j]):
+                continue
+            licht = lichtgrens is not None and m[i, j] >= lichtgrens
+            ax.text(j, i, labelformaat(m[i, j]), ha="center", va="center",
+                    fontsize=6.6, color="white" if licht else INKT)
+    ax.set_xticks(range(13)); ax.set_xticklabels(MATRIX_RANGEN, fontsize=9)
+    ax.set_yticks(range(13)); ax.set_yticklabels(MATRIX_RANGEN, fontsize=9)
+    ax.set_xticks(np.arange(-0.5, 13, 1), minor=True)
+    ax.set_yticks(np.arange(-0.5, 13, 1), minor=True)
+    ax.grid(which="minor", color="#FFFFFF", linewidth=1.5)
+    ax.tick_params(which="both", length=0)
+    for kant in ("top", "right", "bottom", "left"):
+        ax.spines[kant].set_visible(False)
+    ax.set_title(titel, color=INKT, fontsize=12.5, pad=30, loc="left")
+    ax.text(-0.5, -0.95, ondertitel, color=GEDEMPT, fontsize=9.5, va="bottom")
+    balk = fig.colorbar(beeld, ax=ax, fraction=0.046, pad=0.03)
+    balk.set_label(eenheid, color=GEDEMPT, fontsize=9.5)
+    balk.outline.set_visible(False)
+    balk.ax.tick_params(length=0, labelsize=9)
+    return als_uri(fig)
+
+
+def plaat_matrix_actie(eigen, minimaal=4):
+    """Per starthand hoe hard hij speelde, op de schaal fold (0) tot all in (4).
+
+    Dezelfde drempel als de winstmatrix, met opzet: de twee zijn bedoeld om naast
+    elkaar te leggen, en dan moeten dezelfde vakjes gevuld zijn. Anders lijkt een
+    leeg vakje een bewering terwijl het een drempelverschil is.
+    """
+    schaal = {a: i for i, a in enumerate(VOLGORDE)}
+    per_hand = defaultdict(list)
+    for r in eigen:
+        if r["actie"] in schaal:
+            per_hand[handnaam(r["hand"])].append(schaal[r["actie"]])
+    genoeg = {h: statistics.fmean(v) for h, v in per_hand.items()
+              if len(v) >= minimaal}
+    if len(genoeg) < 10:
+        return None
+    cmap = LinearSegmentedColormap.from_list("actie", ACTIERAMP)
+    return _heatmap(
+        _matrix_van(genoeg),
+        "Hoe hard speelde hij elke starthand?",
+        f"0 = altijd fold, 4 = altijd all in  ·  hoogste kaart op de rij  ·  "
+        f"alleen handen die minstens {minimaal}x voorkwamen "
+        f"({len(genoeg)} van de {len(per_hand)})",
+        "gemiddelde keuze (fold → all in)", cmap,
+        plt.Normalize(vmin=0, vmax=4), lambda v: f"{v:.1f}", lichtgrens=2.6)
+
+
+def plaat_matrix_winst(eigen, minimaal=4):
+    """Per starthand wat hij er gemiddeld mee verdiende of verloor."""
+    per_hand = defaultdict(list)
+    for r in eigen:
+        if r["actie"] is not None:
+            per_hand[handnaam(r["hand"])].append(r["winst"])
+    genoeg = {h: statistics.fmean(v) for h, v in per_hand.items()
+              if len(v) >= minimaal}
+    if len(genoeg) < 10:
+        return None
+    m = _matrix_van(genoeg)
+    # Niet op het maximum schalen: één uitschieter maakt dan alle andere vakjes
+    # kleurloos. Op het 92e percentiel schalen houdt het midden leesbaar.
+    grens = float(np.nanpercentile(np.abs(m), 92)) or 1.0
+    cmap = LinearSegmentedColormap.from_list("winst", [DIV_LAAG, DIV_MIDDEN, DIV_HOOG])
+    return _heatmap(
+        m, "En met welke starthanden verdiende hij?",
+        f"gemiddelde winst per keer dat die hand voorkwam  ·  groen is winst, "
+        f"blauw is verlies  ·  minstens {minimaal}x voorgekomen "
+        f"({len(genoeg)} van de {len(per_hand)})",
+        "gemiddelde winst (chips)", cmap,
+        TwoSlopeNorm(vmin=-grens, vcenter=0, vmax=grens), lambda v: f"{v:+.0f}")
 
 
 RANGORDE = {rang: i for i, rang in enumerate(
@@ -838,6 +938,10 @@ honderden handen lang werkelijk deed.</p>
         "Links: op welke straat viel de beslissing, en welke. Rechts welk deel "
         "van zijn preflop-handen de flop, turn en river haalt — als percentage, "
         "want de een speelt nu eenmaal meer handen dan de ander.")}
+{figuur(platen.get("matrix_actie"),
+        "Dezelfde vraag over alle starthanden tegelijk: de hoogste kaart staat op "
+        "de rij, de laagste op de kolom, dus A-K en K-A zijn hetzelfde vakje. "
+        "Donker is hard spelen.")}
 {figuur(platen.get("agressie_per_hand"),
         "Elke actie krijgt een plek op de schaal fold → all in; de bálklengte is "
         "het gemiddelde met die kaarten, de kléur is wat hij er het vaakst mee "
@@ -845,6 +949,10 @@ honderden handen lang werkelijk deed.</p>
         "waarmee hij het hardst speelt.")}
 
 <h2>Wat het opleverde</h2>
+{figuur(platen.get("matrix_winst"),
+        "Dezelfde matrix, maar nu wat elke starthand opleverde. Leg hem naast de "
+        "vorige: waar donkergroen in de ene naast blauw in de andere staat, speelt "
+        "hij hard met kaarten die hem geld kosten.")}
 {figuur(platen.get("winst_per_hand"),
         "De vijf kaarten waarmee hij het meest verloor en de vijf waarmee hij het "
         "meest verdiende, gemiddeld per keer dat hij die hand kreeg. Het ruitje is "
@@ -961,6 +1069,8 @@ def main():
         platen["per_ronde"] = plaat_per_ronde(beslissingen, trechter)
         platen["winst_per_hand"] = plaat_winst_per_hand(eigen, rest)
         platen["agressie_per_hand"] = plaat_agressie_per_hand(eigen, rest)
+        platen["matrix_actie"] = plaat_matrix_actie(eigen)
+        platen["matrix_winst"] = plaat_matrix_winst(eigen)
 
         vragen = maak_vragen(prof, mediaan, handsoortbeeld, trechter, klaswinst,
                              klas_odds, beslissingen, plekken[student], len(stand),
