@@ -54,3 +54,4 @@ scripts/uitslag_week*.html
 
 # Ingeleverde studentcode hoort niet in git.
 scripts/bots_week*/
+scripts/reparaties_week*/

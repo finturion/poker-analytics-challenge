@@ -37,6 +37,7 @@ import argparse
 import getpass
 import json
 import os
+import statistics
 import sys
 import time
 
@@ -73,6 +74,38 @@ def laad_kies_actie(code):
 # geheel mee -- de server vervangt hem per bot.
 BOTS_PER_VERZOEK = 5
 
+
+
+
+def laad_reparaties(pad):
+    """
+    {student_id: {"code": str|None, "bluf_kans": "mediaan"|getal|None}}
+
+    Een inzending die is afgekeurd op iets wat het idee erachter niet raakt --
+    een inspringfout, een ontbrekende bluf_kans -- kan alsnog meespelen. Wat er
+    per student is aangepast staat in wat_is_er_veranderd.json ernaast, zodat het
+    na te lopen is in plaats van ergens in een script te verdwijnen.
+    """
+    if not pad:
+        return {}
+    if not os.path.isdir(pad):
+        sys.exit(f"Reparatiemap niet gevonden: {pad}")
+    uit = {}
+    register = os.path.join(pad, "wat_is_er_veranderd.json")
+    beschreven = {}
+    if os.path.exists(register):
+        with open(register) as f:
+            beschreven = json.load(f)
+    for bestand in sorted(os.listdir(pad)):
+        if not bestand.endswith(".py"):
+            continue
+        sid = bestand[:-3]
+        with open(os.path.join(pad, bestand)) as f:
+            uit[sid] = {"code": f.read(), "bluf_kans": "mediaan"}
+        if sid not in beschreven:
+            print(f"   LET OP: {sid} wordt gerepareerd maar staat niet in "
+                  f"wat_is_er_veranderd.json")
+    return uit
 
 
 def verstuur_bewaarde_uitslag(args, token):
@@ -148,6 +181,11 @@ def main():
     p.add_argument("--week", type=int, default=5)
     p.add_argument("--ronde", type=int, default=1)
     p.add_argument("--handen", type=int, default=STANDAARD_N_HANDEN)
+    p.add_argument("--zonder-referentiebots", action="store_true",
+                   dest="zonder_referentiebots",
+                   help="alleen de klas; referentie- en testbots blijven weg")
+    p.add_argument("--reparaties", default=None,
+                   help="map met herstelde inzendingen (zie reparaties_week5/)")
     p.add_argument("--upload", action="store_true",
                    help="zet de uitslag na afloop op de server, voor de studenten")
     p.add_argument("--alleen-upload", action="store_true", dest="alleen_upload",
@@ -172,34 +210,64 @@ def main():
     botmap = os.path.join(HIER, f"bots_week{args.week}")
     os.makedirs(botmap, exist_ok=True)
 
-    bots, overgeslagen = {}, []
+    reparaties = laad_reparaties(args.reparaties)
+
+    bots, overgeslagen, gerepareerd = {}, [], []
     for rij in inzendingen:
         sid = rij["student_id"]
         with open(os.path.join(botmap, f"{sid}.py"), "w") as f:
             f.write(rij["bot_code"])
-        if not rij["geldig"]:
+
+        code, bluf_kans = rij["bot_code"], rij.get("bluf_kans")
+        herstel = reparaties.get(sid)
+        if herstel:
+            if herstel.get("code"):
+                code = herstel["code"]
+            if bluf_kans is None and herstel.get("bluf_kans") == "mediaan":
+                bluf_kans = "mediaan"      # pas invullen als de klas compleet is
+            gerepareerd.append(sid)
+        elif not rij["geldig"]:
             overgeslagen.append((sid, rij.get("foutmelding") or "afgekeurd"))
             continue
-        functie, fout = laad_kies_actie(rij["bot_code"])
+
+        functie, fout = laad_kies_actie(code)
         if functie is None:
             overgeslagen.append((sid, fout))
             continue
         bots[sid] = {"kies_actie": functie, "strategie": rij.get("strategie"),
-                     "bluf_kans": rij.get("bluf_kans")}
+                     "bluf_kans": bluf_kans}
+
+    # De mediaan kan pas als alle echte waarden binnen zijn. Een eigen getal
+    # verzinnen zou de student bevoor- of benadelen; de mediaan is neutraal.
+    echte = sorted(b["bluf_kans"] for b in bots.values()
+                   if isinstance(b["bluf_kans"], (int, float)))
+    mediaan = statistics.median(echte) if echte else 0.0
+    for sid, info in bots.items():
+        if info["bluf_kans"] == "mediaan":
+            info["bluf_kans"] = mediaan
+            print(f"   {sid}: bluf_kans ontbrak, klasmediaan {mediaan:.2f} ingevuld")
 
     print(f"{len(inzendingen)} inzendingen opgehaald, code staat in {botmap}")
     print(f"{len(bots)} bots doen mee")
+    for sid in gerepareerd:
+        print(f"   gerepareerd: {sid} — zie {os.path.basename(args.reparaties)}")
     for sid, reden in overgeslagen:
         print(f"   overgeslagen: {sid} — {reden[:90]}")
     if len(bots) < 2:
         sys.exit("Minder dan 2 geldige bots; er valt niets te draaien.")
 
     namen_deelnemers = sorted(bots)
-    referentie = referentiebots_voor(args.week)
+    referentie = {} if args.zonder_referentiebots else referentiebots_voor(args.week)
+    if args.zonder_referentiebots:
+        # De referentiebots bezetten stoelen en verplaatsen chips. Wil je weten
+        # hoe de klas het onderling doet, dan horen ze er niet bij te zitten.
+        print("   zonder referentiebots en testbots: alleen de klas")
     for naam, info in referentie.items():
         bots.setdefault(naam, info)
-    for naam, functie in TESTBOTS.items():
-        bots.setdefault(naam, {"kies_actie": functie, "strategie": None, "bluf_kans": None})
+    if not args.zonder_referentiebots:
+        for naam, functie in TESTBOTS.items():
+            bots.setdefault(naam, {"kies_actie": functie, "strategie": None,
+                                   "bluf_kans": None})
 
     n_sim = args.simulaties or n_simulaties_voor(args.week)
     # Elke ronde begint schoon op 1000, net als op de server.

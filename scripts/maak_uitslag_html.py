@@ -69,23 +69,24 @@ def tweemaal_se(waarden):
     return 2 * statistics.pstdev(waarden) / len(waarden) ** 0.5
 
 
-def naam(student, plek, grens):
-    return student if grens is None or plek <= grens else f"student ...{student[-4:]}"
 
+def tabel_ronde(uitslag, titel, ondertitel, hoeveel=5):
+    """De eerste `hoeveel` plekken. De rest van de ranglijst staat er bewust niet.
 
-def tabel_ronde(uitslag, titel, ondertitel, grens):
-    stand = sorted(eindstanden(uitslag).items(), key=lambda kv: -kv[1])
+    Deze pagina gaat naar de hele klas. Wie bovenaan staat heeft daar iets voor
+    gedaan; wie onderaan staat hoeft daar niet klassikaal mee op een pagina.
+    """
+    stand = sorted(eindstanden(uitslag).items(), key=lambda kv: -kv[1])[:hoeveel]
     spreiding = spreiding_per_bot(uitslag)
     rijen = []
     for plek, (student, chips) in enumerate(stand, 1):
-        klasse = "top" if plek <= 5 else ""
         winst = chips - 1000
         kleur = GROEN if winst > 0 else (ORANJE if winst < 0 else GEDEMPT)
         onzeker = tweemaal_se(spreiding.get(student, []))
         rijen.append(f"""
-        <tr class="{klasse}">
+        <tr class="top">
           <td class="plek">{plek}</td>
-          <td class="wie">{naam(student, plek, grens)}</td>
+          <td class="wie">{student}</td>
           <td class="getal">{nl(chips)}</td>
           <td class="getal" style="color:{kleur}">{nl(winst, teken=True)}</td>
           <td class="getal onzeker">&plusmn;{nl(onzeker)}</td>
@@ -139,7 +140,7 @@ def bonustabel(bonus):
       </table>"""
 
 
-def bouw(r1, r2, bonus, grens):
+def bouw(r1, r2, bonus):
     stand2 = sorted(eindstanden(r2).items(), key=lambda kv: -kv[1])
     spreiding2 = spreiding_per_bot(r2)
     vijfde, zesde = stand2[4][1], stand2[5][1]
@@ -163,6 +164,18 @@ def bouw(r1, r2, bonus, grens):
         <tr><td class="wie">{naam_ref.replace('Referentie_', '')}</td>
             <td class="getal">{nl(waarde)}</td>
             <td class="getal onzeker">plek {plek} van {len(stand_lijst)}</td></tr>""")
+
+    meetlat = "" if not ref_rijen else f"""
+  <h2>De referentiebots als meetlat</h2>
+  <p>Deze bots speelden mee zonder voor de bonus mee te tellen: haal je ze in, dan weet
+  je dat je idee iets waard is.</p>
+  <div class="scroll">
+    <table>
+      <thead><tr><th class="wie">bot</th><th class="getal">chips</th>
+                 <th class="getal">zou staan op</th></tr></thead>
+      <tbody>{''.join(ref_rijen)}</tbody>
+    </table>
+  </div>"""
 
     return f"""<!doctype html>
 <html lang="nl">
@@ -258,27 +271,18 @@ def bouw(r1, r2, bonus, grens):
     reken je precies dit zelf uit op je eigen bot.</p>
   </div>
 
-  <h2>De volledige uitslag</h2>
+  <h2>De top vijf per toernooi</h2>
   <p class="sub">De kolom &ldquo;onzekerheid&rdquo; is twee keer de standaardfout over de
   {r2['n_simulaties']} simulaties. Liggen twee bots binnen elkaars marge, dan zegt hun
   onderlinge volgorde weinig.</p>
   <div class="rondes">
-    {tabel_ronde(r1, "Toernooi 1 &middot; woensdagbot",
-                 f"{len(eindstanden(r1))} deelnemers", grens)}
-    {tabel_ronde(r2, "Toernooi 2 &middot; definitieve bot",
-                 f"{len(eindstanden(r2))} deelnemers", grens)}
+    {tabel_ronde(r1, "Woensdag &middot; je woensdagbot",
+                 f"de eerste vijf van {len(eindstanden(r1))} deelnemers")}
+    {tabel_ronde(r2, "Vrijdag &middot; je definitieve bot",
+                 f"de eerste vijf van {len(eindstanden(r2))} deelnemers")}
   </div>
 
-  <h2>De referentiebots als meetlat</h2>
-  <p>Deze vijf bots spelen elk toernooi mee. Ze tellen niet mee voor de bonus, maar ze
-  staan er wel: haal je ze in, dan weet je dat je idee iets waard is.</p>
-  <div class="scroll">
-    <table>
-      <thead><tr><th class="wie">bot</th><th class="getal">chips</th>
-                 <th class="getal">zou staan op</th></tr></thead>
-      <tbody>{''.join(ref_rijen)}</tbody>
-    </table>
-  </div>
+  {meetlat}
 
   <footer>
     <p>Toernooi 1 en 2, week 5 &middot; {r2['n_simulaties']} simulaties &times; 50 handen
@@ -295,11 +299,9 @@ def bouw(r1, r2, bonus, grens):
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--week", type=int, default=5)
-    p.add_argument("--ronde1", type=int, default=5,
-                   help="bestandsnummer van het woensdagtoernooi (staat op de server onder ronde 1)")
-    p.add_argument("--ronde2", type=int, default=2)
-    p.add_argument("--anoniem-onder", type=int, default=None, dest="grens",
-                   help="alleen de eerste N plekken met studentnummer")
+    p.add_argument("--ronde1", default="1_woensdag",
+                   help="achtervoegsel van het woensdagbestand")
+    p.add_argument("--ronde2", default="2")
     args = p.parse_args()
 
     with open(os.path.join(HIER, f"uitslag_week{args.week}_ronde{args.ronde1}.json")) as f:
@@ -311,7 +313,7 @@ def main():
 
     doel = os.path.join(HIER, f"uitslag_week{args.week}.html")
     with open(doel, "w") as f:
-        f.write(bouw(r1, r2, bonus, args.grens))
+        f.write(bouw(r1, r2, bonus))
     print(f"{os.path.getsize(doel) / 1024:.0f} kB -> {doel}")
     return 0
 
