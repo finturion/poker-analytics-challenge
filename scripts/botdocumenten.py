@@ -44,6 +44,7 @@ sys.path.insert(0, HIER)
 
 from botkaarten import (handsoort, klas_medianen, opvallende_handen,  # noqa: E402
                         profiel, winst_per_regel)
+from laat_hand_zien import kaart, leesbaar, zet_volgorde  # noqa: E402
 
 INKT = "#121E31"
 GEDEMPT = "#5A646B"
@@ -93,9 +94,86 @@ def als_uri(fig):
     return "data:image/png;base64," + base64.b64encode(buffer.getvalue()).decode()
 
 
+# ---------------------------------------------------------------- de klas
+def klas_handsoorten(profielen):
+    """Per handsoort het MEDIANE aandeel per actie over de klas.
+
+    De mediaan en niet het gemiddelde: één bot die alles callt verschuift een
+    gemiddelde flink, en dan vergelijk je een student met die uitschieter in
+    plaats van met de klas. Let op dat medianen per actie niet optellen tot 100 --
+    dat hoort zo, en staat ook bij de plaat vermeld.
+    """
+    per_soort = defaultdict(lambda: defaultdict(list))
+    for prof in profielen.values():
+        for soort, teller in prof["per_handsoort"].items():
+            totaal = sum(teller.values())
+            if totaal < 5:
+                continue
+            for actie in VOLGORDE:
+                per_soort[soort][actie].append(100 * teller.get(actie, 0) / totaal)
+    return {soort: {a: statistics.median(v) if v else 0.0 for a, v in acties.items()}
+            for soort, acties in per_soort.items()}
+
+
+def klas_trechter(beslissingen_per_bot, klas):
+    """Welk deel van de preflop-beslissingen elke straat haalt, mediaan over de klas."""
+    per_bot = []
+    for bot in klas:
+        bs = beslissingen_per_bot.get(bot) or []
+        if not bs:
+            continue
+        telling = Counter(b["ronde"] for b in bs)
+        preflop = telling.get("preflop", 0)
+        if preflop < 20:
+            continue
+        per_bot.append({s: 100 * telling.get(s, 0) / preflop for s in STRATEN})
+    if not per_bot:
+        return {}
+    return {s: statistics.median([r[s] for r in per_bot]) for s in STRATEN}
+
+
+def klas_stackmediaan(hand_log, klas):
+    """De mediane stack per handnummer over alle bots en simulaties van de klas."""
+    per_hand = defaultdict(list)
+    for r in hand_log:
+        if r["bot_naam"] in klas:
+            per_hand[r["hand_nummer"]].append(r["stack"])
+    return {n: statistics.median(v) for n, v in sorted(per_hand.items())}
+
+
+def klas_actiewinst(per_bot, klas):
+    """Wat elke actie de klas gemiddeld oplevert, als mediaan over de bots."""
+    per_actie = defaultdict(list)
+    for bot in klas:
+        eigen = defaultdict(list)
+        for r in per_bot.get(bot, []):
+            if r["actie"]:
+                eigen[r["actie"]].append(r["winst"])
+        for actie, winsten in eigen.items():
+            if len(winsten) >= 10:
+                per_actie[actie].append(statistics.fmean(winsten))
+    return {a: statistics.median(v) for a, v in per_actie.items() if v}
+
+
+def klas_potodds(beslissingen_per_bot, klas):
+    """Welk deel van de pot de klas gemiddeld betaalt als ze callen."""
+    per_bot = []
+    for bot in klas:
+        odds = [b["inzet_om_te_callen"] / (b["pot"] + b["inzet_om_te_callen"])
+                for b in beslissingen_per_bot.get(bot, [])
+                if b["gekozen"] == "call" and b["inzet_om_te_callen"] > 0]
+        if len(odds) >= 10:
+            per_bot.append(100 * statistics.fmean(odds))
+    return statistics.median(per_bot) if per_bot else None
+
+
 # ---------------------------------------------------------------- de platen
-def plaat_stackverloop(eigen_log):
-    """Twintig simulaties, met de beste en de slechtste uitgelicht."""
+def plaat_stackverloop(eigen_log, klasmediaan=None):
+    """Twintig simulaties, met de beste en de slechtste uitgelicht.
+
+    De klasmediaan ligt erdoorheen: dan zie je niet alleen de spreiding van deze
+    bot, maar ook of hij boven of onder de klas zat en vanaf welke hand.
+    """
     per_sim = defaultdict(list)
     for r in eigen_log:
         per_sim[r["simulatie"]].append((r["hand_nummer"], r["stack"]))
@@ -134,6 +212,11 @@ def plaat_stackverloop(eigen_log):
                 color=kleur, linewidth=2.5, zorder=4,
                 label=f"{label} ({waarde(sim)})")
     ax.axhline(1000, color=GEDEMPT, linewidth=1, linestyle=(0, (4, 3)), zorder=1)
+    if klasmediaan:
+        nummers = sorted(klasmediaan)
+        ax.plot(nummers, [klasmediaan[n] for n in nummers], color=INKT,
+                linewidth=1.8, linestyle=(0, (5, 2)), zorder=5,
+                label="mediaan van de klas")
     ax.set_xlabel("hand")
     ax.set_ylabel("stack (chips)")
     ax.set_title("Dezelfde bot, dezelfde regels — twintig keer een ander verhaal",
@@ -187,81 +270,123 @@ def plaat_acties_tegenover_klas(eigen, rest):
     return als_uri(fig)
 
 
-def plaat_handsoorten(prof):
-    """Per soort hand: wat deed hij ermee? Gestapeld op percentage."""
+def plaat_handsoorten(prof, klasbeeld):
+    """Per soort hand wat hij ermee deed, met de klas eronder op dezelfde schaal."""
     soorten = [s for s in ("paar", "twee hoge", "één hoge", "twee lage")
                if s in prof["per_handsoort"]]
-    fig, ax = plt.subplots(figsize=(9.2, 3.6))
-    links = np.zeros(len(soorten))
-    for actie in VOLGORDE:
-        waarden = []
-        for s in soorten:
-            teller = prof["per_handsoort"][s]
-            totaal = sum(teller.values()) or 1
-            waarden.append(100 * teller.get(actie, 0) / totaal)
-        waarden = np.array(waarden)
-        if waarden.sum() == 0:
-            continue
-        ax.barh(soorten, waarden, left=links, height=0.62,
-                color=ACTIEKLEUR[actie], label=actie.replace("_", " "))
-        for i, w in enumerate(waarden):
-            if w >= 7:
-                ax.text(links[i] + w / 2, i, f"{w:.0f}%", ha="center", va="center",
-                        color="white" if actie in ACTIE_LABEL_WIT else INKT,
-                        fontsize=9.5, fontweight="bold")
-        links += waarden
-    ax.set_xlim(0, 100)
-    ax.invert_yaxis()
-    ax.set_xlabel("aandeel van de handen van dat soort")
-    ax.set_title("Wat deed hij met welke kaarten?", color=INKT,
-                 fontsize=12.5, pad=26, loc="left")
-    ax.legend(frameon=False, fontsize=9.5, ncol=5, loc="lower right",
-              bbox_to_anchor=(1.0, 1.005))
-    kaal(ax, y=False)
-    ax.tick_params(axis="y", labelsize=11)
+    if not soorten:
+        return None
+
+    fig, assen = plt.subplots(2, 1, figsize=(9.2, 6.4), sharex=True,
+                              gridspec_kw={"hspace": 0.40})
+    for ax, bron, titel in ((assen[0], "eigen", "Deze bot"),
+                            (assen[1], "klas", "De klas (mediaan per handsoort)")):
+        links = np.zeros(len(soorten))
+        for actie in VOLGORDE:
+            waarden = []
+            for s in soorten:
+                if bron == "eigen":
+                    teller = prof["per_handsoort"][s]
+                    totaal = sum(teller.values()) or 1
+                    waarden.append(100 * teller.get(actie, 0) / totaal)
+                else:
+                    waarden.append(klasbeeld.get(s, {}).get(actie, 0.0))
+            waarden = np.array(waarden)
+            if waarden.sum() == 0:
+                continue
+            ax.barh(soorten, waarden, left=links, height=0.62,
+                    color=ACTIEKLEUR[actie],
+                    label=actie.replace("_", " ") if bron == "eigen" else None)
+            for i, w in enumerate(waarden):
+                if w >= 8:
+                    ax.text(links[i] + w / 2, i, f"{w:.0f}%", ha="center", va="center",
+                            color="white" if actie in ACTIE_LABEL_WIT else INKT,
+                            fontsize=9.5, fontweight="bold")
+            links += waarden
+        ax.set_xlim(0, 100)
+        ax.invert_yaxis()
+        ax.set_title(titel, color=INKT, fontsize=11, loc="left", pad=6)
+        kaal(ax, y=False)
+        ax.tick_params(axis="y", labelsize=11)
+
+    assen[1].set_xlabel("aandeel van de handen van dat soort (%)")
+    assen[0].legend(frameon=False, fontsize=9.5, ncol=5, loc="lower right",
+                    bbox_to_anchor=(1.0, 1.12))
+    fig.suptitle("Wat deed hij met welke kaarten — en wat deed de klas?",
+                 color=INKT, fontsize=12.5, x=0.055, y=0.99, ha="left")
     return als_uri(fig)
 
 
-def plaat_per_ronde(beslissingen):
-    """Hoe ver kwam hij per hand, en wat deed hij daar? Uit de uitgebreide log."""
-    per_ronde = defaultdict(Counter)
-    for b in beslissingen:
-        per_ronde[b["ronde"]][b["gekozen"]] += 1
-    straten = [s for s in STRATEN if s in per_ronde]
-    if not straten:
-        return None
+def plaat_per_ronde(beslissingen, klastrechter):
+    """Hoe ver kwam hij per hand, en hoe ver komt de klas?
 
-    fig, ax = plt.subplots(figsize=(9.2, 3.8))
+    Zijn aantallen en die van de klas zijn niet vergelijkbaar -- de een speelt meer
+    handen dan de ander. Rechts daarom als percentage van de eigen
+    preflop-beslissingen: van elke honderd handen, hoeveel haalt de flop, de turn,
+    de river?
+    """
+    if not beslissingen:
+        return None
+    telling = Counter(b["ronde"] for b in beslissingen)
+    preflop = telling.get("preflop", 0)
+    if not preflop:
+        return None
+    straten = [s for s in STRATEN if telling.get(s)]
+
+    fig, assen = plt.subplots(1, 2, figsize=(9.6, 3.9),
+                              gridspec_kw={"width_ratios": [1.25, 1], "wspace": 0.34})
+
+    ax = assen[0]
     onder = np.zeros(len(straten))
     for actie in VOLGORDE:
-        waarden = np.array([per_ronde[s].get(actie, 0) for s in straten])
+        waarden = np.array([Counter(b["gekozen"] for b in beslissingen
+                                    if b["ronde"] == s).get(actie, 0) for s in straten])
         if waarden.sum() == 0:
             continue
         ax.bar(straten, waarden, bottom=onder, width=0.58,
                color=ACTIEKLEUR[actie], label=actie.replace("_", " "))
         onder += waarden
     for i, s in enumerate(straten):
-        totaal = sum(per_ronde[s].values())
-        ax.text(i, totaal + max(onder) * 0.025, str(totaal), ha="center",
-                color=INKT, fontsize=10, fontweight="bold")
+        ax.text(i, telling[s] + max(onder) * 0.03, str(telling[s]), ha="center",
+                color=INKT, fontsize=9.5, fontweight="bold")
     ax.set_ylabel("aantal beslissingen")
-    ax.set_title("Hoe ver kwam hij per hand, en wat deed hij daar?",
-                 color=INKT, fontsize=12.5, pad=26, loc="left")
-    ax.legend(frameon=False, fontsize=9.5, ncol=5, loc="lower right",
-              bbox_to_anchor=(1.0, 1.005))
+    ax.set_title("Wat deed hij per straat?", color=INKT, fontsize=11, loc="left", pad=6)
+    ax.legend(frameon=False, fontsize=8.5, ncol=3, loc="upper right")
     kaal(ax)
-    ax.set_ylim(0, max(onder) * 1.14)
+    ax.set_ylim(0, max(onder) * 1.30)
+
+    ax = assen[1]
+    x = np.arange(len(STRATEN))
+    mijn = [100 * telling.get(s, 0) / preflop for s in STRATEN]
+    hun = [klastrechter.get(s, 0) for s in STRATEN]
+    ax.bar(x - 0.2, mijn, width=0.38, color=ORANJE, label="deze bot")
+    ax.bar(x + 0.2, hun, width=0.38, color=GEDEMPT, alpha=0.55, label="klasmediaan")
+    for i, (a, b) in enumerate(zip(mijn, hun)):
+        ax.text(i - 0.2, a + 2.5, f"{a:.0f}", ha="center", color=INKT,
+                fontsize=9, fontweight="bold")
+        ax.text(i + 0.2, b + 2.5, f"{b:.0f}", ha="center", color=GEDEMPT, fontsize=9)
+    ax.set_xticks(x)
+    ax.set_xticklabels(STRATEN, fontsize=9.5)
+    ax.set_ylabel("% van je preflop-handen")
+    ax.set_title("Hoe ver kom je?", color=INKT, fontsize=11, loc="left", pad=6)
+    ax.legend(frameon=False, fontsize=9)
+    kaal(ax)
+    ax.set_ylim(0, max(max(mijn), max(hun)) * 1.24)
     return als_uri(fig)
 
 
 # ---------------------------------------------------------------- de vragen
-def maak_vragen(prof, mediaan, eigen, beslissingen, plek, aantal, stand):
+def maak_vragen(prof, mediaan, klasbeeld, klastrechter, klaswinst, klas_odds,
+                beslissingen, plek, aantal, stand):
     """
-    Vragen die uit zijn eigen cijfers volgen.
+    Vragen die uit de VERSCHILLEN met de klas volgen.
+
+    Absolute drempels werken hier niet. "Minder dan 8% haalt de river" klinkt als
+    weinig, maar is de klasmediaan 2%, dan gaat deze bot juist drie keer zo ver --
+    en dan stel je de omgekeerde vraag. Elke vraag zet zijn getal dus naast dat
+    van de klas, en de richting volgt uit het verschil.
 
     Geen quizvragen: het goede antwoord is een redenering over zijn eigen regels.
-    Elke vraag draagt het getal waar hij vandaan komt, zodat je hem kunt stellen
-    zonder vooraf te rekenen.
     """
     vragen = []
     totaal = prof["aan_zet"] or 1
@@ -269,83 +394,92 @@ def maak_vragen(prof, mediaan, eigen, beslissingen, plek, aantal, stand):
     def deel(actie):
         return 100 * prof["acties"].get(actie, 0) / totaal
 
-    # 1 -- altijd: de afwijking die het grootst is
-    afwijkingen = []
-    for actie in VOLGORDE:
-        mijn, hun = deel(actie), mediaan.get(actie, 0)
-        if prof["acties"].get(actie, 0) >= 10:
-            afwijkingen.append((abs(mijn - hun), actie, mijn, hun))
+    # 1 -- de grootste afwijking in wat hij kiest
+    afwijkingen = [(abs(deel(a) - mediaan.get(a, 0)), a, deel(a), mediaan.get(a, 0))
+                   for a in VOLGORDE if prof["acties"].get(a, 0) >= 10]
     if afwijkingen:
         _, actie, mijn, hun = max(afwijkingen)
-        richting = "veel vaker" if mijn > hun else "veel minder vaak"
+        keer = mijn / hun if hun > 0.5 else None
+        hoeveel = (f"{keer:.0f} keer zo vaak" if keer and keer >= 1.8
+                   else ("vaker" if mijn > hun else "minder vaak"))
         vragen.append((
             f"Je bot koos <b>{actie.replace('_', ' ')}</b> in {mijn:.0f}% van de handen "
             f"waarin hij aan zet kwam. De klasmediaan is {hun:.0f}%.",
-            f"Je doet dit dus {richting} dan de rest. Welke regel in jouw code "
+            f"Je doet dit {hoeveel} als de rest. Welke regel in jouw code "
             f"veroorzaakt dat, en was dat de bedoeling?"))
 
-    # 2 -- een actie die geld kost
-    verliezend = [(w, a) for a, w in prof["winst_per_actie"].items()
-                  if w < 0 and prof["acties"].get(a, 0) >= 10]
-    if verliezend:
-        w, a = min(verliezend)
-        vragen.append((
-            f"<b>{a.replace('_', ' ')}</b> leverde je gemiddeld {w:+.0f} chips per hand op, "
-            f"over de {prof['acties'][a]} handen waarin dat je <i>eerste</i> actie was.",
-            "Dat is een actie die je geld kost. Wanneer kiest je bot hem, en wat zou "
-            "er gebeuren als je die drempel verschuift?"))
-
-    # 3 -- handsoort waar iets opvalt
-    for soort in ("paar", "twee hoge"):
-        teller = prof["per_handsoort"].get(soort)
-        if not teller:
-            continue
+    # 2 -- de handsoort waar hij het meest van de klas afwijkt
+    kandidaten = []
+    for soort, teller in prof["per_handsoort"].items():
         n = sum(teller.values())
-        gefold = 100 * teller.get("fold", 0) / n if n else 0
-        if n >= 15 and gefold >= 20:
-            vragen.append((
-                f"Van je {n} handen met <b>{soort}</b> foldde je er "
-                f"{teller['fold']} ({gefold:.0f}%).",
-                "Dat zijn de sterkere handen. Welke voorwaarde in je code zorgt "
-                "dat je die toch weggooit?"))
-            break
+        if n < 15 or soort not in klasbeeld:
+            continue
+        for actie in VOLGORDE:
+            mijn = 100 * teller.get(actie, 0) / n
+            hun = klasbeeld[soort].get(actie, 0)
+            if mijn >= 10 or hun >= 10:
+                kandidaten.append((abs(mijn - hun), soort, actie, mijn, hun, n))
+    if kandidaten:
+        _, soort, actie, mijn, hun, n = max(kandidaten)
+        vragen.append((
+            f"Met <b>{soort}</b> koos je {mijn:.0f}% van de keren "
+            f"<b>{actie.replace('_', ' ')}</b> — bij de klas is dat {hun:.0f}%. "
+            f"Je speelde {n} van zulke handen.",
+            f"Dat is {'veel vaker' if mijn > hun else 'veel minder'} dan de rest. "
+            f"Wat weet jouw bot over dit soort hand dat de anderen niet gebruiken "
+            f"— of andersom?"))
 
-    # 4 -- uit de uitgebreide log: hoe ver kom je
-    if beslissingen:
-        per_ronde = Counter(b["ronde"] for b in beslissingen)
-        preflop = per_ronde.get("preflop", 0) or 1
-        river = per_ronde.get("river", 0)
-        aandeel = 100 * river / preflop
-        if aandeel < 8:
-            vragen.append((
-                f"Van je {preflop} preflop-beslissingen kwamen er maar "
-                f"<b>{river}</b> tot de river ({aandeel:.0f}%).",
-                "Je bent vroeg uit de hand. Dat is veilig, maar je wint ook nooit "
-                "een grote pot. Waar zit die rem in je code?"))
-        elif aandeel > 25:
-            vragen.append((
-                f"Van je {preflop} preflop-beslissingen kwamen er <b>{river}</b> "
-                f"tot de river ({aandeel:.0f}%).",
-                "Je betaalt vaak door tot het einde. Kijkt je bot onderweg nog of "
-                "zijn hand nog goed is, of alleen bij het begin?"))
+    # 3 -- dezelfde actie, een ander resultaat dan bij de klas
+    verschillen = [(abs(w - klaswinst[a]), a, w, klaswinst[a])
+                   for a, w in prof["winst_per_actie"].items()
+                   if a in klaswinst and prof["acties"].get(a, 0) >= 10]
+    if verschillen:
+        _, actie, mijn, hun = max(verschillen)
+        vragen.append((
+            f"<b>{actie.replace('_', ' ')}</b> leverde jou gemiddeld {mijn:+.0f} chips "
+            f"per hand op. Bij de klas levert diezelfde actie {hun:+.0f} op.",
+            f"Dezelfde zet, een ander resultaat — dus het zit in wannéér je hem "
+            f"kiest. Wat maakt jouw {actie.replace('_', ' ')} "
+            f"{'beter' if mijn > hun else 'duurder'} dan die van de rest?"))
 
-        # wat kostte callen?
+    # 4 -- hoe ver kom je, naast de klas
+    if beslissingen and klastrechter:
+        telling = Counter(b["ronde"] for b in beslissingen)
+        preflop = telling.get("preflop", 0) or 1
+        mijn = 100 * telling.get("river", 0) / preflop
+        hun = klastrechter.get("river", 0)
+        if hun > 0.3 and abs(mijn - hun) / max(hun, 0.3) > 0.4:
+            if mijn > hun:
+                vragen.append((
+                    f"Van je preflop-handen haalt <b>{mijn:.0f}%</b> de river. "
+                    f"Bij de klas is dat {hun:.0f}%.",
+                    "Je blijft dus veel langer in de hand zitten dan de rest. "
+                    "Kijkt je bot onderweg nog of zijn hand nog goed is, of "
+                    "beslist hij vooral preflop en betaalt hij daarna door?"))
+            else:
+                vragen.append((
+                    f"Van je preflop-handen haalt maar <b>{mijn:.0f}%</b> de river. "
+                    f"Bij de klas is dat {hun:.0f}%.",
+                    "Je bent eerder uit de hand dan de rest. Dat is veilig, maar "
+                    "je wint ook nooit een grote pot. Waar zit die rem in je code?"))
+
         calls = [b for b in beslissingen
                  if b["gekozen"] == "call" and b["inzet_om_te_callen"] > 0]
-        if len(calls) >= 10:
-            odds = [b["inzet_om_te_callen"] / (b["pot"] + b["inzet_om_te_callen"])
-                    for b in calls]
+        if len(calls) >= 10 and klas_odds:
+            mijn_odds = 100 * statistics.fmean(
+                [b["inzet_om_te_callen"] / (b["pot"] + b["inzet_om_te_callen"])
+                 for b in calls])
             vragen.append((
-                f"Over alle straten samen callde je {len(calls)} keer tegen een inzet, "
-                f"en betaalde je daarbij gemiddeld "
-                f"<b>{100*statistics.fmean(odds):.0f}%</b> van de pot om mee te mogen doen.",
-                "Je hand hoeft dus maar in dat percentage van de gevallen de beste "
-                "te zijn om dat lonend te maken. Rekent je bot dat uit, of callt hij "
-                "op de kaarten alleen?"))
+                f"Als je callde, betaalde je gemiddeld <b>{mijn_odds:.0f}%</b> van de "
+                f"pot om mee te mogen doen ({len(calls)} keer, over alle straten). "
+                f"De klas betaalt {klas_odds:.0f}%.",
+                "Je hand hoeft maar in dat percentage van de gevallen de beste te "
+                "zijn om callen lonend te maken. Rekent je bot dat uit, of callt "
+                "hij op de kaarten alleen?"))
 
     # 5 -- altijd: de spreiding
     vragen.append((
-        f"Je eindigde op <b>{stand}</b> chips, plek {plek} van {aantal}.",
+        f"Je eindigde op <b>{nl(stand)}</b> chips, plek {plek} van {aantal}.",
         "Over twintig simulaties zat daar een flinke spreiding in. Wat zou er "
         "gebeuren als we dit toernooi met een andere kaartverdeling opnieuw "
         "draaiden — en hoeveel van je plek is dan nog van jou?"))
@@ -388,6 +522,7 @@ STIJL = """
     padding:1rem 1.1rem;margin:1rem 0 0;border-radius:0 4px 4px 0}
   .vraag .cijfer{margin:0;font-size:.95rem}
   .vraag .stel{margin:.55rem 0 0;font-weight:600;color:var(--vilt)}
+  .handtitel{font-weight:600;margin:1.8rem 0 0;max-width:42rem}
   .nummer{font-family:"IBM Plex Mono",monospace;font-size:.72rem;color:var(--gedempt);
     letter-spacing:.08em;display:block;margin-bottom:.35rem}
   table{border-collapse:collapse;width:100%;font-size:.88rem;margin-top:1rem}
@@ -399,7 +534,116 @@ STIJL = """
     color:var(--gedempt);font-size:.82rem}
   code{font-family:"IBM Plex Mono",monospace;font-size:.89em;
     background:var(--vlak-zacht);padding:.08em .34em;border-radius:3px}
+
+  /* een uitgespeelde hand */
+  .hand{background:var(--vlak);border:1px solid var(--lijn);border-radius:6px;
+    padding:1.1rem 1.2rem;margin:.9rem 0 0}
+  .handkop{font-family:"IBM Plex Mono",monospace;font-size:.72rem;
+    text-transform:uppercase;letter-spacing:.08em;color:var(--gedempt);
+    display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;
+    border-bottom:1px solid var(--lijn);padding-bottom:.6rem}
+  .handkop .pot{color:var(--vilt);font-weight:500}
+  .tafel{display:flex;flex-wrap:wrap;gap:.5rem 1.5rem;margin:.9rem 0 .2rem}
+  .speler{display:flex;align-items:center;gap:.45rem;font-size:.86rem}
+  .speler .naam{color:var(--gedempt);font-variant-numeric:tabular-nums}
+  .speler.ik .naam{color:var(--inkt);font-weight:700}
+  .speler .winst{font-family:"IBM Plex Mono",monospace;font-weight:600;
+    font-variant-numeric:tabular-nums}
+  .speler .winst.plus{color:var(--vilt)}
+  .speler .winst.min{color:#B3261E}
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]) .speler .winst.min{color:#F08A80}}
+  :root[data-theme="dark"] .speler .winst.min{color:#F08A80}
+  .kaart{display:inline-block;min-width:1.6em;padding:.05em .28em;margin-right:.13em;
+    border:1px solid var(--lijn);border-radius:3px;background:#fff;color:#121E31;
+    font-size:.8rem;font-weight:700;text-align:center}
+  .kaart.rood{color:#C0392B}
+  .geenkaart{color:var(--gedempt);font-style:italic;font-size:.8rem}
+  .straten{display:grid;grid-template-columns:repeat(auto-fit,minmax(12.5rem,1fr));
+    gap:.85rem;margin-top:.9rem}
+  .straat{background:var(--vlak-zacht);border-radius:4px;padding:.6rem .7rem}
+  .straatkop{display:flex;align-items:center;gap:.45rem;flex-wrap:wrap;margin-bottom:.45rem}
+  .straatnaam{font-family:"IBM Plex Mono",monospace;font-size:.66rem;
+    text-transform:uppercase;letter-spacing:.08em;color:var(--vilt);font-weight:600}
+  table.zetten{font-size:.78rem;margin:0}
+  table.zetten th{font-size:.6rem;padding:.2rem .45rem .2rem 0}
+  table.zetten td{padding:.22rem .45rem .22rem 0;border-bottom:1px solid var(--lijn)}
+  table.zetten tr:last-child td{border-bottom:none}
+  table.zetten .naam{color:var(--gedempt);font-variant-numeric:tabular-nums}
+  table.zetten tr.ik .naam{color:var(--inkt);font-weight:700}
+  table.zetten .zet{font-weight:600}
+  table.zetten tr.ik .zet{color:var(--vilt)}
+  .reconstructie{color:var(--gedempt);font-size:.74rem;margin:.8rem 0 0;font-style:italic}
 """
+
+
+def hand_als_html(sleutel, rijen, student, winst_van, kort):
+    """
+    Eén hand, straat voor straat, als HTML.
+
+    Dezelfde reconstructie als scripts/laat_hand_zien.py: de log bewaart per bot
+    zijn eigen zetten, niet de tafel als geheel, dus de volgorde binnen een straat
+    komt uit de pot. Die groeit alleen als er chips in gaan, dus een hogere pot is
+    een latere zet; bij een gelijke pot kwam de speler die hem ophoogde als
+    laatste. Dat staat ook onder de hand vermeld -- een reconstructie die zich
+    voordoet als waarneming liegt.
+    """
+    simulatie, tafel, nummer = sleutel
+    gesorteerd = sorted(rijen, key=zet_volgorde)
+
+    eersten = {}
+    for r in gesorteerd:
+        eersten.setdefault(r["bot_naam"], r)
+    resultaat = {b: winst_van(b, simulatie, nummer) for b in eersten}
+    winnaar = max(resultaat, key=resultaat.get)
+    pot_eind = max(r["pot"] for r in gesorteerd)
+
+    def kaartjes(codes):
+        uit = []
+        for code in codes or []:
+            tekst = kaart(code)
+            rood = tekst.endswith("\u2665") or tekst.endswith("\u2666")
+            klasse = "kaart rood" if rood else "kaart"
+            uit.append(f'<span class="{klasse}">{tekst}</span>')
+        return "".join(uit)
+
+    spelers = []
+    for bot, eerste in sorted(eersten.items(), key=lambda kv: -resultaat[kv[0]]):
+        w = resultaat[bot]
+        klasse = "ik" if bot == student else ("winnaar" if bot == winnaar else "")
+        kleur = "plus" if w > 0 else ("min" if w < 0 else "")
+        spelers.append(
+            f'<div class="speler {klasse}"><span class="naam">{kort(bot)}</span>'
+            f'<span class="kaarten">{kaartjes(eerste.get("hand_met_kleur") or eerste.get("hand"))}</span>'
+            f'<span class="winst {kleur}">{w:+d}</span></div>')
+
+    straten_html = []
+    for straat in STRATEN:
+        zetten = [r for r in gesorteerd if r["ronde"] == straat]
+        if not zetten:
+            continue
+        bord = (kaartjes(zetten[0]["bord"]) if zetten[0]["bord"]
+                else '<span class="geenkaart">nog geen kaarten</span>')
+        regels = "".join(
+            f'<tr class="{"ik" if r["bot_naam"] == student else ""}">'
+            f'<td class="naam">{kort(r["bot_naam"])}</td>'
+            f'<td class="getal">{r["pot"]}</td>'
+            f'<td class="getal">{r["inzet_om_te_callen"] or "—"}</td>'
+            f'<td class="zet">{leesbaar(r)}</td></tr>' for r in zetten)
+        straten_html.append(
+            f'<div class="straat"><div class="straatkop">'
+            f'<span class="straatnaam">{straat}</span>{bord}</div>'
+            f'<table class="zetten"><thead><tr><th>wie</th><th class="getal">pot</th>'
+            f'<th class="getal">te callen</th><th>deed</th></tr></thead>'
+            f'<tbody>{regels}</tbody></table></div>')
+
+    return (f'<div class="hand"><div class="handkop">'
+            f'simulatie {simulatie} · tafel {tafel} · hand {nummer}'
+            f'<span class="pot">pot liep op tot {nl(pot_eind)}</span></div>'
+            f'<div class="tafel">{"".join(spelers)}</div>'
+            f'<div class="straten">{"".join(straten_html)}</div>'
+            f'<p class="reconstructie">Volgorde binnen een straat teruggerekend uit '
+            f'de pot — die groeit alleen als er chips in gaan.</p></div>')
 
 
 def bouw_document(student, bonus, plek, aantal, stand, platen, vragen, handen,
@@ -415,10 +659,9 @@ def bouw_document(student, bonus, plek, aantal, stand, platen, vragen, handen,
         f'<p class="cijfer">{cijfer}</p><p class="stel">{stel}</p></div>'
         for i, (cijfer, stel) in enumerate(vragen, 1))
 
-    handrijen = "".join(
-        f'<tr><td class="getal">{h["waar"]}</td><td class="getal">{h["hand"]}</td>'
-        f'<td>{h["actie"]}</td><td class="getal">{h["winst"]:+d}</td>'
-        f'<td>{h["waarom"]}</td></tr>' for h in handen)
+    handblokken = "".join(
+        f'<p class="handtitel">{waarom}</p>{html_hand}'
+        for waarom, html_hand in handen)
 
     return f"""<!doctype html>
 <html lang="nl"><head><meta charset="utf-8">
@@ -459,12 +702,9 @@ er staat.</p>
 {vraagblokken}
 
 <h2>Handen om op door te vragen</h2>
-<table>
-  <thead><tr><th>waar</th><th>hand</th><th>deed</th><th>chips</th><th>waarom deze</th></tr></thead>
-  <tbody>{handrijen}</tbody>
-</table>
-<p class="sub">Naspelen kan met
-<code>python3 scripts/laat_hand_zien.py --ronde {ronde} --bot {student}</code>.</p>
+<p class="sub">Drie handen waar iets gebeurde, helemaal uitgespeeld. Zijn eigen regel
+staat vet. Je hoeft niets op te zoeken — dit is de hand zoals hij gespeeld is.</p>
+{handblokken}
 
 <footer>
   Gemaakt met <code>scripts/botdocumenten.py</code> uit het logboek van week {week},
@@ -499,6 +739,11 @@ def main():
                 bonussen[s["student_id"]] = s["bonus"]
 
     KLAS = set(uitslag["namen_deelnemers"])
+    referentie = set(uitslag.get("referentiebots") or []) | set(uitslag.get("testbots") or [])
+
+    def kort_naam(naam):
+        """Klasgenoten afgekort: dit document gaat naar één student."""
+        return naam if naam in referentie else f"...{naam[-4:]}"
     regels = winst_per_regel(uitslag["hand_log"])
     per_bot = defaultdict(list)
     for r in regels:
@@ -511,8 +756,17 @@ def main():
     plekken = {k: i for i, (_, k) in enumerate(stand, 1)}
 
     beslissingen_per_bot = defaultdict(list)
+    per_hand = defaultdict(list)
     for b in uitgebreid:
         beslissingen_per_bot[b["bot_naam"]].append(b)
+        per_hand[(b["simulatie"], b["tafel"], b["hand_nummer"])].append(b)
+
+    # De klascijfers: één keer uitrekenen, elk document gebruikt dezelfde.
+    handsoortbeeld = klas_handsoorten(profielen)
+    trechter = klas_trechter(beslissingen_per_bot, KLAS)
+    stackmediaan = klas_stackmediaan(uitslag["hand_log"], KLAS)
+    klaswinst = klas_actiewinst(per_bot, KLAS)
+    klas_odds = klas_potodds(beslissingen_per_bot, KLAS)
 
     if args.student:
         doelen = [args.student]
@@ -540,19 +794,39 @@ def main():
         beslissingen = beslissingen_per_bot.get(student, [])
 
         platen = {}
-        platen["stackverloop"], _ = plaat_stackverloop(eigen_log)
+        platen["stackverloop"], _ = plaat_stackverloop(eigen_log, stackmediaan)
         platen["acties"] = plaat_acties_tegenover_klas(eigen, rest)
-        platen["handsoorten"] = plaat_handsoorten(prof)
-        platen["per_ronde"] = plaat_per_ronde(beslissingen)
+        platen["handsoorten"] = plaat_handsoorten(prof, handsoortbeeld)
+        platen["per_ronde"] = plaat_per_ronde(beslissingen, trechter)
 
-        vragen = maak_vragen(prof, mediaan, eigen, beslissingen,
-                             plekken[student], len(stand),
+        vragen = maak_vragen(prof, mediaan, handsoortbeeld, trechter, klaswinst,
+                             klas_odds, beslissingen, plekken[student], len(stand),
                              int(uitslag["eindstand_per_bot"][student]))
-        # opvallende_handen geeft (regel, waarom) terug, niet een dict.
-        handen = [{"waar": f"sim {r['simulatie']}, tafel {r['tafel']}, hand {r['hand_nummer']}",
-                   "hand": "-".join(r["hand"]), "actie": r["actie"] or "—",
-                   "winst": int(r["winst"]), "waarom": waarom}
-                  for r, waarom in opvallende_handen(eigen)]
+        # opvallende_handen geeft (regel, waarom) terug. De hand erbij zoeken in de
+        # uitgebreide log, zodat hij hier uitgespeeld kan worden in plaats van als
+        # tabelregel.
+        winsten = {(r["simulatie"], r["hand_nummer"]): int(r["winst"])
+                   for rs in per_bot.values() for r in rs}
+        winsten_per_bot = defaultdict(dict)
+        for bot, rs in per_bot.items():
+            for r in rs:
+                winsten_per_bot[bot][(r["simulatie"], r["hand_nummer"])] = int(r["winst"])
+
+        def winst_van(bot, simulatie, nummer):
+            return winsten_per_bot.get(bot, {}).get((simulatie, nummer), 0)
+
+        handen = []
+        for r, waarom in opvallende_handen(eigen, 3):
+            sleutel = (r["simulatie"], r["tafel"], r["hand_nummer"])
+            kop = (f"{waarom[0].upper()}{waarom[1:]} — {'-'.join(r['hand'])}, "
+                   f"{r['actie'] or 'niet aan zet'}, {int(r['winst']):+d} chips")
+            rijen = per_hand.get(sleutel)
+            if not rijen:
+                handen.append((kop, '<p class="sub">Deze hand staat niet in de '
+                                    'uitgebreide log van deze ronde.</p>'))
+                continue
+            handen.append((kop, hand_als_html(sleutel, rijen, student,
+                                              winst_van, kort_naam)))
 
         bonus = bonussen.get(student)
         html = bouw_document(
