@@ -96,12 +96,13 @@ def als_uri(fig):
 
 # ---------------------------------------------------------------- de klas
 def klas_handsoorten(profielen):
-    """Per handsoort het MEDIANE aandeel per actie over de klas.
+    """Per handsoort het GEMIDDELDE aandeel per actie over de klas.
 
-    De mediaan en niet het gemiddelde: één bot die alles callt verschuift een
-    gemiddelde flink, en dan vergelijk je een student met die uitschieter in
-    plaats van met de klas. Let op dat medianen per actie niet optellen tot 100 --
-    dat hoort zo, en staat ook bij de plaat vermeld.
+    Let op: een gemiddelde wordt getrokken door uitschieters -- één bot die alles
+    callt verschuift het call-aandeel van de hele klas. De mediaan is daar
+    ongevoelig voor, maar het gemiddelde is wat je intuïtief verwacht als er
+    "de klas" staat, en dat telt zwaarder bij een document dat je aan tafel leest.
+    Omdat het per actie wordt gemiddeld tellen de aandelen wel netjes op tot 100.
     """
     per_soort = defaultdict(lambda: defaultdict(list))
     for prof in profielen.values():
@@ -111,12 +112,12 @@ def klas_handsoorten(profielen):
                 continue
             for actie in VOLGORDE:
                 per_soort[soort][actie].append(100 * teller.get(actie, 0) / totaal)
-    return {soort: {a: statistics.median(v) if v else 0.0 for a, v in acties.items()}
+    return {soort: {a: statistics.fmean(v) if v else 0.0 for a, v in acties.items()}
             for soort, acties in per_soort.items()}
 
 
 def klas_trechter(beslissingen_per_bot, klas):
-    """Welk deel van de preflop-beslissingen elke straat haalt, mediaan over de klas."""
+    """Welk deel van de preflop-beslissingen elke straat haalt, gemiddeld over de klas."""
     per_bot = []
     for bot in klas:
         bs = beslissingen_per_bot.get(bot) or []
@@ -129,20 +130,20 @@ def klas_trechter(beslissingen_per_bot, klas):
         per_bot.append({s: 100 * telling.get(s, 0) / preflop for s in STRATEN})
     if not per_bot:
         return {}
-    return {s: statistics.median([r[s] for r in per_bot]) for s in STRATEN}
+    return {s: statistics.fmean([r[s] for r in per_bot]) for s in STRATEN}
 
 
 def klas_stackmediaan(hand_log, klas):
-    """De mediane stack per handnummer over alle bots en simulaties van de klas."""
+    """De gemiddelde stack per handnummer over alle bots en simulaties van de klas."""
     per_hand = defaultdict(list)
     for r in hand_log:
         if r["bot_naam"] in klas:
             per_hand[r["hand_nummer"]].append(r["stack"])
-    return {n: statistics.median(v) for n, v in sorted(per_hand.items())}
+    return {n: statistics.fmean(v) for n, v in sorted(per_hand.items())}
 
 
 def klas_actiewinst(per_bot, klas):
-    """Wat elke actie de klas gemiddeld oplevert, als mediaan over de bots."""
+    """Wat elke actie de klas gemiddeld oplevert, gemiddeld over de bots."""
     per_actie = defaultdict(list)
     for bot in klas:
         eigen = defaultdict(list)
@@ -152,7 +153,7 @@ def klas_actiewinst(per_bot, klas):
         for actie, winsten in eigen.items():
             if len(winsten) >= 10:
                 per_actie[actie].append(statistics.fmean(winsten))
-    return {a: statistics.median(v) for a, v in per_actie.items() if v}
+    return {a: statistics.fmean(v) for a, v in per_actie.items() if v}
 
 
 def klas_potodds(beslissingen_per_bot, klas):
@@ -164,7 +165,7 @@ def klas_potodds(beslissingen_per_bot, klas):
                 if b["gekozen"] == "call" and b["inzet_om_te_callen"] > 0]
         if len(odds) >= 10:
             per_bot.append(100 * statistics.fmean(odds))
-    return statistics.median(per_bot) if per_bot else None
+    return statistics.fmean(per_bot) if per_bot else None
 
 
 # ---------------------------------------------------------------- de platen
@@ -216,7 +217,7 @@ def plaat_stackverloop(eigen_log, klasmediaan=None):
         nummers = sorted(klasmediaan)
         ax.plot(nummers, [klasmediaan[n] for n in nummers], color=INKT,
                 linewidth=1.8, linestyle=(0, (5, 2)), zorder=5,
-                label="mediaan van de klas")
+                label="gemiddelde van de klas")
     ax.set_xlabel("hand")
     ax.set_ylabel("stack (chips)")
     ax.set_title("Dezelfde bot, dezelfde regels — twintig keer een ander verhaal",
@@ -280,7 +281,7 @@ def plaat_handsoorten(prof, klasbeeld):
     fig, assen = plt.subplots(2, 1, figsize=(9.2, 6.4), sharex=True,
                               gridspec_kw={"hspace": 0.40})
     for ax, bron, titel in ((assen[0], "eigen", "Deze bot"),
-                            (assen[1], "klas", "De klas (mediaan per handsoort)")):
+                            (assen[1], "klas", "De klas (gemiddelde per handsoort)")):
         links = np.zeros(len(soorten))
         for actie in VOLGORDE:
             waarden = []
@@ -355,23 +356,165 @@ def plaat_per_ronde(beslissingen, klastrechter):
     kaal(ax)
     ax.set_ylim(0, max(onder) * 1.30)
 
+    # Preflop is per definitie 100% voor iedereen; die balk zegt niets. Alleen
+    # de straten erna laten zien hoe ver iemand komt.
     ax = assen[1]
-    x = np.arange(len(STRATEN))
-    mijn = [100 * telling.get(s, 0) / preflop for s in STRATEN]
-    hun = [klastrechter.get(s, 0) for s in STRATEN]
+    verder = [s for s in STRATEN if s != "preflop"]
+    x = np.arange(len(verder))
+    mijn = [100 * telling.get(s, 0) / preflop for s in verder]
+    hun = [klastrechter.get(s, 0) for s in verder]
     ax.bar(x - 0.2, mijn, width=0.38, color=ORANJE, label="deze bot")
-    ax.bar(x + 0.2, hun, width=0.38, color=GEDEMPT, alpha=0.55, label="klasmediaan")
+    ax.bar(x + 0.2, hun, width=0.38, color=GEDEMPT, alpha=0.55, label="klasgemiddelde")
     for i, (a, b) in enumerate(zip(mijn, hun)):
         ax.text(i - 0.2, a + 2.5, f"{a:.0f}", ha="center", color=INKT,
                 fontsize=9, fontweight="bold")
         ax.text(i + 0.2, b + 2.5, f"{b:.0f}", ha="center", color=GEDEMPT, fontsize=9)
     ax.set_xticks(x)
-    ax.set_xticklabels(STRATEN, fontsize=9.5)
+    ax.set_xticklabels(verder, fontsize=9.5)
     ax.set_ylabel("% van je preflop-handen")
-    ax.set_title("Hoe ver kom je?", color=INKT, fontsize=11, loc="left", pad=6)
+    ax.set_title("Hoe ver kom je ná preflop?", color=INKT, fontsize=11,
+                 loc="left", pad=6)
     ax.legend(frameon=False, fontsize=9)
     kaal(ax)
     ax.set_ylim(0, max(max(mijn), max(hun)) * 1.24)
+    return als_uri(fig)
+
+
+RANGORDE = {rang: i for i, rang in enumerate(
+    ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"])}
+
+
+def handnaam(hand):
+    """['K', 'A'] en ['A', 'K'] geven allebei 'A-K'.
+
+    Sorteren op rangwaarde en niet alfabetisch, anders komt "10" voor "9" --
+    het is tekst, geen getal.
+    """
+    hoog, laag = sorted(hand, key=lambda r: RANGORDE.get(str(r), -1), reverse=True)
+    return f"{hoog}-{laag}"
+
+
+def _per_handnaam(regels, minimaal=6):
+    """{handnaam: lijst winsten}, alleen handen die vaak genoeg voorkwamen.
+
+    Onder een stuk of zes keer is een gemiddelde geen gemiddelde maar een
+    anekdote, en die wil je niet op een plaat zetten waar iemand op bevraagd wordt.
+    """
+    per_hand = defaultdict(list)
+    for r in regels:
+        if r["actie"] is None:
+            continue
+        per_hand[handnaam(r["hand"])].append(r["winst"])
+    return {h: w for h, w in per_hand.items() if len(w) >= minimaal}
+
+
+def plaat_winst_per_hand(eigen, klas_regels, hoeveel=10):
+    """Met welke kaarten verdiende hij, en met welke verloor hij?
+
+    Gemiddelde winst per keer dat de hand voorkwam, niet het totaal: anders
+    vergelijk je een hand die hij vaak kreeg met een hand die de klas vaak kreeg.
+    """
+    mijn = _per_handnaam(eigen)
+    if not mijn:
+        return None
+    hun = _per_handnaam(klas_regels, minimaal=20)
+
+    gemiddeld = {h: statistics.fmean(w) for h, w in mijn.items()}
+    op_winst = sorted(gemiddeld, key=gemiddeld.get)
+    gekozen = list(dict.fromkeys(op_winst[:hoeveel // 2] + op_winst[-(hoeveel // 2):]))
+
+    fig, ax = plt.subplots(figsize=(9.2, 0.42 * len(gekozen) + 2.0))
+    y = np.arange(len(gekozen))
+    waarden = [gemiddeld[h] for h in gekozen]
+    ax.barh(y, waarden, height=0.62,
+            color=[GROEN if w > 0 else ORANJE for w in waarden])
+    eerste = True
+    for i, h in enumerate(gekozen):
+        if h in hun:
+            ax.plot([statistics.fmean(hun[h])], [i], marker="D", markersize=6,
+                    color=INKT, zorder=5,
+                    label="klasgemiddelde" if eerste else None)
+            eerste = False
+    for i, (h, w) in enumerate(zip(gekozen, waarden)):
+        ax.text(w + (10 if w >= 0 else -10), i, f"{w:+.0f}  (n={len(mijn[h])})",
+                va="center", ha="left" if w >= 0 else "right",
+                color=INKT, fontsize=9, fontweight="bold")
+    ax.axvline(0, color=INKT, linewidth=1.2)
+    ax.set_yticks(y)
+    ax.set_yticklabels(gekozen, fontsize=10.5, fontfamily="monospace")
+    ax.set_xlabel("gemiddelde winst per keer dat je die hand kreeg (chips)")
+    ax.set_title("Met welke kaarten verdiende hij, en met welke verloor hij?",
+                 color=INKT, fontsize=12.5, pad=24, loc="left")
+    if not eerste:
+        ax.legend(frameon=False, fontsize=9.5, loc="lower right",
+                  bbox_to_anchor=(1.0, 1.005))
+    kaal(ax, y=False)
+    marge = (max(waarden) - min(min(waarden), 0)) * 0.38
+    ax.set_xlim(min(min(waarden), 0) - marge, max(max(waarden), 0) + marge)
+    return als_uri(fig)
+
+
+def plaat_agressie_per_hand(eigen, klas_regels, hoeveel=12):
+    """Hoe hard speelt hij elke hand, op de schaal fold -> all in?
+
+    Elke actie krijgt een plek op die schaal: fold 0, call 1, raise 2, grote raise
+    3, all in 4. Het gemiddelde per hand is dan één getal dat zegt hoe ver hij met
+    die kaarten gaat, en dat is direct naast de klas te leggen.
+    """
+    schaal = {a: i for i, a in enumerate(VOLGORDE)}
+
+    def gemiddelde(regels, minimaal):
+        """Per hand: het gemiddelde op de schaal, hoe vaak, en wat hij het VAAKST koos."""
+        per_hand = defaultdict(list)
+        for r in regels:
+            if r["actie"] in schaal:
+                per_hand[handnaam(r["hand"])].append(r["actie"])
+        uit = {}
+        for h, acties in per_hand.items():
+            if len(acties) < minimaal:
+                continue
+            vaakst = Counter(acties).most_common(1)[0][0]
+            uit[h] = (statistics.fmean([schaal[a] for a in acties]), len(acties), vaakst)
+        return uit
+
+    mijn = gemiddelde(eigen, 6)
+    if not mijn:
+        return None
+    hun = gemiddelde(klas_regels, 20)
+    gekozen = sorted(mijn, key=lambda h: mijn[h][0], reverse=True)[:hoeveel]
+
+    fig, ax = plt.subplots(figsize=(9.2, 0.40 * len(gekozen) + 2.1))
+    y = np.arange(len(gekozen))
+    waarden = [mijn[h][0] for h in gekozen]
+    # De LENGTE is het gemiddelde op de schaal, de KLEUR is wat hij met die hand
+    # het vaakst koos. Twee dingen die uit elkaar kunnen lopen: een bot die meestal
+    # foldt maar af en toe all-in gaat heeft een korte balk in fold-kleur.
+    ax.barh(y, waarden, height=0.6, color=[ACTIEKLEUR[mijn[h][2]] for h in gekozen])
+    eerste = True
+    for i, h in enumerate(gekozen):
+        if h in hun:
+            ax.plot([hun[h][0]], [i], marker="D", markersize=6, color=INKT,
+                    zorder=5, label="klasgemiddelde" if eerste else None)
+            eerste = False
+        ax.text(waarden[i] + 0.07, i,
+                f"{mijn[h][2].replace('_', ' ')} · n={mijn[h][1]}", va="center",
+                color=GEDEMPT, fontsize=8.5)
+    ax.set_yticks(y)
+    ax.set_yticklabels(gekozen, fontsize=10.5, fontfamily="monospace")
+    ax.invert_yaxis()
+    ax.set_xlim(0, 5.5)
+    ax.set_xticks(range(5))
+    ax.set_xticklabels([a.replace("_", " ") for a in VOLGORDE], fontsize=9.5)
+    ax.set_xlabel("gemiddelde keuze met die hand")
+    ax.set_title("Hoe hard speelt hij elke hand — en de klas?",
+                 color=INKT, fontsize=12.5, pad=24, loc="left")
+    ax.set_xticks(range(5))
+    if not eerste:
+        ax.legend(frameon=False, fontsize=9.5, loc="lower right",
+                  bbox_to_anchor=(1.0, 1.005))
+    kaal(ax, y=False)
+    ax.grid(axis="x", color=LIJN, linewidth=0.8)
+    ax.set_axisbelow(True)
     return als_uri(fig)
 
 
@@ -404,7 +547,7 @@ def maak_vragen(prof, mediaan, klasbeeld, klastrechter, klaswinst, klas_odds,
                    else ("vaker" if mijn > hun else "minder vaak"))
         vragen.append((
             f"Je bot koos <b>{actie.replace('_', ' ')}</b> in {mijn:.0f}% van de handen "
-            f"waarin hij aan zet kwam. De klasmediaan is {hun:.0f}%.",
+            f"waarin hij aan zet kwam. De klas zit gemiddeld op {hun:.0f}%.",
             f"Je doet dit {hoeveel} als de rest. Welke regel in jouw code "
             f"veroorzaakt dat, en was dat de bedoeling?"))
 
@@ -452,14 +595,14 @@ def maak_vragen(prof, mediaan, klasbeeld, klastrechter, klaswinst, klas_odds,
             if mijn > hun:
                 vragen.append((
                     f"Van je preflop-handen haalt <b>{mijn:.0f}%</b> de river. "
-                    f"Bij de klas is dat {hun:.0f}%.",
+                    f"Bij de klas is dat gemiddeld {hun:.0f}%.",
                     "Je blijft dus veel langer in de hand zitten dan de rest. "
                     "Kijkt je bot onderweg nog of zijn hand nog goed is, of "
                     "beslist hij vooral preflop en betaalt hij daarna door?"))
             else:
                 vragen.append((
                     f"Van je preflop-handen haalt maar <b>{mijn:.0f}%</b> de river. "
-                    f"Bij de klas is dat {hun:.0f}%.",
+                    f"Bij de klas is dat gemiddeld {hun:.0f}%.",
                     "Je bent eerder uit de hand dan de rest. Dat is veilig, maar "
                     "je wint ook nooit een grote pot. Waar zit die rem in je code?"))
 
@@ -688,12 +831,30 @@ heeft deze student nooit gezien: hij kent zijn bot van de code, niet van wat die
 honderden handen lang werkelijk deed.</p>
 
 <h2>Wat zijn bot deed</h2>
-{figuur(platen.get("handsoorten"), "Per soort hand: welk deel ging weg, welk deel werd gespeeld.")}
-{figuur(platen.get("per_ronde"), "Uit de uitgebreide log: op welke straat viel de beslissing, en welke.")}
+{figuur(platen.get("handsoorten"),
+        "Per soort hand: welk deel ging weg, welk deel werd gespeeld — met de "
+        "klas eronder op dezelfde schaal.")}
+{figuur(platen.get("per_ronde"),
+        "Links: op welke straat viel de beslissing, en welke. Rechts welk deel "
+        "van zijn preflop-handen de flop, turn en river haalt — als percentage, "
+        "want de een speelt nu eenmaal meer handen dan de ander.")}
+{figuur(platen.get("agressie_per_hand"),
+        "Elke actie krijgt een plek op de schaal fold → all in; de bálklengte is "
+        "het gemiddelde met die kaarten, de kléur is wat hij er het vaakst mee "
+        "deed, en het ruitje is de klas met dezelfde hand. De twaalf handen "
+        "waarmee hij het hardst speelt.")}
 
 <h2>Wat het opleverde</h2>
-{figuur(platen.get("acties"), "Gemiddelde winst per hand, per actie, naast dezelfde actie bij de rest van de klas.")}
-{figuur(platen.get("stackverloop"), "Twintig simulaties met dezelfde code. De spreiding is het punt.")}
+{figuur(platen.get("winst_per_hand"),
+        "De vijf kaarten waarmee hij het meest verloor en de vijf waarmee hij het "
+        "meest verdiende, gemiddeld per keer dat hij die hand kreeg. Het ruitje is "
+        "wat de klas met dezelfde kaarten haalde.")}
+{figuur(platen.get("acties"),
+        "Gemiddelde winst per hand, per actie, naast dezelfde actie bij de rest "
+        "van de klas.")}
+{figuur(platen.get("stackverloop"),
+        "Twintig simulaties met dezelfde code. De spreiding is het punt; de "
+        "gestreepte lijn is het gemiddelde van de klas op hetzelfde moment.")}
 
 <h2>Vragen om te stellen</h2>
 <p class="sub">Geen quizvragen. Het goede antwoord is een redenering over zijn eigen
@@ -798,6 +959,8 @@ def main():
         platen["acties"] = plaat_acties_tegenover_klas(eigen, rest)
         platen["handsoorten"] = plaat_handsoorten(prof, handsoortbeeld)
         platen["per_ronde"] = plaat_per_ronde(beslissingen, trechter)
+        platen["winst_per_hand"] = plaat_winst_per_hand(eigen, rest)
+        platen["agressie_per_hand"] = plaat_agressie_per_hand(eigen, rest)
 
         vragen = maak_vragen(prof, mediaan, handsoortbeeld, trechter, klaswinst,
                              klas_odds, beslissingen, plekken[student], len(stand),
