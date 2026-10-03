@@ -273,8 +273,12 @@ def main():
     # Elke ronde begint schoon op 1000, net als op de server.
     startstacks = None
 
-    print(f"\n{len(bots)} bots aan tafel (incl. {len(referentie)} referentie- en "
-          f"{len(TESTBOTS)} testbots)")
+    # Tellen wat er echt bij zit, niet hoeveel er bestaan: met
+    # --zonder-referentiebots wordt er niets toegevoegd, en dan moet de melding
+    # dat ook zeggen.
+    n_extra = len(bots) - len(namen_deelnemers)
+    print(f"\n{len(bots)} bots aan tafel ({len(namen_deelnemers)} studenten"
+          + (f" + {n_extra} referentie- en testbots)" if n_extra else ", verder niemand)"))
     print(f"{n_sim} simulaties x {args.handen} handen, seed {args.week * 10 + args.ronde}")
     print("Dit duurt even. Reken op tien tot vijftien minuten bij een volle klas.\n")
 
