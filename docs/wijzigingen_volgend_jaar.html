@@ -299,6 +299,25 @@
       Op een bonus van 1,0 is dat acceptabel. Op 10% van een cijfer geef je een tiende van het
       cijfer voor de seed. Wil de pokerlijn ooit meetellen, dan kan dat niet op toernooiplek.
     </p>
+    <div class="bewijs">
+      <span class="titel">Bevestigd met de echte klas, week 5</span>
+      <p>Het verschil tussen plek 5 en plek 6 in de eindronde was <b>16 chips</b>. De
+      onzekerheid op plek 5 alleen al is <b>&plusmn;460</b> — dertig keer zo groot als het
+      verschil dat erover beslist.</p>
+      <p>Rangschik je per simulatie, dan haalt de nummer 6 de top vijf in <b>7 van de 20</b>
+      simulaties — vaker dan de huidige nummers 3 en 5.</p>
+      <p>En over de twee gescoorde toernooien samen: <b>geen enkele student stond in de top 5
+      van allebei</b>. De vier toppers van woensdag die ook de eindronde speelden eindigden
+      daar op plek 6, 11, 12 en 13.</p>
+    </div>
+    <p>
+      Dat laatste is deels dat ze hun bot hebben veranderd. Maar niet alles, en het bevestigt de
+      simulatiemeting met echte inzendingen: de bonusgrens is grotendeels een muntje. Jerome
+      heeft daar in oktober 2026 bewust ja tegen gezegd — <em>&ldquo;dat ook een goede bot kans
+      maakt is prima, niet altijd de beste wint, dat is ook poker en het is dus voor een
+      bonus&rdquo;</em> — en met die motivering hoort het ook zo in de studiehandleiding te staan,
+      in plaats van dat studenten het zelf moeten concluderen.
+    </p>
   </div>
 
   <div class="item">
@@ -322,7 +341,7 @@
 <section>
   <div class="sectiekop">
     <h2>Lesmateriaal</h2>
-    <span class="telling">9 punten</span>
+    <span class="telling">11 punten</span>
   </div>
 
   <div class="item">
@@ -514,6 +533,60 @@
 
   <div class="item">
     <div class="item-kop">
+      <h3>De peer review is dit jaar niet gebeurd — en de hub kan het al</h3>
+      <i class="merk m-gemeten">gemeten</i>
+    </div>
+    <p class="meta"><span><code>Week1_Werkcollege2.ipynb</code> Deel 5 · <code>Week3_Werkcollege5.ipynb</code> Deel 4</span><span><code>streamlit_hub/app.py</code> regel 160</span><span>omruil, geen bouwklus</span></p>
+    <p>
+      Het beoordelen van elkaars grafieken is er dit blok bij ingeschoten. De reden is te zien in
+      de notebooks: daar heet het &ldquo;Peer review via de API&rdquo;, en dat is precies wat het is.
+      De student haalt de galerij op met <code>requests</code>, typt met de hand een dict in elkaar
+      met zes velden, en POST die. Om de grafiek te kúnnen zien moet hij in WC5 eerst
+      <code>base64</code> importeren en de string decoderen. Je laat iemand naar een plaatje kijken
+      door het te decoderen.
+    </p>
+    <p>
+      <b>De Streamlit-hub doet dit al goed, en draait al.</b> De peer-review-tab rendert de grafiek
+      zoals hij bedoeld is (<code>st.image</code> voor matplotlib, <code>st.plotly_chart</code> voor
+      plotly, een iframe voor folium), geeft drie schuifjes 1–5, eist bij elk criterium een
+      toelichting en weigert te versturen als er één leeg is. Anonimiseren, zelf-review blokkeren
+      en dubbele reviews weren zitten er al in. De galerij vult zichzelf: elke goedgekeurde
+      inzending zet de grafiek er automatisch in.
+    </p>
+    <p>
+      <b>Wat er moet is dus een omruil, geen bouwklus:</b> Deel 5 van WC2 en Deel 4 van WC5 eruit,
+      en op hun plek één alinea die naar de hub wijst. De API hoeft niet te veranderen — de hub ís
+      de voorkant van diezelfde endpoints.
+    </p>
+  </div>
+
+  <div class="item">
+    <div class="item-kop">
+      <h3>Een review komt nooit terug bij degene die hem krijgt</h3>
+      <i class="merk m-fout">fout</i>
+    </div>
+    <p class="meta"><span><code>api/main.py</code> — vier plekken die <code>laad_reviews</code> aanroepen</span><span>geen enkele geeft ze terug aan de auteur</span></p>
+    <p>
+      Dit is groter dan de vraag waar het beoordelen gebeurt. Alle plekken waar reviews worden
+      uitgelezen zijn nagelopen: drie keer om te tellen hoevéél een student er heeft <em>gegeven</em>
+      (dat telt mee voor voldoende — <code>MIN_REVIEWS_VOOR_VOLDAAN = 3</code>), en één keer voor
+      het docentoverzicht. Er is geen endpoint en geen hubweergave waarmee een student ziet wat er
+      over zijn eigen grafiek is gezegd.
+    </p>
+    <p>
+      Zo is peer review een aanwezigheidsvinkje. Je laat ze drie keer een score met toelichting
+      schrijven, en dat verdwijnt in de database. Degene voor wie het bedoeld was leest het nooit.
+    </p>
+    <p>
+      <b>Als er volgend jaar één ding verandert, dan dit</b> — eerder dan de verhuizing naar de hub.
+      Het werk is klein, want de data ligt er al: één route die de reviews over je eigen
+      <code>anon_id</code> teruggeeft, en een tab in de hub die ze toont. Samen met de omruil
+      hierboven is het één middag.
+    </p>
+  </div>
+
+  <div class="item">
+    <div class="item-kop">
       <h3>Geen enkel notebook noemt de referentiebots</h3>
       <i class="merk m-fout">fout</i>
     </div>
@@ -619,24 +692,6 @@
 
   <div class="item">
     <div class="item-kop">
-      <h3>Het hand-log bewaart maar één actie per hand</h3>
-      <i class="merk m-fout">fout</i>
-    </div>
-    <p class="meta"><span><code>api/poker_adapter.py</code></span><span>raakt WC8 en de botkaarten</span></p>
-    <p>
-      Per hand komt er één regel in het log, met de <b>eerste</b> actie en zonder straat. “Hoe
-      vaak foldde hij op de river” is er dus niet uit te halen — en dat is precies een vraag die
-      je bij een overhoring wil stellen.
-    </p>
-    <p>
-      De straatinformatie bestaat wel: <code>_acties_deze_hand</code> krijgt sinds deze week een
-      veld <code>ronde</code>, maar dat gaat naar de tegenstanders en niet naar het log. Elke
-      beslissing wegschrijven maakt het log flink dikker; dat is de afweging.
-    </p>
-  </div>
-
-  <div class="item">
-    <div class="item-kop">
       <h3>Een setup-cel bovenaan elk notebook</h3>
       <i class="merk m-voorstel">voorstel</i>
     </div>
@@ -678,27 +733,59 @@
 
   <div class="item">
     <div class="item-kop">
-      <h3>De bovengrens van de referentiebots is onbereikbaar</h3>
+      <h3>De referentiebots zijn geen meetlat maar een loterij</h3>
       <i class="merk m-gemeten">gemeten</i>
     </div>
-    <p class="meta"><span>Bluffer en Inzetgrootte</span><span>1e en 2e van 49</span></p>
+    <p class="meta"><span>drie echte toernooien, week 5, 27 studenten</span><span>20 simulaties per toernooi</span></p>
+    <p>
+      In september stond hier dat de twee sterkste referentiebots onbereikbaar waren, gemeten tegen
+      simulatiestudenten, met de opdracht het na te kijken zodra er echte inzendingen zouden zijn.
+      Die zijn er nu, en het beeld klopt niet.
+    </p>
     <div class="tabelwrap">
       <table>
-        <thead><tr><th>Bot</th><th>Niveau</th><th>Gemiddeld</th><th>Plek van 49</th></tr></thead>
+        <thead><tr><th>Bot</th><th>Niveau</th><th>ronde 1</th><th>oefenronde</th><th>eindronde</th><th>plek van 27</th></tr></thead>
         <tbody>
-          <tr><td>Tafellezer</td><td class="getal">1</td><td class="getal">733</td><td class="getal">44e</td></tr>
-          <tr><td>PotOdds</td><td class="getal">1</td><td class="getal">877</td><td class="getal">37e</td></tr>
-          <tr><td>Allrounder</td><td class="getal">2</td><td class="getal">1090</td><td class="getal">14e</td></tr>
-          <tr><td>Bluffer</td><td class="getal">3</td><td class="getal">1585</td><td class="getal">2e</td></tr>
-          <tr><td>Inzetgrootte</td><td class="getal">3</td><td class="getal">1616</td><td class="getal">1e</td></tr>
+          <tr><td>Tafellezer</td><td class="getal">1</td><td class="getal">822</td><td class="getal">665</td><td class="getal">781</td><td class="getal">23e</td></tr>
+          <tr><td>PotOdds</td><td class="getal">1</td><td class="getal">420</td><td class="getal">378</td><td class="getal">697</td><td class="getal">25e</td></tr>
+          <tr><td>Allrounder</td><td class="getal">2</td><td class="getal">656</td><td class="getal">811</td><td class="getal">978</td><td class="getal">17e</td></tr>
+          <tr><td>Bluffer</td><td class="getal">3</td><td class="getal">1047</td><td class="getal">840</td><td class="getal">734</td><td class="getal">24e</td></tr>
+          <tr><td>Inzetgrootte</td><td class="getal">3</td><td class="getal">1095</td><td class="getal">1128</td><td class="getal">1871</td><td class="getal">1e</td></tr>
+          <tr><td><i>mediaan student</i></td><td class="getal">—</td><td class="getal">1073</td><td class="getal">997</td><td class="getal">1026</td><td class="getal">—</td></tr>
         </tbody>
       </table>
     </div>
     <p>
-      Geen enkele simulatiestudent kwam boven de twee sterkste uit; de beste testbot haalde 1285.
-      Hun beschrijving zegt nu dat verslaan een stretchdoel is. Kijk volgend jaar met echte
-      inzendingen of dat klopt — de testbots waren simpele drempelbots, dus studenten met 4 tot 8
-      uur werk komen mogelijk hoger.
+      Vier van de vijf eindigen onder de mediaanstudent, en drie ervan in de onderste vijf. Het
+      &ldquo;stretchdoel&rdquo; in hun beschrijving klopt dus niet: wie een van deze bots inhaalt,
+      haalt vooral de zwakste helft van de klas in.
+    </p>
+    <p>
+      En Inzetgrootte is geen meetlat maar een loterij: 1095, 1128, 1871 over drie toernooien met
+      dezelfde code. Dat hij de eindronde won is de seed, niet het idee.
+    </p>
+    <p>
+      <b>Wat er moet:</b> de niveaubeschrijvingen kloppen niet meer en moeten op echte cijfers
+      opnieuw worden gezet. En of ze überhaupt in het gescoorde toernooi horen is een aparte vraag
+      — zie het punt hieronder.
+    </p>
+  </div>
+
+  <div class="item">
+    <div class="item-kop">
+      <h3>Referentiebots en testbot horen niet in een toernooi waar punten aan hangen</h3>
+      <i class="merk m-gemeten">gemeten</i>
+    </div>
+    <p class="meta"><span>besloten 3 oktober 2026</span><span><code>--zonder-referentiebots</code></span></p>
+    <p>
+      Ze bezetten zes van de 33 stoelen en verplaatsen chips. Testbot CalltAlles eindigde op
+      <b>302 van de 1000</b>: hij deelt dus ruim zevenhonderd chips uit aan wie toevallig naast hem
+      zit. Dat is geen meetlat meer, dat is een subsidie die van je tafelindeling afhangt.
+    </p>
+    <p>
+      De eindronde van week 5 is daarom opnieuw gedraaid met alleen de klas. Houd dat volgend jaar
+      zo voor elk toernooi waar bonuspunten aan hangen, en laat ze wél meespelen in de
+      oefenrondes — daar zijn ze nuttig, want daar kost een vertekening niets.
     </p>
   </div>
   <div class="item">
@@ -788,14 +875,20 @@
     <li><b>Werkcollege 9 keek naar het verkeerde toernooi.</b> <code>/locaties</code> kende de ronde niet en gaf altijd de woensdagstand.</li>
     <li><b>Het raise-bedrag in WC4 was fout</b> (small blind in plaats van big blind), inclusief de bijbehorende controlevraag.</li>
     <li><b>Pot odds zonder inzet crashten.</b> <code>bereken_pot_odds</code> deelde door <code>pot + inzet</code>, en de testset van WC4 Deel 7 begint met allebei nul — eerste aan zet preflop. Wie TODO 1 netjes volgde, kreeg een <code>ZeroDivisionError</code> op de eerste regel van zijn eigen testset. Nu: zonder inzet is er geen prijs, dus 0% nodig.</li>
-    <li><b>Doorspelen met je chips gold in elke week.</b> Vanaf ronde 2 kreeg iedereen de eindstand van de ronde ervoor als startstack. Dat hoort bij de bonusweek; in week 3 maakte het een tweede ronde onvergelijkbaar met de eerste. Nu staat het in <code>WEKEN_MET_DOORSPELEN</code>.</li>
+    <li><b>Het hand-log bewaarde maar één actie per hand</b> — de eerste, zonder straat. &ldquo;Hoe vaak foldde hij op de river&rdquo; was er niet uit te halen. Er is nu een tweede log met één regel per <em>beslissing</em>, met <code>ronde</code>, <code>bord</code>, <code>pot</code> en <code>inzet_om_te_callen</code>. Hij staat per bot opgeslagen en zit bewust níét in <code>/toernooi</code>: bij een volle klas is het ruim honderdduizend regels. Studenten halen hun eigen regels op via <code>/toernooi/{week}/uitgebreid</code>.</li>
+    <li><b>De validator keurde correcte bots af.</b> De testgevallen gaven tegenstander-acties zonder veld <code>ronde</code>, terwijl de engine dat altijd meestuurt. Een bot die netjes filterde op <code>a["ronde"] == ronde</code> — precies wat Werkcollege 7 leert — kreeg een <code>KeyError</code> en werd afgewezen; een bot zonder dat filter kwam er wél door. Dus exact de verkeerde kant op. Opgelost, met een regressietest.</li>
+    <li><b>De referentiebots in <code>api/</code> liepen achter op <code>mijn_bots/</code>.</b> Render deployt met <code>rootDir: api</code>, dus op de server draaide een versie zonder de guard tegen <code>bluf_kans=None</code>. Het gedrag bleek identiek, maar een kopie die uit elkaar loopt werkt lokaal en niet in productie. Er is nu een test die het bewaakt.</li>
+    <li><b>Een lokale toernooirun overschreef de vorige.</b> De bestandsnaam had alleen het weeknummer, dus de eindronde at de oefenronde op — en dat merk je pas als je de vorige wilt terugzien. Het rondenummer staat nu in de naam.</li>
+    <li><b>&ldquo;De laatst gedraaide ronde&rdquo; was de hoogste, niet de nieuwste.</b> Een oefenronde krijgt bewust een hoog nummer om buiten de gescoorde rondes te vallen; draai je daarna de eindronde (ronde 2), dan kreeg iedereen die <code>/toernooi</code> zonder rondenummer opvroeg de oefenronde te zien. Een uitslag draagt nu <code>gedraaid_op</code>.</li>
+    <li><b>Doorspelen met je chips gold in elke week.</b> Vanaf ronde 2 kreeg iedereen de eindstand van de ronde ervoor als startstack. Dat maakte een tweede ronde onvergelijkbaar met de eerste. Eerst beperkt tot de bonusweek, later helemaal eruit: elke ronde begint nu schoon op 1000, ook in week 5.</li>
   </ul>
 </div>
 
 <footer>
-  Opgesteld 15 september 2026, bijgewerkt 16 september, tijdens blok 1 van 2026–2027. De gemeten cijfers komen uit
-  <code>scripts/meet_toernooi_variantie.py</code>, <code>scripts/test_referentiebots.py</code> en
-  de curriculum-audit. Punten zonder merkteken “gemeten” zijn waarnemingen, geen metingen.
+  Opgesteld 15 september 2026, bijgewerkt 16 september en 3 oktober, tijdens blok 1 van 2026–2027.
+  De oktober-ronde voegt toe wat week 5 met echte inzendingen liet zien. De gemeten cijfers komen uit
+  <code>scripts/meet_toernooi_variantie.py</code>, <code>scripts/test_referentiebots.py</code>,
+  de drie gedraaide toernooien van week 5 en de curriculum-audit. Punten zonder merkteken “gemeten” zijn waarnemingen, geen metingen.
 </footer>
 
 </div>
