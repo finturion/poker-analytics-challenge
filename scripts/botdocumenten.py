@@ -107,12 +107,32 @@ def plaat_stackverloop(eigen_log):
         y = [p[1] for p in punten]
         eind[sim] = y[-1]
         ax.plot(x, y, color=GEDEMPT, linewidth=1.0, alpha=0.35, zorder=2)
-    for sim, kleur, label in ((max(eind, key=eind.get), AQUA, "beste simulatie"),
-                              (min(eind, key=eind.get), BLAUW, "slechtste simulatie")):
+    # Welke twee licht je uit? Normaal de beste en de slechtste eindstand. Maar een
+    # bot die in elke simulatie op 0 eindigt heeft die niet: dan vallen de twee
+    # lijnen samen, staat er twee keer "0 chips" in de legenda, en ligt het echte
+    # verhaal -- een simulatie die eerst naar 3300 liep -- in het grijs.
+    piek = {sim: max(s for _, s in punten) for sim, punten in per_sim.items()}
+    if len(set(eind.values())) > 1:
+        uitgelicht = ((max(eind, key=eind.get), AQUA, "beste simulatie",
+                       lambda s: f"{eind[s]} chips"),
+                      (min(eind, key=eind.get), BLAUW, "slechtste simulatie",
+                       lambda s: f"{eind[s]} chips"))
+    else:
+        gelijk = next(iter(eind.values()))
+        uitgelicht = ((max(piek, key=piek.get), AQUA, "hoogste piek",
+                       lambda s: f"tot {piek[s]} chips"),
+                      (min(piek, key=piek.get), BLAUW, "laagste piek",
+                       lambda s: f"tot {piek[s]} chips"))
+        ax.text(0.985, 0.955,
+                f"elke simulatie eindigde op {gelijk}",
+                transform=ax.transAxes, ha="right", va="top",
+                color=GEDEMPT, fontsize=10, style="italic")
+
+    for sim, kleur, label, waarde in uitgelicht:
         punten = sorted(per_sim[sim])
         ax.plot([p[0] for p in punten], [p[1] for p in punten],
                 color=kleur, linewidth=2.5, zorder=4,
-                label=f"{label} ({eind[sim]} chips)")
+                label=f"{label} ({waarde(sim)})")
     ax.axhline(1000, color=GEDEMPT, linewidth=1, linestyle=(0, (4, 3)), zorder=1)
     ax.set_xlabel("hand")
     ax.set_ylabel("stack (chips)")
