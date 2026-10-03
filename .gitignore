@@ -47,6 +47,10 @@ scripts/toernooi_test.json
 # Echte toernooi-uitslagen bevatten studentnummers en horen niet in git.
 scripts/uitslag_week*.json
 scripts/uitgebreid_week*.json
+scripts/bonus_week*.json
+# De pagina voor Brightspace is de uitslag mét namen; het script dat hem maakt
+# hoort wel in git, de uitkomst niet.
+scripts/uitslag_week*.html
 
 # Ingeleverde studentcode hoort niet in git.
 scripts/bots_week*/
