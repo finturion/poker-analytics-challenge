@@ -181,7 +181,8 @@ WEKEN = [
             ("Week5_Werkcollege7.ipynb", "Werkcollege 7 — Bot v3: strategie, bluffen en tegenstanders",
              "Kort werkcollege, veel eigen werk: reken op 4 tot 8 uur."),
             ("Week5_Werkcollege8.ipynb", "Werkcollege 8 — Resultaten, verfijnen en de aftrap van de laatste case",
-             None),
+             "Gebruikt <code>mijn_bot_week5.py</code> — die schrijf je in Werkcollege 7 — "
+             "en je oude <code>mijn_bot_week3.py</code> om de twee te vergelijken."),
         ],
         "hulpbestanden": [
             ("_hulpfuncties.py", "Hulpfuncties",
@@ -189,9 +190,17 @@ WEKEN = [
              "notebook in dezelfde map als je werk van week 1 en 3, of kopieer dit bestand "
              "erheen. Je eigen <code>mijn_bot_week3.py</code> heb je er ook bij nodig: "
              "daar begin je Bot v3 mee."),
+            ("_hulpfuncties_week3.py", "Hulpfuncties week 3 (bijgewerkt)",
+             "Vervang de versie die je al had: deze is bijgewerkt. In dezelfde map "
+             "als je notebook."),
+            ("_hulpfuncties_week5.py", "Hulpfuncties week 5",
+             "Nieuw deze week, ook in dezelfde map. Werkcollege 8 gebruikt hem om je "
+             "bot tegen die van een klasgenoot te laten spelen."),
         ],
         "hoorcollege_volgt": True,
-        "powerpoints": [],
+        "powerpoints": [
+            ("Pokerbot_Upgrade_Week5.pptx", "Slides bij Werkcollege 7"),
+        ],
         "deadlines": [
             ("woensdag 09:00", "Bot v3 — <strong>dit toernooi telt mee</strong>: 1e 0,5 · 2e 0,4 · 3e 0,3 · 4e 0,2 · 5e 0,1"),
             ("donderdag 09:00", "oefenronde. Telt niet mee, maar laat zien wat je aanpassing doet"),
@@ -219,7 +228,17 @@ WEKEN = [
              "het notebook haalt de grenzen normaal zelf via de API op, en dat ophalen is "
              "onderdeel van de opdracht."),
         ],
-        "hoorcollege_volgt": True,
+        "hoorcolleges": [
+            ("06_Kaarten en Dashboards.pptx",
+             "Hoorcollege 6 — Kaarten en dashboards",
+             "Wat een kaart met je lezer doet, wanneer je er juist géén moet maken, "
+             "en hoe je code eruitziet die een ander kan lezen."),
+            ("06_demo_folium.ipynb",
+             "Demo — wat kun je met Folium?",
+             "Tien blokken onder elkaar: marker, cirkelgrootte, kleur, tooltip en popup, "
+             "clusteren, warmtekaart, lagen aan en uit, en een andere ondergrond. "
+             "Draait op voorbeelddata, dus je kunt hem zonder token openen."),
+        ],
         "powerpoints": [],
         "deadlines": [],
         "let_op": "Dit notebook heeft <code>geopandas</code> nodig, en dat is de enige "
@@ -227,7 +246,11 @@ WEKEN = [
                   "vóór het werkcollege: <code>pip install geopandas folium</code>. Lukt het "
                   "niet, meld het dan vooraf — tijdens het werkcollege een installatie "
                   "uitzoeken kost je de hele les. De kaart gebruikt de uitslag van het "
-                  "toernooi van vrijdag in week 5, dus de eindstand van de hele reeks.",
+                  "toernooi van vrijdag in week 5, dus de eindstand van de hele reeks. "
+                  "En let op je ondergrond: <code>tiles=\"cartodbpositron\"</code> werkt "
+                  "niet meer, CARTO vraagt daar sinds kort een API-sleutel voor. Je krijgt "
+                  "dan geen foutmelding maar een kaart met \"API KEY REQUIRED\" erover. "
+                  "Het notebook laat zien welke ondergronden het wél zonder sleutel doen.",
     },
 ]
 
@@ -279,7 +302,33 @@ STIJL = """\t<style>
 \tcode{{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
 \t\tfont-size:.92em;background:#F2F2F2;padding:.08em .32em;border-radius:3px}}
 \t.lead{{color:#565A5C}}
+
+\t/* Deadlines: het belangrijkste op de pagina. Geen opsomming met een vette
+\t   aanloop, maar een rij per deadline met de dag los van wat er moet. */
+\t.deadlines{{list-style:none;padding:0;margin:.8rem 0 0;border-top:1px solid #D9D9D9}}
+\t.deadlines li{{margin:0;padding:.7rem 0;border-bottom:1px solid #D9D9D9;
+\t\tdisplay:grid;grid-template-columns:11rem 1fr;gap:.2rem 1rem;align-items:baseline}}
+\t.deadlines .wanneer{{font-weight:700;font-variant-numeric:tabular-nums}}
+\t.telt-mee{{display:inline-block;background:#25167A;color:#fff;
+\t\tfont-size:.72em;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+\t\tpadding:.12em .5em;border-radius:3px;margin-left:.4rem;white-space:nowrap}}
+\t@media (max-width:560px){{.deadlines li{{grid-template-columns:1fr}}}}
+
+\t/* Een lange bestandsnaam mag de pagina op een telefoon niet breed maken. */
+\tcode{{overflow-wrap:anywhere}}
+\ta:focus-visible{{outline:3px solid #25167A;outline-offset:2px;text-decoration:none}}
+\t.nieuwtab{{position:absolute;width:1px;height:1px;overflow:hidden;
+\t\tclip:rect(0 0 0 0);white-space:nowrap}}
+
 \t@media (min-width:768px){{body{{font-size:19px}}h1{{font-size:40px}}h2{{font-size:28px}}}}
+\t@media print{{
+\t\tbody{{font-size:11pt}}
+\t\t.streep{{background:#000}}
+\t\ta{{color:#000}}
+\t\ta[href^="http"]::after{{content:" (" attr(href) ")";font-weight:400;font-size:.85em}}
+\t\th2{{color:#000;page-break-after:avoid}}
+\t\tli,p{{page-break-inside:avoid}}
+\t}}
 \t</style>
 """
 
@@ -290,11 +339,11 @@ KOP = """<!DOCTYPE html>
 \t<meta name="description" content="{omschrijving}">
 \t<meta name="viewport" content="width=device-width, initial-scale=1.0">
 """ + STIJL + """</head><body>
-<div class="blad">
+<main class="blad">
 <div class="streep"></div>
 """
 
-VOET = """</div>
+VOET = """</main>
 </body></html>
 """
 
@@ -314,6 +363,10 @@ BUITEN_DEZE_REPO = {
     "02_Data Science Proces.pptx",
     "03_Exploring Manipulating Data.pptx",
     "02_Dashboard opdracht omschrijving.pptx",
+    # De hoorcollege-map staat in Drive/HvA/IDS/2026-2027_SEM1/Hoorcolleges/,
+    # niet in deze repo.
+    "06_Kaarten en Dashboards.pptx",
+    "06_demo_folium.ipynb",
 }
 
 ANDERE_NAAM_OP_BRIGHTSPACE = {
@@ -347,7 +400,8 @@ def bestandslink(pad: str, label: str) -> str:
     """
     from urllib.parse import quote
     return (f'<a rel="noopener" href="{BASISPAD}/{quote(pad, safe="%/")}" target="_blank">'
-            f'{html.escape(label)}</a>')
+            f'{html.escape(label)}'
+            f'<span class="nieuwtab"> (opent in een nieuw tabblad)</span></a>')
 
 
 def bestandenblok(items) -> str:
@@ -400,9 +454,20 @@ def weekpagina(w: dict) -> str:
                  f'<strong>Content &gt; Week {w["week"]}</strong>.</p>')
 
     if w["deadlines"]:
-        regels = "\n".join(f'<li><strong>{wanneer}</strong> — {wat}</li>'
-                           for wanneer, wat in w["deadlines"])
-        delen.append(f'<h2>Deadlines</h2>\n<ul>\n{regels}\n</ul>')
+        # De dag in een eigen kolom, zodat je de week kunt scannen zonder te
+        # lezen. "telt mee" wordt een label in plaats van vetgedrukte tekst
+        # middenin een zin -- dat is het enige onderscheid dat er echt toe doet.
+        regels = []
+        for wanneer, wat in w["deadlines"]:
+            telt = "<strong>dit toernooi telt mee</strong>: " in wat or \
+                   "<strong>het tweede toernooi dat meetelt</strong>" in wat
+            merk = '<span class="telt-mee">telt mee</span>' if telt else ""
+            schoon = (wat.replace("<strong>dit toernooi telt mee</strong>: ", "")
+                        .replace("<strong>het tweede toernooi dat meetelt</strong>, ", ""))
+            regels.append(f'<li><span class="wanneer">{wanneer}{merk}</span>'
+                          f'<span class="wat">{schoon}</span></li>')
+        delen.append('<h2>Deadlines</h2>\n<ul class="deadlines">\n'
+                     + "\n".join(regels) + '\n</ul>')
     else:
         delen.append('<h2>Deadlines</h2>\n'
                      '<p>Deze week lever je geen nieuwe botversie in.</p>')
@@ -446,13 +511,23 @@ def weekpagina(w: dict) -> str:
             'inzending. Je studentnummer en token staan bovenaan je notebook.</p>'
         )
 
-    # Ook deze als tekst. Het is een externe link en die is niet verdacht, maar
-    # één uitzondering maakt de regel "deze pagina's hebben geen links" onwaar,
-    # en dan gaat iemand hem later toch weer oprekken.
-    delen.append(
-        f'<h2>API</h2>\n<p>Wie de resultaten zelf wil ophalen: de documentatie '
-        f'staat op <code>{API}/docs</code></p>'
-    )
+    # Als tekst zolang de pagina geen links heeft, anders als link. Het argument
+    # om hem als tekst te houden was dat één uitzondering de regel "deze pagina's
+    # hebben geen links" onwaar maakt -- maar met MET_LINKS aan is die regel toch
+    # al onwaar, en dan is een niet-klikbare URL alleen maar onhandig. Het is
+    # bovendien een externe link, dus niet het soort dat Brightspace liet vastlopen.
+    if MET_LINKS:
+        adres = f'{API}/docs'
+        delen.append(
+            f'<h2>API</h2>\n<p>Wie de resultaten zelf wil ophalen: de documentatie '
+            f'staat op <a rel="noopener" href="{adres}" target="_blank">{adres}'
+            f'<span class="nieuwtab"> (opent in een nieuw tabblad)</span></a></p>'
+        )
+    else:
+        delen.append(
+            f'<h2>API</h2>\n<p>Wie de resultaten zelf wil ophalen: de documentatie '
+            f'staat op <code>{API}/docs</code></p>'
+        )
 
     delen.append(VOET)
     return "\n".join(delen)

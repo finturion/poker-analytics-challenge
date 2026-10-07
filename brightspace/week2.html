@@ -21,10 +21,36 @@
 	code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
 		font-size:.92em;background:#F2F2F2;padding:.08em .32em;border-radius:3px}
 	.lead{color:#565A5C}
+
+	/* Deadlines: het belangrijkste op de pagina. Geen opsomming met een vette
+	   aanloop, maar een rij per deadline met de dag los van wat er moet. */
+	.deadlines{list-style:none;padding:0;margin:.8rem 0 0;border-top:1px solid #D9D9D9}
+	.deadlines li{margin:0;padding:.7rem 0;border-bottom:1px solid #D9D9D9;
+		display:grid;grid-template-columns:11rem 1fr;gap:.2rem 1rem;align-items:baseline}
+	.deadlines .wanneer{font-weight:700;font-variant-numeric:tabular-nums}
+	.telt-mee{display:inline-block;background:#25167A;color:#fff;
+		font-size:.72em;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+		padding:.12em .5em;border-radius:3px;margin-left:.4rem;white-space:nowrap}
+	@media (max-width:560px){.deadlines li{grid-template-columns:1fr}}
+
+	/* Een lange bestandsnaam mag de pagina op een telefoon niet breed maken. */
+	code{overflow-wrap:anywhere}
+	a:focus-visible{outline:3px solid #25167A;outline-offset:2px;text-decoration:none}
+	.nieuwtab{position:absolute;width:1px;height:1px;overflow:hidden;
+		clip:rect(0 0 0 0);white-space:nowrap}
+
 	@media (min-width:768px){body{font-size:19px}h1{font-size:40px}h2{font-size:28px}}
+	@media print{
+		body{font-size:11pt}
+		.streep{background:#000}
+		a{color:#000}
+		a[href^="http"]::after{content:" (" attr(href) ")";font-weight:400;font-size:.85em}
+		h2{color:#000;page-break-after:avoid}
+		li,p{page-break-inside:avoid}
+	}
 	</style>
 </head><body>
-<div class="blad">
+<main class="blad">
 <div class="streep"></div>
 
 <h1>Week 2 — Visual Maandag: ruis, focal points en ordening</h1>
@@ -35,15 +61,15 @@
 <p>Deze week lever je geen nieuwe botversie in.</p>
 <h2>Werkcolleges</h2>
 <ul>
-<li><a rel="noopener" href="/content/enforced/764257-FT-6100DASC23-T--ALG-2627/Week2_Werkcollege3.ipynb" target="_blank">Werkcollege 3 — Visual Maandag</a><br><code>Week2_Werkcollege3.ipynb</code></li>
+<li><a rel="noopener" href="/content/enforced/764257-FT-6100DASC23-T--ALG-2627/Week2_Werkcollege3.ipynb" target="_blank">Werkcollege 3 — Visual Maandag<span class="nieuwtab"> (opent in een nieuw tabblad)</span></a><br><code>Week2_Werkcollege3.ipynb</code></li>
 </ul>
 <h2>Hoorcollege</h2>
 <ul>
-<li><a rel="noopener" href="/content/enforced/764257-FT-6100DASC23-T--ALG-2627/02_Data%20Science%20Proces.pptx" target="_blank">Hoorcollege 2 — Het Data Science-proces</a><br><code>02_Data Science Proces.pptx</code></li>
+<li><a rel="noopener" href="/content/enforced/764257-FT-6100DASC23-T--ALG-2627/02_Data%20Science%20Proces.pptx" target="_blank">Hoorcollege 2 — Het Data Science-proces<span class="nieuwtab"> (opent in een nieuw tabblad)</span></a><br><code>02_Data Science Proces.pptx</code></li>
 </ul>
 <h2>Hulpbestanden</h2>
 <ul>
-<li><a rel="noopener" href="/content/enforced/764257-FT-6100DASC23-T--ALG-2627/pokerdata_voorbeeld.csv" target="_blank">Voorbeelddata bij Werkcollege 3</a><br><code>pokerdata_voorbeeld.csv</code><br>In dezelfde map als het notebook.</li>
+<li><a rel="noopener" href="/content/enforced/764257-FT-6100DASC23-T--ALG-2627/pokerdata_voorbeeld.csv" target="_blank">Voorbeelddata bij Werkcollege 3<span class="nieuwtab"> (opent in een nieuw tabblad)</span></a><br><code>pokerdata_voorbeeld.csv</code><br>In dezelfde map als het notebook.</li>
 </ul>
 <h2>DataCamp deze week</h2>
 <ul>
@@ -51,6 +77,6 @@
 <li>VA 2 — Introduction to Data Visualization with Seaborn, vóór 11 september</li>
 </ul>
 <h2>API</h2>
-<p>Wie de resultaten zelf wil ophalen: de documentatie staat op <code>https://poker-analytics-api.onrender.com/docs</code></p>
-</div>
+<p>Wie de resultaten zelf wil ophalen: de documentatie staat op <a rel="noopener" href="https://poker-analytics-api.onrender.com/docs" target="_blank">https://poker-analytics-api.onrender.com/docs<span class="nieuwtab"> (opent in een nieuw tabblad)</span></a></p>
+</main>
 </body></html>
