@@ -778,7 +778,12 @@ def locaties(
 
 @app.get("/export/{week}")
 def export(week: int, ok: bool = Depends(db.verifieer_docent_token)):
-    """Docent-only: overzicht per student, zonder dat er handmatig nagekeken hoeft te worden."""
+    """
+    Docent-only: overzicht per student, zonder dat er handmatig nagekeken hoeft te worden.
+
+    Inclusief de opgegeven locatie, zodat je met alleen een docent-token een kaart
+    kunt maken. /locaties/{week} geeft hetzelfde maar vraagt een studenttoken.
+    """
     week_key = str(week)
     submissions = db.laad_submissions().get(week_key, {})
     reviews = db.laad_reviews().get(week_key, {})
@@ -800,6 +805,11 @@ def export(week: int, ok: bool = Depends(db.verifieer_docent_token)):
                 "reviews_gegeven": reviews_gegeven,
                 "voldaan": submission["geldig"] and reviews_gegeven >= MIN_REVIEWS_VOOR_VOLDAAN,
                 "laatst_ingeleverd_op": submission["ingeleverd_op"],
+                # De locatie zat alleen in /locaties, en die route vraagt een
+                # studenttoken. Een docent die een kaart wil maken had dus niets:
+                # met zijn eigen token kreeg hij daar een 401. Hier staat hij nu
+                # bij, zodat één docent-token genoeg is.
+                "locatie": submission.get("locatie"),
             }
         )
     return overzicht
