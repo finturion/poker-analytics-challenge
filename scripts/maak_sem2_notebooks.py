@@ -34,7 +34,10 @@ import sys
 HIER = os.path.dirname(os.path.abspath(__file__))
 WORTEL = os.path.dirname(HIER)
 BRON = os.path.join(WORTEL, "notebooks")
-DOEL = os.path.join(WORTEL, "notebooks_sem2")
+# De uitvoer hoort bij het semester, niet bij de repo: de notebooks staan in
+# HvA_voorbereidingen/IDS_2026_2027_SEM2/Werkcolleges/. De generator en de
+# bronnotebooks blijven hier, want dat is code.
+DOEL = '/Users/jerome/Library/Mobile Documents/com~apple~CloudDocs/Full_Stack_dev/HvA_voorbereidingen/IDS_2026_2027_SEM2/Werkcolleges'
 
 LAAD_TOERNOOI = '''import json
 
@@ -150,10 +153,95 @@ def werkcollege3(nb):
     return 0, aangepast
 
 
+
+API_LES = """---
+
+## Deel 1a — Wat gebeurde er toen je inleverde? (20 min)
+
+Maandag draaide je één regel: `lever_in(...)`. Daar ging een bericht over het
+internet, en er kwam een antwoord terug. Nu je bot in een toernooi heeft gespeeld,
+is het de moeite waard om te kijken wat daar precies gebeurde.
+
+**Client en server.** Jouw notebook is de *client*: die stelt een vraag. Ergens
+anders draait de *server*: die geeft antwoord. Elk bericht heeft een adres,
+eventueel een sleutel, en een antwoord met een getal erbij.
+
+**Dat getal is de statuscode:**
+
+| code | betekent |
+|---|---|
+| `200` | gelukt |
+| `401` | wie ben jij? — je token ontbreekt of klopt niet |
+| `404` | dat adres bestaat niet — vaak een typefout |
+| `422` | je vraag mist iets, bijvoorbeeld je `student_id` |
+
+Hieronder stel je dezelfde vraag drie keer: zonder sleutel, met sleutel, en met een
+typefout in het adres. **Voorspel eerst welke code je bij elk verwacht.**"""
+
+API_CODE = "\n".join([
+    "import requests",
+    "",
+    'API_URL = "https://poker-analytics-api.onrender.com"',
+    "",
+    "# 1 - zonder token",
+    'zonder = requests.get(f"{API_URL}/status/{STUDENT_ID}/3")',
+    'print("zonder token:  ", zonder.status_code)',
+    "",
+    "# 2 - met token. De sleutel gaat mee in een 'header': extra informatie naast",
+    "#     het adres, die niet in de url zelf staat.",
+    "met = requests.get(",
+    '    f"{API_URL}/status/{STUDENT_ID}/3",',
+    '    headers={"Authorization": f"Bearer {TOKEN}"},',
+    ")",
+    'print("met token:     ", met.status_code)',
+    "",
+    "# 3 - met een typefout in het adres",
+    "fout = requests.get(",
+    '    f"{API_URL}/statuz/{STUDENT_ID}/3",',
+    '    headers={"Authorization": f"Bearer {TOKEN}"},',
+    ")",
+    'print("verkeerd adres:", fout.status_code)',
+    "",
+    "print()",
+    'print("wat de server terugstuurt als het lukt:")',
+    "met.json()",
+])
+
+API_NA = """🤔 Klopten je voorspellingen? Let vooral op het verschil tussen `401` en `404`:
+de eerste zegt *ik weet niet wie je bent*, de tweede *dat bestaat hier niet*. Als je
+straks een foutmelding krijgt, scheelt dat een hoop zoeken.
+
+`.json()` zet het antwoord om in een Python-dictionary. Dat is het enige wat je van
+een API hoeft te onthouden: je stelt een vraag aan een adres, en je krijgt een
+dictionary terug — en met dictionaries werk je sinds week 1."""
+
+
+def werkcollege5(nb):
+    """De API-les erbij, nu met hun eigen toernooi ernaast. Peer review eruit."""
+    import nbformat
+    weg = knip(nb, "## Deel 4 — Peer review via de API", "## Deel 5 — Aftrap Groepscase 2")
+    # Niet hernummeren: er staan kruisverwijzingen in de tekst ("in Deel 6 ga je
+    # zien...") en die breken dan stilletjes. Het gat krijgt een regel uitleg.
+    j = zoek_cel(nb, "## Deel 5 — Aftrap Groepscase 2", "markdown")
+    nb["cells"].insert(j, nbformat.v4.new_markdown_cell(
+        "> **Deel 4 staat niet in dit notebook.** Het beoordelen van elkaars "
+        "grafieken doe je in de Streamlit-hub, waar je ze gewoon ziet staan in "
+        "plaats van ze uit een API te moeten peuteren. De deelnummers hieronder "
+        "lopen door zoals ze waren."))
+    i = zoek_cel(nb, "## Deel 2 — Resultaten: v2 vs v1", "markdown")
+    nb["cells"][i:i] = [
+        nbformat.v4.new_markdown_cell(API_LES),
+        nbformat.v4.new_code_cell(API_CODE),
+        nbformat.v4.new_markdown_cell(API_NA),
+    ]
+    return weg, 3
+
+
 BEWERKINGEN = {
     "Week1_Werkcollege1.ipynb": werkcollege1,
     "Week1_Werkcollege2.ipynb": werkcollege2,
     "Week2_Werkcollege3.ipynb": werkcollege3,
+    "Week3_Werkcollege5.ipynb": werkcollege5,
 }
 
 
@@ -178,7 +266,9 @@ def main():
 
     # Controle: er mag geen netwerkaanroep meer in staan.
     import re
-    for naam in BEWERKINGEN:
+    # Vanaf werkcollege 4 hoort er juist wél netwerk in te zitten -- dat is het punt
+    # van de verhuizing. Alleen week 1 en 2 moeten schoon zijn.
+    for naam in [n for n in BEWERKINGEN if not n.startswith("Week3")]:
         nb = nbformat.read(os.path.join(DOEL, naam), as_version=4)
         code = "\n".join("".join(c["source"]) for c in nb["cells"] if c["cell_type"] == "code")
         resten = re.findall(r"requests\.(get|post)|lever_in\(|onrender\.com", code)

@@ -49,6 +49,10 @@ import bot_inzetgrootte
 import bot_potodds
 import bot_tafellezer
 import bot_uitbuiter
+import simpel_bluffer
+import simpel_caller
+import simpel_muntje
+import simpel_goeiehanden
 
 # --- de knoppen van dit script ---------------------------------------------
 SEEDS = [51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62]
@@ -67,6 +71,12 @@ VELD = {
     "bluffer":      {"module": bot_bluffer,      "strategie": "balanced", "bluf_kans": 0.25},
     "allrounder":   {"module": bot_allrounder,   "strategie": "balanced", "bluf_kans": 0.25},
     "uitbuiter":    {"module": bot_uitbuiter,    "strategie": "balanced", "bluf_kans": 0.25},
+    # De vier simpele bots. Eén regel elk, als ijkpunt: wat een bot boven
+    # "muntje" uitkomt, is precies wat zijn idee waard is.
+    "s_bluffer":    {"module": simpel_bluffer,   "strategie": "balanced", "bluf_kans": 0.25},
+    "s_caller":     {"module": simpel_caller,    "strategie": "balanced", "bluf_kans": 0.0},
+    "s_goeiehanden":{"module": simpel_goeiehanden, "strategie": "balanced", "bluf_kans": 0.0},
+    "s_muntje":     {"module": simpel_muntje,    "strategie": "balanced", "bluf_kans": 0.0},
 }
 
 # Winkans-bakken voor "met welke handen deed hij mee". Grenzen in procenten.
@@ -241,12 +251,15 @@ def controle_run():
 
 # --- 3. Het toernooi --------------------------------------------------------
 def speel_alles():
+    rest = len(VELD) % TAFEL_GROOTTE_MAX
     if len(VELD) > TAFEL_GROOTTE_MAX:
-        print(f"  LET OP: {len(VELD)} bots, maar TAFEL_GROOTTE_MAX is {TAFEL_GROOTTE_MAX}.")
-        print("  _verdeel_in_tafels() maakt van de rest-tafel geen aparte tafel als daar")
-        print("  minder dan 2 bots op staan, maar plakt die bij de vorige. Bij 7 bots komt")
-        print(f"  daar dus ÉÉN tafel van 7 uit -- ruimer dan de engine bedoelt. Het draait,")
-        print("  maar 7-handed poker is tighter dan de 6-max van het echte toernooi.")
+        print(f"  {len(VELD)} bots bij TAFEL_GROOTTE_MAX {TAFEL_GROOTTE_MAX}: elke simulatie wordt "
+              f"verdeeld over {-(-len(VELD) // TAFEL_GROOTTE_MAX)} tafels.")
+        if 0 < rest < 2:
+            print("  LET OP: er blijft een rest-tafel met 1 bot over, en _verdeel_in_tafels()")
+            print("  plakt die bij de vorige in plaats van hem apart te zetten. Je krijgt dan")
+            print(f"  een tafel van {TAFEL_GROOTTE_MAX + rest} -- ruimer dan de engine bedoelt. Het draait, maar")
+            print("  zo'n tafel is tighter dan de 6-max van het echte toernooi.")
     bots = {naam: {"kies_actie": info["module"].kies_actie,
                    "strategie": info["strategie"], "bluf_kans": info["bluf_kans"]}
             for naam, info in VELD.items()}
@@ -306,11 +319,10 @@ def rapporteer_uitslag(eindstanden):
     plekken = per_seed.rank(axis=1, ascending=False)
     kolommen = list(plekken.mean().sort_values().index)
     print()
-    print("    seed " + "".join(f"{naam[:11]:>13}" for naam in kolommen))
-    for seed in plekken.index:
-        print(f"    {seed:<5}" + "".join(f"{plekken.loc[seed, naam]:>13.0f}" for naam in kolommen))
-    print("    " + "-" * (5 + 13 * len(kolommen)))
-    print("    gem. " + "".join(f"{plekken[naam].mean():>13.1f}" for naam in kolommen))
+    print(f"    {'bot':<14}" + "".join(f"{seed:>5}" for seed in plekken.index) + f"{'gem.':>8}")
+    for naam in kolommen:
+        rij = "".join(f"{plekken.loc[seed, naam]:>5.0f}" for seed in plekken.index)
+        print(f"    {naam:<14}{rij}{plekken[naam].mean():>8.1f}")
 
     namen = list(tafels.columns)
     n_paren = len(namen) * (len(namen) - 1) // 2
@@ -320,6 +332,12 @@ def rapporteer_uitslag(eindstanden):
     # vergelijkingen. Met 7 bots zijn dat 21 paren en komt de grens op ~3,1.
     ENKEL = 1.96
     STRENG = statistics.NormalDist().inv_cdf(1 - 0.025 / n_paren)
+    tafels_per_sim = eindstanden.groupby(["seed", "simulatie"])["tafel"].nunique().max()
+    if tafels_per_sim > 1:
+        print(f"\n  LET OP: {len(VELD)} bots passen niet aan één tafel, dus elke simulatie wordt")
+        print(f"  over {tafels_per_sim} tafels verdeeld en twee bots zitten lang niet altijd bij elkaar.")
+        print("  De koppeling hieronder is dan per SIMULATIE en niet per tafel: nog steeds")
+        print("  geldig, maar minder scherp dan wanneer ze elkaars chips direct afpakken.")
     print(f"\n  Gepaarde verschillen (per tafel, dus zonder de gedeelde tafelruis).")
     print(f"  t = verschil / onzekerheid. Bij {n_paren} vergelijkingen tegelijk is |t| > "
           f"{STRENG:.1f} pas overtuigend;")
@@ -362,27 +380,24 @@ def verrijk_log(log):
     eerste_hand = log["winst"].isna()
     log.loc[eerste_hand, "winst"] = log.loc[eerste_hand, "stack"] - STANDAARD_INITIAL_STACK
 
-    # TWEE SPOOKREGELS die je uit poker_adapter.py moet halen, want je ziet ze
-    # niet in de kolommen. Het log schrijft `self._eerste_actie_deze_hand or
-    # "fold"`, dus "fold" betekent OOK: deze bot heeft niets gekozen.
-    #
-    # 1. Een bot die op 0 chips staat blijft de uitslag van elke hand krijgen en
-    #    dus elke hand een regel schrijven -- met actie "fold". Wie die regels
-    #    meerekent, meet een bot die uitgespeeld is als een bot die tight speelt.
+    # Regels waarin de bot niets heeft gekozen, tellen niet mee. poker_adapter
+    # schreef daar eerst `or "fold"` neer en dat was niet te onderscheiden van
+    # een echte fold; sinds die `or "fold"` eruit is, staat er gewoon None en
+    # kunnen we er direct op filteren. Twee soorten zitten daarin:
+    #   - hij was al uitgespeeld (stack 0) en krijgt de uitslag nog wel door
+    #   - hij kwam niet aan de beurt omdat iedereen naar zijn blind foldde,
+    #     en dan wón hij die hand juist
     log["uitgespeeld"] = log["stack_voor"] <= 0
-    # 2. Kwam hij niet aan de beurt (iedereen foldde naar de blinds), dan staat er
-    #    ook "fold" -- terwijl hij die hand juist WON. Een echte fold kan nooit
-    #    chips opleveren, dus dat is eraan te herkennen.
-    log["kwam_niet_aan_beurt"] = (log["actie"] == "fold") & (log["winst"] > 0)
-    log["echte_beslissing"] = ~log["uitgespeeld"] & ~log["kwam_niet_aan_beurt"]
+    log["kwam_niet_aan_beurt"] = log["actie"].isna() & ~log["uitgespeeld"]
+    log["echte_beslissing"] = log["actie"].notna() & ~log["uitgespeeld"]
     return log
 
 
 def rapporteer_spookregels(log):
     kop("4. Eerst opruimen: welke regels zijn geen beslissing?")
-    print("  Het hand-log schrijft `eerste_actie or \"fold\"`. Daardoor staat er ook")
-    print("  \"fold\" als een bot niets KON kiezen. Twee gevallen, en ze zijn groot")
-    print("  genoeg om elke actieverdeling te vervalsen als je ze meerekent:")
+    print("  Een regel zonder gekozen actie (actie is None) is geen beslissing.")
+    print("  Twee gevallen, en ze zijn groot genoeg om elke actieverdeling te")
+    print("  vervalsen als je ze meerekent:")
     print(f"\n  {'bot':<14}{'regels':>9}{'al uitgespeeld':>16}"
           f"{'niet aan de beurt':>19}{'echte beslissingen':>20}")
     for naam in sorted(log["bot_naam"].unique()):
