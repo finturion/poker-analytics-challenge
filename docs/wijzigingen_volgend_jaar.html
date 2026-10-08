@@ -574,7 +574,7 @@
 <section>
   <div class="sectiekop">
     <h2>Lesmateriaal</h2>
-    <span class="telling">11 punten</span>
+    <span class="telling">13 punten</span>
   </div>
 
   <div class="item">
@@ -641,6 +641,75 @@
         het punt hieronder). Wie op Deel 6 vastloopt, levert in wat op Deel 3 stond. Eén idee per
         werkcollege lost dit aan de voorkant op; de twee punten hierboven vangen de rest.</li>
     </ul>
+  </div>
+
+  <div class="item">
+    <div class="item-kop">
+      <h3>Laat studenten zelf een paar bots van één regel maken</h3>
+      <i class="merk m-voorstel">voorstel</i>
+    </div>
+    <p class="meta"><span>WC1 of WC3</span><span>15 min</span><span>het materiaal ligt er al in <code>mijn_bots/simpel_*.py</code></span></p>
+    <p>
+      Vier botjes van een paar regels: eentje die altijd callt, eentje die altijd verhoogt,
+      eentje die een muntje opgooit, en eentje die zeven handen uit een lijstje speelt en de
+      rest weggooit. Ze zijn er niet om te winnen maar om tegen af te meten: wat jouw bot
+      bóven het muntje uitkomt, is precies wat je idee waard is.
+    </p>
+    <div class="bewijs">
+      <span class="titel">En dan gebeurt er iets wat niemand verwacht</span>
+      <p><code>Testbot_CalltAlles</code> doet precies één ding: callen. In het toernooi van
+      week 3 werd hij <b>eerste van 27</b>, tien chips voor nummer twee, in een veld dat
+      <b>92,2%</b> van alle beslissingen foldde.</p>
+      <p>Twee weken later, toen de klas echt speelde: <b>118 chips</b> in het
+      woensdagtoernooi en <b>0</b> in de oefenronde, allebei laatste.</p>
+      <p>Diezelfde ene regel, van eerste naar laatste. Dat is niet te vertellen; dat moet je
+      zien gebeuren met je eigen bot ernaast.</p>
+    </div>
+    <p>
+      <b>Waarom dit meer is dan een leuk extraatje.</b> Het raakt drie dingen die elders in
+      dit document als probleem staan. Een bot van één regel maakt zichtbaar wat een
+      <em>baseline</em> is, en daarmee ook dat 92% fold geen strategie is. Het is de kleinst
+      mogelijke oefening in &ldquo;wat doet één regel&rdquo; &mdash; de stap die vooraf hoort te
+      gaan aan vijf regels samenvoegen. En een bot van één regel valt niet te kopiëren van een
+      voorbeeld: daar is hij te klein voor.
+    </p>
+    <p>
+      Ze staan al in <code>mijn_bots/</code> als docentmateriaal, met een eigen stuk in de
+      README. Het enige dat nog moet gebeuren is ze omdraaien: nu zijn ze gegeven, straks
+      schrijft de student ze en draait ze tegen het veld.
+    </p>
+  </div>
+
+  <div class="item">
+    <div class="item-kop">
+      <h3>Pot odds gaat eruit</h3>
+      <i class="merk m-keuze">besloten</i>
+    </div>
+    <p class="meta"><span>besloten 8 oktober 2026</span><span>WC4 Deel 6 (16 min)</span><span>raakt de engine niet</span></p>
+    <p>
+      Het rekent een verhouding uit &mdash; <code>inzet / (pot + inzet)</code> &mdash; en legt
+      die naast een geschatte kans. Dat is het meest wiskundige wat er in het vak zit, en
+      voor de bot is het niet nodig: <code>pot</code> en <code>inzet_om_te_callen</code>
+      blijven gewoon beschikbaar, studenten gebruiken ze dan eenvoudiger.
+    </p>
+    <div class="bewijs">
+      <span class="titel">Wat de ingeleverde bots lieten zien</span>
+      <p><b>29 van de 29</b> bots rekenden pot odds echt uit, en 25 vergeleken de winkans met
+      die prijs. Op het eerste gezicht dus het best benutte idee van het vak.</p>
+      <p>Maar <b>24 van de 28</b> pot-odds-functies waren byte-identiek. Ze gebruikten het
+      allemaal; vrijwel niemand had het zelf geschreven.</p>
+      <p><code>Referentie_PotOdds</code> was bovendien de zwakste van de vijf meetlatten:
+      378 chips, plek 26 van 27. Die kan mee weg.</p>
+    </div>
+    <p>
+      <b>Wat er moet gebeuren:</b> Deel 6 uit Werkcollege 4,
+      <code>bereken_pot_odds</code> en <code>prijs_van_meedoen</code> uit
+      <code>_hulpfuncties_week3.py</code>, de referentiebot en zijn regel in
+      <code>referentiebots/__init__.py</code>, en de dia&rsquo;s in
+      <code>maak_presentatie_week3.py</code> en <code>wc8plaatjes.py</code>. De engine blijft
+      ongemoeid: in <code>winkans.py</code>, <code>poker_adapter.py</code> en
+      <code>bot_validator.py</code> staat het alleen in commentaar.
+    </p>
   </div>
 
   <div class="item">
