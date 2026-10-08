@@ -38,7 +38,7 @@ import random
 
 HIER = os.path.dirname(os.path.abspath(__file__))
 WORTEL = os.path.dirname(HIER)
-DOEL = os.path.join(WORTEL, "notebooks", "data", "voorbeeldtoernooi.json")
+DOEL = os.path.join(WORTEL, "notebooks_sem2", "data", "voorbeeldtoernooi.json")
 
 # Namen in plaats van nummers. Herkenbaar genoeg om over te praten ("waarom doet
 # Mees zo veel fold?") en duidelijk niet van een echte student.
