@@ -58,3 +58,6 @@ scripts/botdocumenten/
 # Ingeleverde studentcode hoort niet in git.
 scripts/bots_week*/
 scripts/reparaties_week*/
+
+# Door een draaitest achtergelaten; hoort niet in git.
+notebooks_sem2/mijn_bot_week1.py
