@@ -348,6 +348,174 @@
   </div>
 </section>
 
+<!-- ============ didactiek ============ -->
+<section>
+  <div class="sectiekop">
+    <h2>Didactiek</h2>
+    <span class="telling">6 punten</span>
+  </div>
+  <p class="sectie-intro">
+    Deze punten komen uit twee kanten: een telling over de negen notebooks, en wat het
+    onderzoek naar programmeeronderwijs zegt over wat werkt. Waar die twee elkaar raken
+    staat het hier. De bronnen staan onderaan elk punt.
+  </p>
+
+  <div class="item">
+    <div class="item-kop">
+      <h3>Nergens in het vak wordt code getraceerd</h3>
+      <i class="merk m-gemeten">gemeten</i>
+    </div>
+    <p class="meta"><span>negen notebooks</span><span><b>0</b> traceeropdrachten</span><span>goedkoopste ingreep met de sterkste onderbouwing</span></p>
+    <p>
+      Geteld over alle negen notebooks: 15 keer &ldquo;voorspel wat eruit komt&rdquo;, 30 keer
+      &ldquo;leg uit waarom&rdquo;, 71 reflectievragen &mdash; en <b>geen enkele keer</b> &ldquo;loop
+      deze code regel voor regel na en schrijf op wat er in elke variabele staat&rdquo;.
+    </p>
+    <div class="bewijs">
+      <span class="titel">Waarom dat uitgerekend deze ontbreekt</span>
+      <p>Lopez en Lister vonden dat tracing en &ldquo;leg in gewone taal uit wat deze code
+      doet&rdquo; samen <b>66% van de variantie in code schrijven</b> verklaren. En scherper:
+      geen enkele student die zwak was op die twee, was goed in schrijven; geen enkele die er
+      goed in was, was slecht in schrijven.</p>
+    </div>
+    <p>
+      <b>Wat er moet:</b> één traceeropdracht per werkcollege. Vijf regels code, een tabel met
+      een kolom per variabele, invullen wat erin staat na elke regel. Tien minuten. Het is
+      bovendien de ontbrekende <i>I</i> van PRIMM &mdash; Predict en Modify en Make doet dit vak
+      al, Investigate niet.
+    </p>
+    <p class="meta"><span>
+      <a href="https://forrt.org/flora-replication-atlas/doi/10.1145/1404520.1404531/">Lopez &amp; Lister, relationships between reading, tracing and writing</a> &middot;
+      <a href="https://static.raspberrypi.org/files/curriculum/quickreads/11-Pedagogy_Summary_PRIMM_V4_2023.pdf">PRIMM, Raspberry Pi Foundation</a>
+    </span></p>
+  </div>
+
+  <div class="item">
+    <div class="item-kop">
+      <h3>Tien van de 21 concepten landen in Werkcollege 1</h3>
+      <i class="merk m-gemeten">gemeten</i>
+    </div>
+    <p class="meta"><span>15 van de 21 in week 1</span><span>week 4, 5 en 6: nul nieuwe concepten</span></p>
+    <div class="tabelwrap">
+      <table>
+        <thead><tr><th>werkcollege</th><th>nieuwe concepten</th><th>welke</th></tr></thead>
+        <tbody>
+          <tr><td>WC1</td><td class="getal">10</td><td>variabelen, lists, if/else, for, functies, return, import, list comprehension, plotten, random</td></tr>
+          <tr><td>WC2</td><td class="getal">5</td><td>dicts, dict-toegang, f-strings, API-requests, sorted(key=)</td></tr>
+          <tr><td>WC3</td><td class="getal">2</td><td>pandas, enumerate/zip</td></tr>
+          <tr><td>WC4</td><td class="getal">2</td><td>groupby, merge</td></tr>
+          <tr><td>WC5 t/m WC9</td><td class="getal">1</td><td>try/except</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      Een steile berg en daarna een vlakte. List comprehensions staan in dezelfde middag als de
+      eerste <code>for</code>-loop, terwijl ze een compacte vorm zijn van precies dat wat je net
+      leert &mdash; dat is twee dingen tegelijk voor wie het nog niet kan.
+    </p>
+    <p>
+      <b>Wat er moet:</b> spreiden. List comprehensions kunnen naar week 3, waar ze bij pandas
+      nuttig worden. Dat haalt één concept uit de drukste middag en geeft het een plek waar er
+      een reden voor is.
+    </p>
+  </div>
+
+  <div class="item">
+    <div class="item-kop">
+      <h3>Het vak is één groot plan-compositieprobleem, en dat wordt nergens benoemd</h3>
+      <i class="merk m-gemeten">gemeten</i>
+    </div>
+    <p class="meta"><span>Werkcollege 7: vijf regels tot één bot</span><span>week 3: <b>92% fold</b></span></p>
+    <p>
+      In het onderzoek naar programmeeronderwijs is het samenvoegen van deeloplossingen tot één
+      programma al decennia het moeilijkste wat er is &mdash; moeilijker dan de losse constructies.
+      Het staat bekend als het rainfall-probleem, en de bevinding is steeds dezelfde: studenten
+      die elk onderdeel afzonderlijk kunnen, lopen vast op het combineren.
+    </p>
+    <p>
+      Dit vak is daar vanaf week 3 één lange oefening in: handsterkte, winkans, pot odds,
+      bluffen en tegenstanders lezen moeten samen één <code>kies_actie</code> worden. Het bewijs
+      dat het daar misgaat staat al in de eigen data: in week 3 was <b>92% van alle
+      beslissingen fold</b> en folden negen van de 27 bots in 99% of meer van de gevallen. Dat
+      is de handtekening van een student die inlevert wat op Deel 3 werkte omdat hij bij Deel 6
+      vastliep.
+    </p>
+    <p>
+      <b>Wat er moet:</b> compositie een eigen deel geven in plaats van een slotopdracht.
+      Expliciet over volgorde en voorrang: welke regel wint als er twee van toepassing zijn, en
+      waarom staat de ene boven de andere? De bug-opdracht in Werkcollege 2 gaat daar al over,
+      maar daar heet het een bug en niet een concept.
+    </p>
+    <p class="meta"><span>
+      <a href="https://2018.programming-conference.org/event/programming-2018-keynotes-the-recurring-rainfall-problem">Krishnamurthi, The Recurring Rainfall Problem</a>
+    </span></p>
+  </div>
+
+  <div class="item">
+    <div class="item-kop">
+      <h3>Parsons-problemen passen hier bijzonder goed</h3>
+      <i class="merk m-voorstel">voorstel</i>
+    </div>
+    <p class="meta"><span>43 tot 65% tijdwinst bij gelijke leeruitkomst</span><span>het materiaal ligt er al</span></p>
+    <p>
+      Bij een Parsons-probleem krijgt een student de juiste coderegels door elkaar en zet hij ze
+      in de goede volgorde. Het onderzoek laat tijdwinst van 43 tot 65 procent zien bij
+      vergelijkbare leeruitkomsten en lagere cognitieve belasting, en studenten geven er de
+      voorkeur aan boven zelf schrijven.
+    </p>
+    <p>
+      Een pokerbot <i>is</i> een geordende regelset waarin de volgorde alles bepaalt, dus de
+      vorm sluit precies aan. En het kost bijna niets: de regels staan al in de notebooks, ze
+      hoeven alleen door elkaar. Zet er één vóór elke schrijfopdracht &mdash; eerst de volgorde
+      herstellen, dan zelf schrijven.
+    </p>
+    <p class="meta"><span>
+      <a href="https://arxiv.org/pdf/2311.18115">Parsons problems als scaffold voor code schrijven</a> &middot;
+      <a href="https://falmouth-test.eprints-hosting.org/5216/1/ITiCSE_2023_WorkingGroup_Parsons_Report.pdf">ITiCSE 2023 working group report</a>
+    </span></p>
+  </div>
+
+  <div class="item">
+    <div class="item-kop">
+      <h3>Drie concepten komen één keer langs en staan wel in de toets</h3>
+      <i class="merk m-fout">fout</i>
+    </div>
+    <div class="tabelwrap">
+      <table>
+        <thead><tr><th>concept</th><th>eerst in</th><th>daarna</th><th>staat in</th></tr></thead>
+        <tbody>
+          <tr><td><code>merge</code> / <code>join</code></td><td>WC4</td><td class="getal">3x, 2 notebooks</td><td>rubric én toets</td></tr>
+          <tr><td><code>enumerate</code> / <code>zip</code></td><td>WC3</td><td class="getal">5x, 2 notebooks</td><td>—</td></tr>
+          <tr><td><code>sorted(key=)</code></td><td>WC2</td><td class="getal">1x, 1 notebook</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      Ter vergelijking: <code>if/else</code> komt na introductie nog 77 keer terug over acht
+      notebooks, dict-toegang 188 keer. Die zitten goed. Deze drie niet, en bij <code>merge</code>
+      is dat een probleem omdat het wel wordt getoetst.
+    </p>
+  </div>
+
+  <div class="item">
+    <div class="item-kop">
+      <h3>De leeslast is bijna drie uur, en zit scheef</h3>
+      <i class="merk m-gemeten">gemeten</i>
+    </div>
+    <p class="meta"><span>31.751 woorden markdown</span><span>&plusmn; 176 minuten lezen</span><span>los van het programmeren</span></p>
+    <p>
+      Werkcollege 4 is de uitschieter: <b>7.252 woorden</b> &mdash; veertig minuten lezen &mdash;
+      naast 266 regels code en 23 TODO&rsquo;s in één middag. Dat is meer dan twee keer het
+      gemiddelde van de andere acht.
+    </p>
+    <p>
+      Dit versterkt het punt hieronder over WC4 opsplitsen: niet alleen drie nieuwe ideeën
+      tegelijk, maar ook de langste tekst van het blok om doorheen te komen voordat je aan het
+      derde toekomt.
+    </p>
+  </div>
+</section>
+
 <!-- ============ B ============ -->
 <section>
   <div class="sectiekop">
@@ -825,7 +993,7 @@
 <section>
   <div class="sectiekop">
     <h2>Rooster en organisatie</h2>
-    <span class="telling">3 punten</span>
+    <span class="telling">4 punten</span>
   </div>
 
   <div class="item">
@@ -858,6 +1026,68 @@
       nog heeft kan hem mogelijk blijven openen. Test dat één keer met een studentaccount voordat
       je materiaal alvast klaarzet — en verberg tot die tijd niets waarvan het uitmaakt.
     </p>
+  </div>
+
+  <div class="item">
+    <div class="item-kop">
+      <h3>DataCamp telt nergens voor mee, en dat is te zien</h3>
+      <i class="merk m-keuze">keuze</i>
+    </div>
+    <p class="meta"><span>11 cursussen over 6 weken</span><span><code>api/datacamp_rooster.py</code></span><span>beslissen vóór het blok</span></p>
+    <p>
+      Elf DataCamp-cursussen staan in het rooster, met deadlines, en ze wegen nergens in mee:
+      <code>voldaan</code> is alleen &ldquo;inzending technisch oké&rdquo; plus drie peer reviews.
+      Er is dus geen enkel gevolg aan het niet maken ervan.
+    </p>
+    <div class="bewijs">
+      <span class="titel">De scrape van 8 september, drie dagen vóór de eerste deadline</span>
+      <p><b>14 van de 37</b> studenten met een gekoppeld account hadden <b>nul</b> cursussen af.
+      De mediaan stond op 1 van de 5 die voor die deadline gevraagd waren; <b>niemand</b> had ze
+      alle vijf.</p>
+      <p>Van <i>Data Manipulation with pandas</i> had <b>geen enkele student</b> iets afgerond —
+      en dat is de cursus die het dichtst bij werkcollege 3 ligt.</p>
+      <p>Daarbovenop: 5 studenten zonder gekoppeld account en 8 zonder account. Van de 45 op de
+      klaslijst waren er dus 13 niet eens in beeld.</p>
+    </div>
+    <p>
+      <b>Eén kanttekening bij dat cijfer:</b> er is maar één peildatum, en er zaten nog drie
+      dagen tot de deadline. Hoeveel er alsnog is afgerond weten we niet. Dat is op zichzelf
+      een bevinding: de snapshot draait wel wekelijks in <code>scripts/</code>, maar er staat er
+      maar één bewaard.
+    </p>
+    <p class="meta"><span><b>Wat het onderzoek zegt over verplichten</b></span></p>
+    <p>
+      Twee dingen, en ze wijzen niet dezelfde kant op. Wordt dit soort oefenstof vrijwillig
+      aangeboden, dan is de deelname laag en is er <i>geen</i> verband tussen gebruik en cijfer
+      &mdash; het trekt dus niet de studenten die het nodig hebben. Verplichte practica leveren
+      wél meetbaar beter werk aan het eind van de periode op.
+    </p>
+    <p>
+      Maar: zodra er een puntendrempel aan hangt, stoppen studenten precies op die drempel. In
+      een onderzochte cursus zakte het aantal inzendingen zichtbaar op het moment dat de meesten
+      genoeg punten hadden voor toegang tot het tentamen. Verplichten werkt dus, maar wat je
+      precies verplicht bepaalt waar ze ophouden.
+    </p>
+    <p class="meta"><span><b>Mijn voorstel, als je het verplicht maakt</b></span></p>
+    <ul>
+      <li><b>Als voorwaarde, niet als punten.</b> Neem DataCamp op in dezelfde
+        <code>voldaan</code>-check als de inzending en de reviews. Een cijfer of puntendrempel
+        nodigt uit om te stoppen zodra het genoeg is; een voorwaarde kent die grens niet.</li>
+      <li><b>Spreid de deadlines.</b> Nu vallen week 1 én week 2 allebei op 11 september: vijf
+        cursussen in één deadline, in de week waarin ook tien programmeerconcepten binnenkomen.
+        Eén cursus per week met een eigen deadline sluit aan bij hetzelfde
+        spreidingsargument als hierboven.</li>
+      <li><b>Regel eerst de accounts.</b> 13 van de 45 waren niet gekoppeld of hadden geen
+        account. Verplicht stellen wat je niet kunt meten betekent dat je studenten afrekent op
+        een administratieprobleem. Dit moet in week 1 kloppen, niet in week 3.</li>
+      <li><b>Zeg erbij waarvoor het dient.</b> De cursus die het dichtst bij een werkcollege
+        ligt stond op 0% afgerond. Als de koppeling tussen &ldquo;deze cursus&rdquo; en
+        &ldquo;dit werkcollege van woensdag&rdquo; niet expliciet is, leest het als los huiswerk.</li>
+    </ul>
+    <p class="meta"><span>
+      <a href="https://bora.uib.no/bora-xmlui/handle/11250/3137717">Mandatory or voluntary course work in introductory programming courses?</a> &middot;
+      <a href="https://investigacion.unirioja.es/documentos/62b1465e8581f90f944eccbf?lang=ca">Effecten van niet-verplichte oefeningen op prestaties en overschrijven</a>
+    </span></p>
   </div>
 
   <div class="item">
@@ -896,7 +1126,9 @@
 </div>
 
 <footer>
-  Opgesteld 15 september 2026, bijgewerkt 16 september en 3 oktober, tijdens blok 1 van 2026–2027.
+  Opgesteld 15 september 2026, bijgewerkt 16 september, 3 oktober en 8 oktober, tijdens blok 1
+  van 2026–2027. De oktober-ronde van de 8e voegt de sectie Didactiek toe: een telling over de
+  negen notebooks naast wat het onderzoek naar programmeeronderwijs zegt.
   De oktober-ronde voegt toe wat week 5 met echte inzendingen liet zien. De gemeten cijfers komen uit
   <code>scripts/meet_toernooi_variantie.py</code>, <code>scripts/test_referentiebots.py</code>,
   de drie gedraaide toernooien van week 5 en de curriculum-audit. Punten zonder merkteken “gemeten” zijn waarnemingen, geen metingen.
