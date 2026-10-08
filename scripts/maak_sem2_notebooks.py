@@ -90,8 +90,20 @@ def knip(nb, van_stuk, tot_stuk, van_soort="markdown", tot_soort="markdown"):
 
 
 def werkcollege1(nb):
+    """Inleveren eruit, en extra oefening met if/else en functies erbij."""
     """Inleveren eruit: de bot blijft deze week op je eigen machine."""
     weg = knip(nb, "### Stap B: de benodigde imports", "## Reflectievragen")
+    # De kop van Deel 4 stond vóór Stap A en overleefde het knippen, maar hij
+    # belooft iets wat er niet meer in staat.
+    naar_huiswerk(nb, "## Deel 4 — Inleveren via de API (huiswerk, ± 15 min)",
+                  "## Deel 4 — Je bot in een eigen bestand (huiswerk, ± 5 min)")
+    k = zoek_cel(nb, "## Deel 4 — Je bot in een eigen bestand", "markdown")
+    nb["cells"][k]["source"] = (
+        "---\n\n## Deel 4 — Je bot in een eigen bestand (huiswerk, ± 5 min)\n\n"
+        "Je bot staat nu in een cel. Zet hem daarnaast in een los bestand: in "
+        "werkcollege 2 laat je hem daarmee tegen een klasgenoot spelen, en vanaf "
+        "week 3 is het het bestand dat je inlevert.\n")
+
     i = zoek_cel(nb, "### Stap A: maak `mijn_bot_week1.py`", "markdown")
     nb["cells"][i]["source"] = [
         "### Stap A: zet je bot in een los bestand\n", "\n",
@@ -108,7 +120,20 @@ def werkcollege1(nb):
         "**Deze week lever je nog niets in.** Bewaar `mijn_bot_week1.py` op een plek "
         "die je terugvindt: in week 2 heb je hem nodig, en in week 3 gaat hij naar de "
         "server.\n"]
-    return weg, 2
+    # Het deck telde 13 losse waarden, en dan is een paar met random.sample
+    # onmogelijk: de call-tak van de voorbeeldbot vuurde nooit. De tekst eronder
+    # belooft 5% call en vraagt zelfs waarom die tak zo weinig vuurt -- met vier
+    # kaarten van elke waarde klopt dat weer, en blijft een hand ["A", "K"] zodat
+    # hand[0] == hand[1] een paar herkent.
+    d = zoek_cel(nb, "deck = kaartwaarden  # uit Deel 1")
+    bron = "".join(nb["cells"][d]["source"])
+    nb["cells"][d]["source"] = bron.replace(
+        "deck = kaartwaarden  # uit Deel 1",
+        "# Vier kaarten van elke waarde: 52 stuks, net als een echt deck. Zonder die\n"
+        "# maal vier kun je nooit een paar trekken.\ndeck = kaartwaarden * 4")
+
+    _, erbij = oefening_wc1(nb)
+    return weg, 3 + erbij
 
 
 def werkcollege2(nb):
@@ -130,6 +155,13 @@ print()
 print(mijn_bot, "staat op:", eindstand[mijn_bot])
 print("plek:", op_volgorde.index(mijn_bot) + 1, "van de", len(op_volgorde))""")
 
+    # Deel 2 was de API-les en is weg; de nummers schuiven bewust niet op.
+    g = zoek_cel(nb, "## Deel 3 — Het toernooi bekijken", "markdown")
+    nb["cells"].insert(g, nbformat.v4.new_markdown_cell(
+        "> **Deel 2 staat niet in dit notebook.** Dat ging over hoe een API werkt, "
+        "en dat komt in week 3 — op het moment dat je er zelf een nodig hebt om je "
+        "bot in te leveren. De deelnummers hieronder lopen door zoals ze waren."))
+    _, erbij = oefening_wc2(nb)
     j = zoek_cel(nb, "De eerste keer dat iemand in de klas dit ophaalt", "markdown")
     nb["cells"][j]["source"] = [
         "Geen internet nodig: het bestand staat naast je notebook in de map `data/`. "
@@ -315,6 +347,305 @@ def werkcollege9(nb):
         "van je klasgenoten naast elkaar, en dat werkt beter dan ze hier een voor een "
         "op te halen."))
     return weg, 4
+
+
+
+# ---------------------------------------------------------------------------
+# Extra oefening in week 1 en 2: if/else, functies, tracing en flowcharts.
+#
+# Er is ruimte: werkcollege 1 gebruikt 40 van zijn 100 minuten en werkcollege 2
+# na de verhuizing 55. Dat is precies de week waarin tien programmeerconcepten
+# binnenkomen, dus die ruimte gaat naar oefenen met de twee die alles dragen --
+# if/elif/else en functies -- in de vormen waarvan het onderzoek zegt dat ze
+# werken: eerst voorspellen, dan natrekken, dan pas zelf schrijven.
+# ---------------------------------------------------------------------------
+
+TRACE_KOP = """---
+
+## Deel 1b — Regel voor regel meekijken (10 min)
+
+Je hebt nu `if`, `else` en een `for`-loop gezien. De vraag is niet of je ze kunt
+*lezen* maar of je kunt voorspellen wat ze **doen** — en dat is iets anders.
+
+Hieronder staat een stukje code. Draai het nog niet. Vul eerst de tabel in: wat
+staat er in elke variabele, na elke doorloop van de loop?
+
+```python
+kaarten = ["A", "7", "K", "3"]
+hoog = 0
+laag = 0
+
+for kaart in kaarten:
+    if kaart in ["A", "K", "Q", "J"]:
+        hoog = hoog + 1
+    else:
+        laag = laag + 1
+```
+
+| na kaart | `kaart` | `hoog` | `laag` |
+|---|---|---|---|
+| 1e | `"A"` | | |
+| 2e | | | |
+| 3e | | | |
+| 4e | | | |
+
+Vul hem met de hand in — op papier of in de cel hieronder als tekst. Daarna pas
+draaien."""
+
+TRACE_CODE = "\n".join([
+    "kaarten = [\"A\", \"7\", \"K\", \"3\"]",
+    "hoog = 0",
+    "laag = 0",
+    "",
+    "for kaart in kaarten:",
+    "    if kaart in [\"A\", \"K\", \"Q\", \"J\"]:",
+    "        hoog = hoog + 1",
+    "    else:",
+    "        laag = laag + 1",
+    "    print(kaart, \"-> hoog:\", hoog, \"laag:\", laag)",
+    "",
+    "print()",
+    "print(\"eind:\", hoog, \"hoog en\", laag, \"laag\")",
+])
+
+TRACE_NA = """🤔 Klopte je tabel? De twee plekken waar het meestal misgaat:
+
+- **`hoog = hoog + 1`** is geen bewering maar een opdracht: *neem wat er in `hoog`
+  staat, tel er 1 bij op, en zet dat terug*. Een variabele houdt één waarde vast,
+  niet een reeks.
+- **De `else` hoort bij de `if` erboven**, en wordt alleen uitgevoerd als die `if`
+  onwaar was. Hij draait niet "ook even".
+
+💡 Deze tabel invullen heet *tracen*. Het klinkt als iets voor beginners, maar uit
+onderzoek blijkt het de beste voorspeller van of je straks zelf code kunt
+schrijven. Doe het bij elk stuk code dat je niet meteen snapt."""
+
+SCHEMA_KOP = """---
+
+## Deel 1c — Van schema naar code, en terug (10 min)
+
+Een `if/elif/else` is een schema met vertakkingen. Hieronder staat er een
+getekend. **Schrijf hem om naar code** — en let op de volgorde: wie als eerste
+past, wint.
+
+```mermaid
+flowchart TD
+    A["hand"] --> B{"is het een paar?"}
+    B -- ja --> C["raise"]
+    B -- nee --> D{"zit er een A of K in?"}
+    D -- ja --> E["call"]
+    D -- nee --> F["fold"]
+```
+
+Noem de functie `kies_actie_schema(hand)` en laat hem `"raise"`, `"call"` of
+`"fold"` teruggeven."""
+
+SCHEMA_CODE = "\n".join([
+    "def kies_actie_schema(hand):",
+    "    # TODO: schrijf het schema hierboven om naar if/elif/else.",
+    "    #   Let op de volgorde: een paar azen is én een paar én een hand met",
+    "    #   een A erin. Welke tak hoort dan te winnen?",
+    "    ___",
+    "",
+    "",
+    "for hand in [[\"A\", \"A\"], [\"A\", \"7\"], [\"8\", \"3\"], [\"K\", \"K\"]]:",
+    "    print(hand, \"->\", kies_actie_schema(hand))",
+])
+
+SCHEMA_NA = """Verwachte uitvoer: `raise`, `call`, `fold`, `raise`.
+
+**En nu andersom.** Hieronder staat code zonder schema. Teken het schema erbij —
+op papier is prima — en kijk daarna of je het eens bent met de volgorde.
+
+```python
+def kies_actie_anders(hand):
+    if "A" in hand:
+        return "raise"
+    elif hand[0] == hand[1]:
+        return "call"
+    else:
+        return "fold"
+```
+
+🤔 Wat doet deze functie met `["K", "K"]`? En met `["A", "A"]`? Vergelijk met het
+schema hierboven: dezelfde drie uitkomsten, een andere volgorde — en dus een ander
+antwoord op twee van de vier handen."""
+
+FUNCTIE_KOP = """---
+
+## Deel 1d — `return` of `print`? (8 min)
+
+Dit is de fout die in week 3 de meeste tijd kost, dus we halen hem nu naar voren.
+
+```python
+def dubbel_print(getal):
+    print(getal * 2)
+
+def dubbel_return(getal):
+    return getal * 2
+```
+
+Allebei lijken ze te werken: je draait ze en je ziet een getal. Maar probeer
+hieronder wat er gebeurt als je ze **gebruikt** in plaats van bekijkt."""
+
+FUNCTIE_CODE = "\n".join([
+    "def dubbel_print(getal):",
+    "    print(getal * 2)",
+    "",
+    "def dubbel_return(getal):",
+    "    return getal * 2",
+    "",
+    "# allebei aanroepen: ze zien er hetzelfde uit",
+    "dubbel_print(5)",
+    "dubbel_return(5)",
+    "",
+    "# maar nu ermee doorrekenen:",
+    "a = dubbel_print(5)",
+    "b = dubbel_return(5)",
+    "",
+    "print(\"a is\", a)",
+    "print(\"b is\", b)",
+])
+
+FUNCTIE_NA = """🤔 `a` is `None`. Waarom?
+
+`print` laat iets zíén; `return` geeft iets térug. Een functie zonder `return`
+geeft `None` terug — en met `None` kun je niet verder rekenen.
+
+**Waarom dit er nu toe doet:** je bot heet `kies_actie(hand)` en moet een actie
+*teruggeven*, want de server roept hem aan en doet er iets mee. Print je in plaats
+van returnt, dan zie je in je notebook keurig `"raise"` staan en krijgt de server
+`None` — en dan wordt je bot afgekeurd met een foutmelding die hier niets over zegt.
+
+💡 Vuistregel: `print` is voor jou, `return` is voor de code die jouw functie
+aanroept."""
+
+EENREGEL_KOP = """---
+
+## Deel 2b — Drie bots van één regel (15 min)
+
+Voordat je je eigen bot gaat verbeteren: waar meet je hem tegen af?
+
+Schrijf drie bots die elk precies één ding doen. Ze zijn er niet om te winnen,
+maar om een ondergrens te hebben. Wat jouw bot daarboven uitkomt, is wat je idee
+waard is.
+
+1. `altijd_callen(hand)` — geeft altijd `"call"` terug
+2. `altijd_verhogen(hand)` — geeft altijd `"raise"` terug
+3. `het_muntje(hand)` — kiest willekeurig uit de drie acties
+
+Tel daarna van alle drie, plus van je eigen `kies_actie`, wat ze doen over
+`alle_handen`."""
+
+EENREGEL_CODE = "\n".join([
+    "# TODO: schrijf de drie bots. Elk is één of twee regels.",
+    "",
+    "",
+    "def tel_acties(bot, handen):",
+    "    \"\"\"Hoe vaak kiest deze bot elke actie? Geeft percentages terug.\"\"\"",
+    "    aantallen = {\"raise\": 0, \"call\": 0, \"fold\": 0}",
+    "    for hand in handen:",
+    "        aantallen[bot(hand)] += 1",
+    "    return {a: n / len(handen) * 100 for a, n in aantallen.items()}",
+    "",
+    "",
+    "# TODO: zet de vier bots in deze dict en draai de vergelijking",
+    "bots = {",
+    "    \"jouw bot\": kies_actie,",
+    "    # ...",
+    "}",
+    "",
+    "for naam, bot in bots.items():",
+    "    verdeling = tel_acties(bot, alle_handen)",
+    "    print(f\"{naam:<16s}\", \"  \".join(f\"{a} {p:.0f}%\" for a, p in verdeling.items()))",
+])
+
+EENREGEL_NA = """🤔 Het muntje kiest alle drie de acties even vaak. Is dat beter of slechter dan
+jouw bot? Je kunt die vraag nu nog niet beantwoorden — daar heb je een toernooi
+voor nodig, en dat komt in week 3.
+
+💡 Wel alvast dit: in het echte toernooi van een eerdere lichting werd een bot die
+**altijd callde eerste van de 27**, tien chips voor nummer twee. Niet omdat callen
+slim is, maar omdat de rest zo voorzichtig speelde dat er niemand overbleef om de
+pot van af te pakken. Twee weken later, toen iedereen echt speelde, werd diezelfde
+bot laatste met nul chips.
+
+Dezelfde ene regel. Dat is waarom je een ondergrens nodig hebt om iets over je
+eigen bot te kunnen zeggen."""
+
+PARSONS_KOP = """---
+
+## Deel 4b — Zet de regels op volgorde (10 min)
+
+Hieronder staan de regels van een werkende bot, maar door elkaar. Zet ze in de
+juiste volgorde.
+
+Dat klinkt makkelijker dan het is: bij `if/elif/else` wint de eerste tak die past,
+dus de volgorde ís de strategie. Zet je de ruimste regel bovenaan, dan komen de
+scherpere er nooit aan te pas.
+
+```
+    return "fold"
+    if hand[0] == hand[1]:
+def kies_actie_puzzel(hand):
+        return "raise"
+    if "A" in hand or "K" in hand:
+        return "call"
+```
+
+Deze bot hoort te doen: een paar is altijd een `raise`, een hoge kaart zonder paar
+een `call`, en de rest `fold`."""
+
+PARSONS_CODE = "\n".join([
+    "# TODO: zet de zes regels hierboven in de juiste volgorde.",
+    "",
+    "",
+    "for hand in [[\"8\", \"8\"], [\"A\", \"7\"], [\"9\", \"4\"], [\"A\", \"A\"]]:",
+    "    print(hand, \"->\", kies_actie_puzzel(hand))",
+])
+
+PARSONS_NA = """Verwachte uitvoer: `raise`, `call`, `fold`, `raise`.
+
+🤔 Zet de `"A" in hand`-regel nu eens bovenaan, vóór de paar-regel. Welke van de
+vier handen verandert van antwoord? En welke van de twee volgordes vind je beter —
+en waarom?
+
+💡 Dit is dezelfde bug als in Deel 0C, maar nu van de andere kant: daar zocht je
+hem, hier bouw je hem per ongeluk zelf als je niet oplet."""
+
+
+def oefening_wc1(nb):
+    """Tracing, een flowchart, return-vs-print en de drie bots van één regel."""
+    i = zoek_cel(nb, "## Deel 2 — Pokerbot Upgrade Week 1", "markdown")
+    nb["cells"][i:i] = [
+        nbformat.v4.new_markdown_cell(TRACE_KOP),
+        nbformat.v4.new_code_cell(TRACE_CODE),
+        nbformat.v4.new_markdown_cell(TRACE_NA),
+        nbformat.v4.new_markdown_cell(SCHEMA_KOP),
+        nbformat.v4.new_code_cell(SCHEMA_CODE),
+        nbformat.v4.new_markdown_cell(SCHEMA_NA),
+        nbformat.v4.new_markdown_cell(FUNCTIE_KOP),
+        nbformat.v4.new_code_cell(FUNCTIE_CODE),
+        nbformat.v4.new_markdown_cell(FUNCTIE_NA),
+    ]
+    j = zoek_cel(nb, "## Deel 3 — Je eerste visualisatie", "markdown")
+    nb["cells"][j:j] = [
+        nbformat.v4.new_markdown_cell(EENREGEL_KOP),
+        nbformat.v4.new_code_cell(EENREGEL_CODE),
+        nbformat.v4.new_markdown_cell(EENREGEL_NA),
+    ]
+    return 0, 12
+
+
+def oefening_wc2(nb):
+    """Een Parsons-opdracht op de botregels."""
+    i = zoek_cel(nb, "## Reflectievragen", "markdown")
+    nb["cells"][i:i] = [
+        nbformat.v4.new_markdown_cell(PARSONS_KOP),
+        nbformat.v4.new_code_cell(PARSONS_CODE),
+        nbformat.v4.new_markdown_cell(PARSONS_NA),
+    ]
+    return 0, 3
 
 
 BEWERKINGEN = {
