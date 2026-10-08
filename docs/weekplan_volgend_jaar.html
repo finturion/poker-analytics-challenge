@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="nl"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Negen werkcolleges herindelen</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,400;7..72,600;7..72,700&family=Public+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root{
+    --vilt:#1B4D3E;--inkt:#121E31;--papier:#F7F8F6;--vlak:#FFFFFF;
+    --vlak-zacht:#EEF2EF;--gedempt:#59636B;--lijn:#DCE3DE;--rood:#B3261E;--oker:#8A6A12;
+    --s-xs:.735rem;--s-s:.83rem;--s-m:.955rem;--s-l:1.16rem;--s-xl:1.55rem;--s-xxl:2.35rem;
+  }
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+    --vilt:#5FB894;--inkt:#E6EDE9;--papier:#10171A;--vlak:#161F23;
+    --vlak-zacht:#1C282B;--gedempt:#9AA8A4;--lijn:#2A3A3B;--rood:#F08A80;--oker:#D8B25A;}}
+  :root[data-theme="dark"]{
+    --vilt:#5FB894;--inkt:#E6EDE9;--papier:#10171A;--vlak:#161F23;
+    --vlak-zacht:#1C282B;--gedempt:#9AA8A4;--lijn:#2A3A3B;--rood:#F08A80;--oker:#D8B25A;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--papier);color:var(--inkt);
+    font-family:"Public Sans","Segoe UI",system-ui,-apple-system,sans-serif;
+    font-size:var(--s-m);line-height:1.62;-webkit-font-smoothing:antialiased}
+  .blad{max-width:53rem;margin:0 auto;padding:3.4rem 1.5rem 6rem}
+  h1,h2,h3{font-family:Literata,Georgia,serif;text-wrap:balance;margin:0}
+  h1{font-size:var(--s-xxl);font-weight:700;line-height:1.16;letter-spacing:-.015em}
+  h2{font-size:var(--s-xl);font-weight:600;line-height:1.25}
+  h3{font-size:var(--s-l);font-weight:600;line-height:1.35}
+  code{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-size:.89em;
+    background:var(--vlak-zacht);padding:.08em .34em;border-radius:3px}
+  header{border-bottom:2px solid var(--vilt);padding-bottom:1.9rem;margin-bottom:2.6rem}
+  .stempel{font-family:"IBM Plex Mono",monospace;font-size:var(--s-xs);
+    text-transform:uppercase;letter-spacing:.12em;color:var(--vilt);
+    font-weight:500;display:block;margin-bottom:.9rem}
+  header p.lead{font-size:1.07rem;color:var(--gedempt);max-width:44rem;margin:1.1rem 0 0;line-height:1.66}
+  .merk{font-family:"IBM Plex Mono",monospace;font-size:var(--s-xs);
+    text-transform:uppercase;letter-spacing:.07em;font-weight:500;
+    padding:.14em .5em;border-radius:2px;white-space:nowrap}
+  .m-past{background:var(--vilt);color:var(--papier)}
+  .m-krap{background:transparent;color:var(--oker);box-shadow:inset 0 0 0 1px var(--oker)}
+  section{margin-top:3.4rem}
+  .sectiekop{display:flex;align-items:baseline;justify-content:space-between;
+    gap:1rem;border-bottom:1px solid var(--lijn);padding-bottom:.6rem}
+  .sectiekop .telling{font-family:"IBM Plex Mono",monospace;font-size:var(--s-s);
+    color:var(--gedempt);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .sectie-intro{color:var(--gedempt);margin:.85rem 0 0;max-width:44rem}
+  .item{padding:1.7rem 0;border-bottom:1px solid var(--lijn)}
+  .item:last-child{border-bottom:none}
+  .item-kop{display:flex;align-items:flex-start;gap:.75rem;flex-wrap:wrap}
+  .item-kop h3{flex:1 1 20rem;min-width:0}
+  .meta{font-family:"IBM Plex Mono",monospace;font-size:var(--s-xs);color:var(--gedempt);
+    margin:.5rem 0 0;display:flex;flex-wrap:wrap;gap:.3rem .9rem}
+  .meta b{font-weight:500;color:var(--inkt)}
+  .item p{margin:.8rem 0 0;max-width:44rem}
+  .kader{margin:.95rem 0 0;padding:.85rem 1rem;background:var(--vlak);
+    border-left:3px solid var(--vilt);border-radius:0 3px 3px 0;
+    font-size:var(--s-s);max-width:44rem}
+  .kader .titel{font-family:"IBM Plex Mono",monospace;font-size:var(--s-xs);
+    text-transform:uppercase;letter-spacing:.08em;color:var(--vilt);
+    font-weight:500;display:block;margin-bottom:.35rem}
+  .kader p{margin:0;max-width:none}
+  .kader p + p{margin-top:.4rem}
+  .tabelwrap{overflow-x:auto;margin:.95rem 0 0;max-width:44rem}
+  table{border-collapse:collapse;width:100%;font-size:var(--s-s)}
+  th,td{text-align:left;padding:.42rem .8rem .42rem 0;border-bottom:1px solid var(--lijn);vertical-align:top}
+  th{font-family:"IBM Plex Mono",monospace;font-size:var(--s-xs);text-transform:uppercase;
+    letter-spacing:.06em;color:var(--gedempt);font-weight:500}
+  td.getal{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right}
+  table.muts tr.weg td{color:var(--gedempt)}
+  table.muts tr.bij td.getal{color:var(--vilt);font-weight:600}
+  .balken{margin:1.2rem 0 0}
+  .balk{display:grid;grid-template-columns:3.2rem 1fr 4.5rem;gap:.7rem;
+    align-items:center;margin-bottom:.35rem;font-size:var(--s-s)}
+  .balk .naam{font-family:"IBM Plex Mono",monospace;color:var(--gedempt)}
+  .balk .spoor{position:relative;height:1.1rem;background:var(--vlak-zacht);border-radius:2px}
+  .balk .vul{position:absolute;left:0;top:0;bottom:0;background:var(--vilt);border-radius:2px}
+  .balk .vul.over{background:var(--oker)}
+  .balk .grens{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--inkt)}
+  .balk .getal{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;
+    text-align:right;color:var(--gedempt)}
+  footer{margin-top:3.4rem;padding-top:1.4rem;border-top:1px solid var(--lijn);
+    font-size:var(--s-s);color:var(--gedempt)}
+  a{color:var(--vilt);text-decoration-thickness:1px;text-underline-offset:2px}
+  @media (max-width:640px){.blad{padding:2.3rem 1.1rem 4rem}h1{font-size:1.75rem}}
+</style></head><body><div class="blad">
+
+<header>
+  <span class="stempel">Poker Analytics Challenge &middot; weekplan voor de volgende lichting</span>
+  <h1>Negen werkcolleges herindelen</h1>
+  <p class="lead">
+    Wat er per werkcollege verandert als je de didactiekpunten doorvoert, en wat dat
+    in minuten kost. Het begint met een probleem dat er nu al is: vijf van de negen
+    werkcolleges passen niet in het roostervak.
+  </p>
+</header>
+
+<section>
+  <div class="sectiekop">
+    <h2>Het vak is 100 minuten. Vijf werkcolleges zijn dat niet.</h2>
+    <span class="telling">gemeten</span>
+  </div>
+  <p class="sectie-intro">
+    Opgeteld uit de minuten die in de kopjes van de notebooks staan, alleen de
+    hoofddelen en zonder het huiswerk. Het roostervak is woensdag 13:40&ndash;15:20.
+  </p>
+  <div class="balken"><div class="balk"><span class="naam">WC1</span><span class="spoor"><span class="vul" style="width:23.5%"></span><span class="grens" style="left:58.8%"></span></span><span class="getal">40 min</span></div><div class="balk"><span class="naam">WC2</span><span class="spoor"><span class="vul" style="width:50.0%"></span><span class="grens" style="left:58.8%"></span></span><span class="getal">85 min</span></div><div class="balk"><span class="naam">WC3</span><span class="spoor"><span class="vul over" style="width:61.2%"></span><span class="grens" style="left:58.8%"></span></span><span class="getal">104 min</span></div><div class="balk"><span class="naam">WC4</span><span class="spoor"><span class="vul over" style="width:72.4%"></span><span class="grens" style="left:58.8%"></span></span><span class="getal">123 min</span></div><div class="balk"><span class="naam">WC5</span><span class="spoor"><span class="vul over" style="width:76.5%"></span><span class="grens" style="left:58.8%"></span></span><span class="getal">130 min</span></div><div class="balk"><span class="naam">WC6</span><span class="spoor"><span class="vul over" style="width:93.5%"></span><span class="grens" style="left:58.8%"></span></span><span class="getal">159 min</span></div><div class="balk"><span class="naam">WC7</span><span class="spoor"><span class="vul" style="width:47.1%"></span><span class="grens" style="left:58.8%"></span></span><span class="getal">80 min</span></div><div class="balk"><span class="naam">WC8</span><span class="spoor"><span class="vul over" style="width:70.6%"></span><span class="grens" style="left:58.8%"></span></span><span class="getal">120 min</span></div><div class="balk"><span class="naam">WC9</span><span class="spoor"><span class="vul over" style="width:61.2%"></span><span class="grens" style="left:58.8%"></span></span><span class="getal">104 min</span></div></div>
+  <div class="kader">
+    <span class="titel">Het is geen tekort maar scheefheid</span>
+    <p>Alles bij elkaar is er <b>841 minuten</b> aan contactinhoud voor <b>900 minuten</b>
+    capaciteit. Er is dus ruimte &mdash; alleen staat die op de verkeerde plek.
+    Werkcollege 1 gebruikt 40 van zijn 100 minuten, werkcollege 6 gebruikt er 159.</p>
+    <p>Dat is goed nieuws voor dit plan: de twee nieuwe werkvormen &mdash; tracing en
+    flowcharts &mdash; passen in week 1 en 2 zonder dat er iets uit hoeft. Daar zijn ze
+    ook het hardst nodig.</p>
+  </div>
+  <p>
+    <b>En er is een tweede bron.</b> Het vak heeft 31.751 woorden leestekst, ongeveer
+    176 minuten lezen. Een flowchart naast de code vervangt een alinea proza, en een
+    traceertabel vervangt een uitleg over wat de code doet. Reken de nieuwe werkvormen
+    dus niet op bij wat er staat, maar haal ze eruit &mdash; anders wordt het drukker in
+    plaats van duidelijker.
+  </p>
+</section>
+
+<section>
+  <div class="sectiekop">
+    <h2>Per werkcollege</h2>
+    <span class="telling">945 &rarr; 871 min</span>
+  </div>
+  <p class="sectie-intro">
+    &ldquo;Naar de hub&rdquo; betekent: het gebeurt nog steeds, maar als huiswerk in de
+    Streamlit-hub in plaats van in de zaal. &ldquo;Naar huiswerk&rdquo; betekent dat het
+    notebookdeel blijft maar niet meer klassikaal wordt doorlopen.
+  </p>
+
+  <div class="item">
+    <div class="item-kop">
+      <h3>WC1 &middot; Python-basis en de eerste bot</h3>
+      <i class="merk m-past">past</i>
+    </div>
+    <p class="meta"><span>week 1</span><span>nu <b>40 min</b></span>
+      <span>straks <b>55 min</b></span><span>vak is 100 min</span></p>
+    <p>Hier zit 60 minuten lucht, als enige van de negen. Dit is dus de plek waar de twee nieuwe werkvormen gratis passen — en meteen de week waarin ze het hardst nodig zijn.</p>
+    <div class="tabelwrap">
+      <table class="muts">
+        <thead><tr><th>wat verandert</th><th class="getal">min</th></tr></thead>
+        <tbody><tr class="weg"><td>list comprehension verhuist naar WC3</td><td class="getal">-5</td></tr><tr class="bij"><td>flowchart naast de if/elif-uitleg</td><td class="getal">+10</td></tr><tr class="bij"><td>tracing: vijf regels, een kolom per variabele</td><td class="getal">+10</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-kop">
+      <h3>WC2 &middot; API, toernooi en bot v1.1</h3>
+      <i class="merk m-past">past</i>
+    </div>
+    <p class="meta"><span>week 1</span><span>nu <b>85 min</b></span>
+      <span>straks <b>93 min</b></span><span>vak is 100 min</span></p>
+    <p>Deel 0B laat studenten nu acht stappen op volgorde zetten als lijstje. Datzelfde als flowchart tekenen kost drie minuten meer en levert het schema op waar de rest van het blok naar terugverwijst.</p>
+    <div class="tabelwrap">
+      <table class="muts">
+        <thead><tr><th>wat verandert</th><th class="getal">min</th></tr></thead>
+        <tbody><tr class="weg"><td>peer review naar de hub, als huiswerk</td><td class="getal">-10</td></tr><tr class="bij"><td>tracing op de kapotte bot uit Deel 0C</td><td class="getal">+10</td></tr><tr class="bij"><td>flowchart van de bot-pijplijn (Deel 0B)</td><td class="getal">+8</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-kop">
+      <h3>WC3 &middot; Visual Maandag: hiërarchie</h3>
+      <i class="merk m-krap">7 min over</i>
+    </div>
+    <p class="meta"><span>week 2</span><span>nu <b>104 min</b></span>
+      <span>straks <b>107 min</b></span><span>vak is 100 min</span></p>
+    <p>Ronde 1 herhaalt wat Ronde 0 net heeft gedaan. List comprehensions landen hier omdat ze bij pandas pas ergens voor dienen.</p>
+    <div class="tabelwrap">
+      <table class="muts">
+        <thead><tr><th>wat verandert</th><th class="getal">min</th></tr></thead>
+        <tbody><tr class="bij"><td>list comprehension komt hier binnen</td><td class="getal">+5</td></tr><tr class="weg"><td>Ronde 1 (opfrissen kaartwaarden) eruit</td><td class="getal">-12</td></tr><tr class="bij"><td>tracing op een pandas-ketting</td><td class="getal">+10</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-kop">
+      <h3>WC4 &middot; Hoe vaak win ik?</h3>
+      <i class="merk m-krap">1 min over</i>
+    </div>
+    <p class="meta"><span>week 3</span><span>nu <b>123 min</b></span>
+      <span>straks <b>101 min</b></span><span>vak is 100 min</span></p>
+    <p>Het zwaarste werkcollege van het blok, met 7.252 woorden leestekst. Eén idee per middag: hier alleen nog handsterkte en winkans. De spelregels van poker zijn voorwerk — daar hoeft niemand bij te zitten.</p>
+    <div class="tabelwrap">
+      <table class="muts">
+        <thead><tr><th>wat verandert</th><th class="getal">min</th></tr></thead>
+        <tbody><tr class="weg"><td>pot odds (Deel 6) naar WC5</td><td class="getal">-16</td></tr><tr class="weg"><td>spelregels (Deel 2) naar voorwerk</td><td class="getal">-16</td></tr><tr class="bij"><td>flowchart en tracing in één opdracht</td><td class="getal">+10</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-kop">
+      <h3>WC5 &middot; Wat kost meedoen?</h3>
+      <i class="merk m-krap">1 min over</i>
+    </div>
+    <p class="meta"><span>week 3</span><span>nu <b>130 min</b></span>
+      <span>straks <b>101 min</b></span><span>vak is 100 min</span></p>
+    <p>Pot odds landt hier, op het moment dat studenten hun eigen uitslag voor zich hebben en zien wat folden ze heeft gekost. Deel 6 (merge) blijft staan: dat staat in de rubric én in de toets.</p>
+    <div class="tabelwrap">
+      <table class="muts">
+        <thead><tr><th>wat verandert</th><th class="getal">min</th></tr></thead>
+        <tbody><tr class="weg"><td>peer review naar de hub</td><td class="getal">-20</td></tr><tr class="weg"><td>Streamlit-opstap (Deel 7) naar huiswerk</td><td class="getal">-10</td></tr><tr class="weg"><td>aftrap case 2 naar het hoorcollege</td><td class="getal">-15</td></tr><tr class="weg"><td>spelregels terugvinden (Deel 3) naar huiswerk</td><td class="getal">-10</td></tr><tr class="bij"><td>pot odds uit WC4</td><td class="getal">+16</td></tr><tr class="bij"><td>Parsons op de beslisregels</td><td class="getal">+10</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-kop">
+      <h3>WC6 &middot; Visual Maandag: spaghetti</h3>
+      <i class="merk m-krap">7 min over</i>
+    </div>
+    <p class="meta"><span>week 4</span><span>nu <b>159 min</b></span>
+      <span>straks <b>107 min</b></span><span>vak is 100 min</span></p>
+    <p>Met 159 minuten in een vak van 100 is dit het werkcollege dat het meest moet inleveren. Deel 9 is bovendien de enige pokerinhoud op een middag die verder over visualisatie gaat.</p>
+    <div class="tabelwrap">
+      <table class="muts">
+        <thead><tr><th>wat verandert</th><th class="getal">min</th></tr></thead>
+        <tbody><tr class="weg"><td>winkans-ranglijst (Deel 9) eruit</td><td class="getal">-15</td></tr><tr class="weg"><td>multi-week (Deel 8) naar huiswerk</td><td class="getal">-15</td></tr><tr class="weg"><td>Streamlit-app (Deel 11) naar huiswerk</td><td class="getal">-15</td></tr><tr class="weg"><td>peer-vergelijking naar de hub</td><td class="getal">-10</td></tr><tr class="weg"><td>eigen bot uitlichten: 22 naar 15 min</td><td class="getal">-7</td></tr><tr class="bij"><td>tracing op diff, cumsum en shift</td><td class="getal">+10</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-kop">
+      <h3>WC7 &middot; Bot v3: de bouwstenen</h3>
+      <i class="merk m-past">past</i>
+    </div>
+    <p class="meta"><span>week 5</span><span>nu <b>80 min</b></span>
+      <span>straks <b>100 min</b></span><span>vak is 100 min</span></p>
+    <p>Hier zit 20 minuten ruimte, en hier zit ook het compositieprobleem. Vijf losse regels moeten één kies_actie worden — precies waar het rainfall-onderzoek zegt dat novices vastlopen, en waar de 92% fold van week 3 vandaan kwam.</p>
+    <div class="tabelwrap">
+      <table class="muts">
+        <thead><tr><th>wat verandert</th><th class="getal">min</th></tr></thead>
+        <tbody><tr class="bij"><td>Parsons: zet de vijf regels op volgorde</td><td class="getal">+10</td></tr><tr class="bij"><td>compositie als eigen deel, met uitleg over voorrang</td><td class="getal">+10</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-kop">
+      <h3>WC8 &middot; Data science op het toernooi</h3>
+      <i class="merk m-krap">7 min over</i>
+    </div>
+    <p class="meta"><span>week 5</span><span>nu <b>120 min</b></span>
+      <span>straks <b>107 min</b></span><span>vak is 100 min</span></p>
+    <p>De kaart hoort inhoudelijk bij WC9, waar hij het onderwerp is.</p>
+    <div class="tabelwrap">
+      <table class="muts">
+        <thead><tr><th>wat verandert</th><th class="getal">min</th></tr></thead>
+        <tbody><tr class="weg"><td>kaart van de klas (Deel 6) naar WC9</td><td class="getal">-15</td></tr><tr class="weg"><td>3.6 (uitgebreide log) naar huiswerk</td><td class="getal">-8</td></tr><tr class="bij"><td>tracing op de groupby-ketting</td><td class="getal">+10</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-kop">
+      <h3>WC9 &middot; Kaarten en dashboards</h3>
+      <i class="merk m-past">past</i>
+    </div>
+    <p class="meta"><span>week 6</span><span>nu <b>104 min</b></span>
+      <span>straks <b>100 min</b></span><span>vak is 100 min</span></p>
+    <p>Houdt daarnaast 40 minuten voorwerk met geopandas.</p>
+    <div class="tabelwrap">
+      <table class="muts">
+        <thead><tr><th>wat verandert</th><th class="getal">min</th></tr></thead>
+        <tbody><tr class="bij"><td>kaart uit WC8</td><td class="getal">+15</td></tr><tr class="weg"><td>peer-vergelijking naar de hub</td><td class="getal">-12</td></tr><tr class="weg"><td>level 2, de detail-popup: 25 naar 18 min</td><td class="getal">-7</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="sectiekop">
+    <h2>Wat dit plan níét oplost</h2>
+    <span class="telling">3 punten</span>
+  </div>
+
+  <div class="item">
+    <div class="item-kop">
+      <h3>Vijf werkcolleges blijven 1 tot 15 minuten over het vak</h3>
+    </div>
+    <p>
+      WC3 (+7), WC4 (+1), WC5 (+1), WC6 (+7) en WC8 (+7) komen na de herindeling nog
+      net boven de honderd uit. Dat laat ik zo: een werkcollege dat vijf minuten
+      uitloopt is normaal, en doen alsof het precies op 100 landt is schijnprecisie.
+      Wil je het strak hebben, dan is in elk van die vijf het laatste peer-moment de
+      goedkoopste snit.
+    </p>
+  </div>
+
+  <div class="item">
+    <div class="item-kop">
+      <h3>Werkcollege 1 houdt 45 minuten lucht die je niet kunt verplaatsen</h3>
+    </div>
+    <p>
+      Capaciteit in week 1 helpt werkcollege 6 niet: pot odds kan niet naar de eerste
+      middag. Je zou die ruimte kunnen gebruiken om week 1 juist rustiger te maken
+      &mdash; tien concepten in één middag is de oorspronkelijke klacht &mdash; of om
+      er een extra traceer- en flowchartblok in te zetten. Dat laatste is wat hierboven
+      staat, maar het mag ook minder.
+    </p>
+  </div>
+
+  <div class="item">
+    <div class="item-kop">
+      <h3>Een tegenspraak in het veranderpuntendocument</h3>
+    </div>
+    <p>
+      Daar staat op twee plekken iets anders over de peer review: één punt verhuist hem
+      <em>naar</em> werkcollege 6, een later punt verhuist hem naar de Streamlit-hub.
+      De meting beslist dat: werkcollege 6 zit 59 minuten over het vak, dus daar kan
+      niets bij. In dit plan gaat de peer review overal naar de hub, en wordt het
+      bijbehorende moment in WC2, WC5, WC6 en WC9 geschrapt.
+    </p>
+  </div>
+</section>
+
+<footer>
+  Opgesteld 8 oktober 2026. De minuten komen uit de kopjes van de negen notebooks
+  (alleen hoofddelen, exclusief huiswerk en exclusief de 4 tot 8 uur botwerk in WC4 en
+  WC7). De onderbouwing per wijziging staat in
+  <a href="https://claude.ai/artifact/VHxz3JTPug9qEvCFXnnqbG">Wat er volgend jaar anders moet</a>,
+  sectie Didactiek. Bron van deze pagina: <code>docs/weekplan_volgend_jaar.html</code>.
+</footer>
+
+</div></body></html>
