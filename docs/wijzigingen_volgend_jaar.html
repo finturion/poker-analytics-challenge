@@ -196,6 +196,7 @@
     <span><i class="merk m-gemeten">gemeten</i> met cijfers onderbouwd</span>
     <span><i class="merk m-voorstel">voorstel</i> te doen, nog niet besloten</span>
     <span><i class="merk m-keuze">keuze</i> jouw beslissing</span>
+    <span><i class="merk m-niet">niet doen</i> besloten, blijft liggen</span>
   </div>
 </header>
 
@@ -211,12 +212,17 @@
     overige 40% observeert alleen het product.
   </p>
 
-  <div class="item">
+  <div class="item afgevoerd">
     <div class="item-kop">
       <h3>Een codemoment in de casepresentaties</h3>
-      <i class="merk m-voorstel">voorstel</i>
+      <i class="merk m-niet">niet doen</i>
     </div>
-    <p class="meta"><span>raakt <b>30% van het cijfer</b></span><span>kost <b>2 uur per case</b>, samen</span><span>geen nieuwe afspraak</span></p>
+    <p class="meta"><span>besloten 8 oktober 2026</span><span>kost <b>6 uur</b> over het blok</span></p>
+    <p>
+      <b>Blijft liggen.</b> Zes uur over het blok, en het is een los besluit over toetsing
+      &mdash; niet iets dat volgt uit wat er dit jaar misging. Komt het ooit terug, dan staat
+      hieronder hoe het eruit zou zien.
+    </p>
     <p>
       Een groep presenteert het dashboard en jij beoordeelt dat. Je ziet niet wie wat deed en
       niet of iemand begrijpt wat er staat. Het live moment bestaat dus wel, maar het raakt de
@@ -352,7 +358,7 @@
 <section>
   <div class="sectiekop">
     <h2>Didactiek</h2>
-    <span class="telling">6 punten</span>
+    <span class="telling">7 punten</span>
   </div>
   <p class="sectie-intro">
     Deze punten komen uit twee kanten: een telling over de negen notebooks, en wat het
@@ -495,6 +501,54 @@
       notebooks, dict-toegang 188 keer. Die zitten goed. Deze drie niet, en bij <code>merge</code>
       is dat een probleem omdat het wel wordt getoetst.
     </p>
+  </div>
+
+  <div class="item">
+    <div class="item-kop">
+      <h3>De flowcharts staan allemaal achteraan, en horen vooraan</h3>
+      <i class="merk m-gemeten">gemeten</i>
+    </div>
+    <p class="meta"><span>18 flowcharts in het hele vak</span><span><b>16 ervan in week 5</b></span><span>week 1, 2 en 6: nul</span></p>
+    <div class="tabelwrap">
+      <table>
+        <thead><tr><th>werkcollege</th><th class="getal">flowcharts</th><th>wanneer</th></tr></thead>
+        <tbody>
+          <tr><td>WC1, WC2</td><td class="getal">0</td><td>de week waarin if/elif/else wordt uitgelegd</td></tr>
+          <tr><td>WC3</td><td class="getal">0</td><td>—</td></tr>
+          <tr><td>WC4</td><td class="getal">1</td><td>—</td></tr>
+          <tr><td>WC7</td><td class="getal">13</td><td>na vier weken coderen</td></tr>
+          <tr><td>WC8</td><td class="getal">2</td><td>—</td></tr>
+          <tr><td>WC9</td><td class="getal">0</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      De steun staat dus precies omgekeerd: het zwaarst waar studenten al een maand code
+      schrijven, en afwezig in de week waarin ze voor het eerst een <code>if</code> van een
+      <code>elif</code> moeten onderscheiden. In werkcollege 7 werken ze goed &mdash; daar is één
+      flowchart per botregel &mdash; maar dat is de laatste week waarin ze nodig zijn.
+    </p>
+    <p>
+      <b>Wat er moet:</b> flowcharts vanaf werkcollege 1, en dan steeds <b>naast de code</b>, niet
+      in plaats ervan. De opdracht is de vertaling: hier is een flowchart, schrijf de
+      <code>if</code>-structuur &mdash; of andersom, hier is code, teken wat hij doet. Precies
+      daar vond het onderzoek winst, en vooral bij de zwakkere studenten.
+    </p>
+    <div class="bewijs">
+      <span class="titel">Met één waarschuwing uit datzelfde onderzoek</span>
+      <p>&ldquo;The challenge is to develop approaches whereby learning to program &mdash; not
+      learning to flowchart &mdash; is emphasized.&rdquo; Een flowchart die op zichzelf staat
+      wordt een eigen vaardigheid om te leren, en dan heb je er twee in plaats van één.
+      Koppel hem dus altijd aan de code ernaast.</p>
+    </div>
+    <p>
+      Dit valt samen met het traceerpunt hierboven: een flowchart tekenen bij bestaande code
+      <i>is</i> de Investigate-stap van PRIMM. Eén opdracht kan allebei dekken.
+    </p>
+    <p class="meta"><span>
+      <a href="https://cerdika.publikasiindonesia.id/index.php/cerdika/article/view/3395">Flowcharts en programmeerlogica bij beginnende studenten</a> &middot;
+      <a href="https://jise.org/Volume15/n1/JISEv15n1p65.html">Flowcharting en de koppeling met code</a>
+    </span></p>
   </div>
 
   <div class="item">
@@ -846,12 +900,18 @@
     </p>
   </div>
 
-  <div class="item">
+  <div class="item afgevoerd">
     <div class="item-kop">
       <h3>Vrije inzetbedragen als verdiepingsspoor</h3>
-      <i class="merk m-voorstel">voorstel</i>
+      <i class="merk m-niet">niet doen</i>
     </div>
-    <p class="meta"><span>uitgesteld in sep 2026</span><span>raakt de adapter en de validator</span></p>
+    <p class="meta"><span>besloten 8 oktober 2026</span><span>raakt de adapter en de validator</span></p>
+    <p>
+      <b>Blijft liggen.</b> Het raakt zowel de adapter als de validator, en levert didactisch
+      weinig op naast wat er al staat: een student die <code>raise</code> van
+      <code>grote_raise</code> kan onderscheiden heeft het idee van inzetgrootte al te pakken.
+      De beschrijving hieronder blijft staan voor als het ooit wél aan de beurt is.
+    </p>
     <p>
       Nu heeft een bot twee maten: <code>raise</code> (het minimum) en <code>grote_raise</code>
       (200). Een echte keuze zou <code>("raise", bedrag)</code> zijn. Dat is bewust uitgesteld —
