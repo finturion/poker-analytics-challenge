@@ -31,6 +31,8 @@ import json
 import os
 import sys
 
+import nbformat
+
 HIER = os.path.dirname(os.path.abspath(__file__))
 WORTEL = os.path.dirname(HIER)
 BRON = os.path.join(WORTEL, "notebooks")
@@ -228,25 +230,106 @@ def werkcollege5(nb):
         "grafieken doe je in de Streamlit-hub, waar je ze gewoon ziet staan in "
         "plaats van ze uit een API te moeten peuteren. De deelnummers hieronder "
         "lopen door zoals ze waren."))
+    # Zonder deze drie blijft WC5 op 130 minuten staan in een vak van 100.
+    naar_huiswerk(nb, "## Deel 3 — De spelregels terugvinden in je eigen data (20 min)",
+                  "## Deel 3 — De spelregels terugvinden in je eigen data (huiswerk, ± 20 min)")
+    naar_huiswerk(nb, "## Deel 7 — Van notebook naar script: de opstap naar Streamlit (10 min)",
+                  "## Deel 7 — Van notebook naar script: de opstap naar Streamlit (huiswerk, ± 10 min)")
+    naar_huiswerk(nb, "## Deel 5 — Aftrap Groepscase 2 (15 min)",
+                  "## Deel 5 — Aftrap Groepscase 2 (in het hoorcollege, 15 min)")
+
     i = zoek_cel(nb, "## Deel 2 — Resultaten: v2 vs v1", "markdown")
     nb["cells"][i:i] = [
         nbformat.v4.new_markdown_cell(API_LES),
         nbformat.v4.new_code_cell(API_CODE),
         nbformat.v4.new_markdown_cell(API_NA),
     ]
-    return weg, 3
+    return weg, 6
+
+
+
+def naar_huiswerk(nb, kop, nieuwe_kop):
+    """Een deel blijft staan maar wordt huiswerk in plaats van klassikaal."""
+    i = zoek_cel(nb, kop, "markdown")
+    bron = "".join(nb["cells"][i]["source"])
+    nb["cells"][i]["source"] = bron.replace(kop, nieuwe_kop, 1)
+
+
+def werkcollege4b(nb):
+    """Pot odds eruit, de spelregels naar voorwerk."""
+    weg = knip(nb, "## Deel 6 — Pot odds", "## Deel 7 — Bot v2 afmaken")
+    naar_huiswerk(nb,
+        "## Deel 2 — Pokerbot Upgrade Week 3: hoe het spel écht werkt (± 16 min)",
+        "## Deel 2 — De regels van het spel (voorwerk, ± 16 min)")
+    i = zoek_cel(nb, "## Deel 2 — De regels van het spel", "markdown")
+    bron = "".join(nb["cells"][i]["source"])
+    nb["cells"][i]["source"] = bron.rstrip() + (
+        "\n\n> **Doe dit vóór het werkcollege.** Je hoeft er niemand bij te hebben: "
+        "het zijn de spelregels, geen programmeerstof. Wie ze al kent kan doorbladeren.\n")
+    return weg, 2
+
+
+def werkcollege6(nb):
+    """Het volste werkcollege van het blok: 159 minuten in een vak van 100."""
+    weg = knip(nb, "## Deel 9 — De winkans-ranglijst in beeld", "## Deel 10 — Peer-vergelijking")
+    weg += knip(nb, "## Deel 10 — Peer-vergelijking", "## Deel 11 — Van grafiek naar Streamlit-app")
+    naar_huiswerk(nb, "## Deel 8 — Multi-week: laat je eigen vooruitgang zien (15 min)",
+                  "## Deel 8 — Multi-week: laat je eigen vooruitgang zien (huiswerk, ± 15 min)")
+    naar_huiswerk(nb, "## Deel 11 — Van grafiek naar Streamlit-app (15 min)",
+                  "## Deel 11 — Van grafiek naar Streamlit-app (huiswerk, ± 15 min)")
+    naar_huiswerk(nb, "## Deel 3 — Eigen bot uitlichten (22 min)",
+                  "## Deel 3 — Eigen bot uitlichten (15 min)")
+    i = zoek_cel(nb, "## Deel 11 — Van grafiek naar Streamlit-app", "markdown")
+    nb["cells"].insert(i, nbformat.v4.new_markdown_cell(
+        "> **Deel 9 en 10 staan niet in dit notebook.** De winkans-ranglijst was de "
+        "enige pokerinhoud op een middag die verder over visualisatie gaat, en het "
+        "vergelijken met klasgenoten doe je in de Streamlit-hub. De deelnummers "
+        "hieronder lopen door zoals ze waren."))
+    return weg, 4
+
+
+def werkcollege8(nb):
+    """De kaart hoort bij werkcollege 9, waar hij het onderwerp is."""
+    weg = knip(nb, "## Deel 6 — De kaart van de klas", "## Reflectievragen")
+    naar_huiswerk(nb, "### 3.6 — De uitgebreide log: één regel per beslissing (extra)",
+                  "### 3.6 — De uitgebreide log: één regel per beslissing (huiswerk, ± 8 min)")
+    i = zoek_cel(nb, "## Reflectievragen", "markdown")
+    nb["cells"].insert(i, nbformat.v4.new_markdown_cell(
+        "> **De kaart van de klas staat niet meer in dit notebook.** Werkcollege 9 "
+        "gaat er een hele middag over, met echte gemeentegrenzen en een popup per "
+        "gemeente; een kwartier hier voegde daar niets aan toe."))
+    return weg, 2
+
+
+def werkcollege9(nb):
+    """Peer-vergelijking naar de hub; de detail-popup iets korter."""
+    weg = knip(nb, "## Deel 6 — Peer-vergelijking: de 3-seconden-test", "## Reflectievragen")
+    naar_huiswerk(nb, "## Deel 4 — Level 2: de detail-popup (25 min)",
+                  "## Deel 4 — Level 2: de detail-popup (18 min)")
+    # Er staat al 40 minuten voorwerk met geopandas; data ophalen hoort daarbij.
+    naar_huiswerk(nb, "## Deel 2 — Data verzamelen (15 min)",
+                  "## Deel 2 — Data verzamelen (voorwerk, ± 15 min)")
+    i = zoek_cel(nb, "## Reflectievragen", "markdown")
+    nb["cells"].insert(i, nbformat.v4.new_markdown_cell(
+        "> **De 3-seconden-test doe je in de Streamlit-hub.** Daar staan de kaarten "
+        "van je klasgenoten naast elkaar, en dat werkt beter dan ze hier een voor een "
+        "op te halen."))
+    return weg, 4
 
 
 BEWERKINGEN = {
     "Week1_Werkcollege1.ipynb": werkcollege1,
     "Week1_Werkcollege2.ipynb": werkcollege2,
     "Week2_Werkcollege3.ipynb": werkcollege3,
+    "Week3_Werkcollege4.ipynb": werkcollege4b,
     "Week3_Werkcollege5.ipynb": werkcollege5,
+    "Week4_Werkcollege6.ipynb": werkcollege6,
+    "Week5_Werkcollege8.ipynb": werkcollege8,
+    "Week6_Werkcollege9.ipynb": werkcollege9,
 }
 
 
 def main():
-    import nbformat
     p = argparse.ArgumentParser()
     p.parse_args()
 
@@ -266,9 +349,9 @@ def main():
 
     # Controle: er mag geen netwerkaanroep meer in staan.
     import re
-    # Vanaf werkcollege 4 hoort er juist wél netwerk in te zitten -- dat is het punt
-    # van de verhuizing. Alleen week 1 en 2 moeten schoon zijn.
-    for naam in [n for n in BEWERKINGEN if not n.startswith("Week3")]:
+    # Alleen week 1 en 2 moeten schoon zijn. Vanaf week 3 hoort er juist wél
+    # netwerk in te zitten -- dat is het punt van de verhuizing.
+    for naam in [n for n in BEWERKINGEN if n.startswith(("Week1", "Week2"))]:
         nb = nbformat.read(os.path.join(DOEL, naam), as_version=4)
         code = "\n".join("".join(c["source"]) for c in nb["cells"] if c["cell_type"] == "code")
         resten = re.findall(r"requests\.(get|post)|lever_in\(|onrender\.com", code)
