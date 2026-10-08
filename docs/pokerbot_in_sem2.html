@@ -245,11 +245,54 @@
 <section>
   <div class="sectiekop">
     <h2>Vóór het blok beslissen</h2>
-    <span class="telling">4 punten</span>
+    <span class="telling">5 punten</span>
   </div>
   <p class="sectie-intro">
     Dingen die je in week 1 niet meer wilt uitzoeken, omdat ze de opzet van de weken erna bepalen.
   </p>
+
+  <div class="item">
+    <div class="item-kop">
+      <h3>De API komt pas in week 3</h3>
+      <i class="merk m-bouwen">half gebouwd</i>
+    </div>
+    <p class="meta"><span>besloten 8 oktober 2026</span><span>haalt 45 min uit WC2</span><span>het databestand staat er al</span></p>
+    <p>
+      Nu zit de API vanaf werkcollege 1 in de stof: inleveren in WC1, en in WC2 een deel over
+      wat een API is (20 min), het toernooi ophalen (15) en peer review (10). Dat is
+      <b>45 van de 85 minuten</b> van WC2, in dezelfde week waarin ook tien
+      programmeerconcepten binnenkomen.
+    </p>
+    <p>
+      Erger dan de minuten is wat het meebrengt: tokens, 401&rsquo;s en netwerkfouten &mdash;
+      een hele categorie problemen die niets met programmeren te maken heeft, in de week
+      waarin iemand voor het eerst een <code>for</code>-loop schrijft.
+    </p>
+    <div class="kader">
+      <span class="titel">Waarom week 3 en niet week 5</span>
+      <p>Week 5 is de bonusweek. Daar een nieuw technisch concept introduceren betekent dat
+      een typefout in een token punten kost.</p>
+      <p>En wacht je tot week 5, dan draaien vier van de zes weken op blikdata en komt de
+      hele &ldquo;jouw bot tegen de klas&rdquo;-motor pas aan het eind op gang. Week 3 is waar
+      Bot v2 wordt gebouwd &mdash; de eerste bot die het waard is om in te leveren.</p>
+    </div>
+    <p>
+      <b>Wat er al klaar is:</b> <code>notebooks/data/voorbeeldtoernooi.json</code>, gemaakt
+      met <code>scripts/maak_voorbeeldtoernooi.py</code>. Een toernooi dat werkelijk gespeeld
+      is &mdash; 28 bots, 2.800 logregels, eindstanden van 118 tot 1.835 chips, 62% fold &mdash;
+      met namen in plaats van studentnummers. Daarmee kunnen WC2 en WC3 hun hele programma
+      draaien zonder dat er iets over de lijn gaat.
+    </p>
+    <p>
+      Echte data en geen verzinsel, en dat is hier geen detail: een verzonnen dataset heeft
+      geen rare uitschieters, en juist die maken een grafiek de moeite waard.
+    </p>
+    <p>
+      <b>Wat nog moet:</b> WC1 zonder <code>lever_in()</code>, WC2 en WC3 laten lezen uit het
+      bestand in plaats van uit <code>/toernooi/1</code>, en het API-deel verplaatsen naar
+      WC4. De peer review verhuist toch al naar de hub, dus die hoeft niet mee.
+    </p>
+  </div>
 
   <div class="item">
     <div class="item-kop">
